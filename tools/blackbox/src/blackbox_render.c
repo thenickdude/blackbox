@@ -680,7 +680,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 					fieldValue = 0;
 			} else if (idents.hasPIDs) {
 				if (pidType == PID_TOTAL)
-					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]] + frame[idents.axisPIDFields[PID_I][axisIndex]] + frame[idents.axisPIDFields[PID_D][axisIndex]];
+					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]] + frame[idents.axisPIDFields[PID_I][axisIndex]] - frame[idents.axisPIDFields[PID_D][axisIndex]];
 				else
 					fieldValue = frame[idents.axisPIDFields[pidType][axisIndex]];
 			} else
@@ -1146,7 +1146,7 @@ int main(int argc, char **argv)
 
 	identifyFields();
 
-	//applySmoothing();
+	applySmoothing();
 
 	timeBegin = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] + options.timeBegin * 1000000u;
 
