@@ -7,6 +7,7 @@
 
 #include "cli.h"
 #include "telemetry_common.h"
+#include "blackbox.h"
 
 flags_t f;
 int16_t debug[4];
@@ -283,6 +284,9 @@ static void mwArm(void)
         if (!f.ARMED) {         // arm now!
             f.ARMED = 1;
             headFreeModeHold = heading;
+
+            if (!cliMode && feature(FEATURE_BLACKBOX))
+            	startBlackbox();
         }
     } else if (!f.ARMED) {
         blinkLED(2, 255, 1);
@@ -291,8 +295,12 @@ static void mwArm(void)
 
 static void mwDisarm(void)
 {
-    if (f.ARMED)
+	if (f.ARMED) {
         f.ARMED = 0;
+
+        if (feature(FEATURE_BLACKBOX))
+        	finishBlackbox();
+	}
 }
 
 static void mwVario(void)
@@ -357,6 +365,11 @@ static void pidMultiWii(void)
         delta1[axis] = delta;
         DTerm = (deltaSum * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
+
+        // Values for Blackbox
+        blackboxCurrent->axisP[axis] = PTerm;
+        blackboxCurrent->axisI[axis] = ITerm;
+        blackboxCurrent->axisD[axis] = DTerm;
     }
 }
 
@@ -934,5 +947,8 @@ void loop(void)
         mixTable();
         writeServos();
         writeMotors();
+
+        if (!cliMode && feature(FEATURE_BLACKBOX))
+        	handleBlackbox();
     }
 }

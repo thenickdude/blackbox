@@ -251,7 +251,8 @@ static void resetConf(void)
     mcfg.emf_avoidance = 0;
     mcfg.rssi_aux_channel = 0;
     mcfg.rssi_adc_max = 4095;
-
+    mcfg.blackbox_port = TELEMETRY_PORT_UART;
+    
     cfg.pidController = 0;
     cfg.P8[ROLL] = 40;
     cfg.I8[ROLL] = 30;

@@ -62,7 +62,7 @@ static const char * const featureNames[] = {
     "PPM", "VBAT", "INFLIGHT_ACC_CAL", "SERIALRX", "MOTOR_STOP",
     "SERVO_TILT", "SOFTSERIAL", "LED_RING", "GPS",
     "FAILSAFE", "SONAR", "TELEMETRY", "POWERMETER", "VARIO", "3D",
-    NULL
+    "BLACKBOX", NULL
 };
 
 // sync this with AvailableSensors enum from board.h
@@ -253,6 +253,7 @@ const clivalue_t valueTable[] = {
     { "p_vel", VAR_UINT8, &cfg.P8[PIDVEL], 0, 200 },
     { "i_vel", VAR_UINT8, &cfg.I8[PIDVEL], 0, 200 },
     { "d_vel", VAR_UINT8, &cfg.D8[PIDVEL], 0, 200 },
+    { "blackbox_port", VAR_UINT8, &mcfg.blackbox_port, 0, TELEMETRY_PORT_MAX },
 };
 
 #define VALUE_COUNT (sizeof(valueTable) / sizeof(clivalue_t))

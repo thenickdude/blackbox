@@ -5,7 +5,7 @@
 #include "board.h"
 #include "mw.h"
 
-static uint8_t numberMotor = 0;
+uint8_t numberMotor = 0;
 int16_t motor[MAX_MOTORS];
 int16_t motor_disarmed[MAX_MOTORS];
 int16_t servo[MAX_SERVOS] = { 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500 };

@@ -310,6 +310,9 @@ typedef struct master_t {
     uint8_t current_profile;                // currently loaded profile
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 
+    // blackbox settings
+    uint8_t blackbox_port;                  // See TelemetryPort enum.
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
 } master_t;
