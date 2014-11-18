@@ -133,6 +133,7 @@ color_t lineColors[] = {
 const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
 const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
 const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
+const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 
 static renderOptions_t options = {
 	.imageWidth = 1920, .imageHeight = 1080,
@@ -336,24 +337,25 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 
 	cairo_translate(cr, -stickSpacing / 2, 0);
 
-	cairo_set_source_rgba(cr, stickAreaColor.r, stickAreaColor.g, stickAreaColor.b, stickAreaColor.a);
-	cairo_rectangle(cr, -stickSurroundRadius, -stickSurroundRadius, stickSurroundRadius * 2, stickSurroundRadius * 2);
-	cairo_fill(cr);
+	for (int i = 0; i < 2; i++) {
+		cairo_set_source_rgba(cr, stickAreaColor.r, stickAreaColor.g, stickAreaColor.b, stickAreaColor.a);
+		cairo_rectangle(cr, -stickSurroundRadius, -stickSurroundRadius, stickSurroundRadius * 2, stickSurroundRadius * 2);
+		cairo_fill(cr);
 
-	cairo_set_source_rgba(cr, stickColor.r, stickColor.g, stickColor.b, stickColor.a);
-	cairo_arc(cr, stickPositions[0], stickPositions[1],	stickSurroundRadius / 5, 0, 2 * M_PI);
-	cairo_fill(cr);
+		cairo_set_line_width(cr, 1);
+		cairo_set_source_rgba(cr, crosshairColor.r, crosshairColor.g, crosshairColor.b, crosshairColor.a);
+		cairo_move_to(cr, -stickSurroundRadius, 0);
+		cairo_line_to(cr, stickSurroundRadius, 0);
+		cairo_move_to(cr, 0, -stickSurroundRadius);
+		cairo_line_to(cr, 0, stickSurroundRadius);
+		cairo_stroke(cr);
 
-	cairo_translate(cr, stickSpacing, 0);
+		cairo_set_source_rgba(cr, stickColor.r, stickColor.g, stickColor.b, stickColor.a);
+		cairo_arc(cr, stickPositions[i * 2 + 0], stickPositions[i * 2 + 1], stickSurroundRadius / 5, 0, 2 * M_PI);
+		cairo_fill(cr);
 
-	cairo_set_source_rgba(cr, stickAreaColor.r, stickAreaColor.g, stickAreaColor.b, stickAreaColor.a);
-	cairo_rectangle(cr, -stickSurroundRadius, -stickSurroundRadius, stickSurroundRadius * 2, stickSurroundRadius * 2);
-	cairo_fill(cr);
-
-	cairo_set_source_rgba(cr, stickColor.r, stickColor.g, stickColor.b, stickColor.a);
-
-	cairo_arc(cr, stickPositions[2], stickPositions[3],	stickSurroundRadius / 5, 0, 2 * M_PI);
-	cairo_fill(cr);
+		cairo_translate(cr, stickSpacing, 0);
+	}
 
 	cairo_restore(cr);
 }
