@@ -69,7 +69,7 @@ void printStats(flightLog_t *log, bool raw, bool limits)
 
 	uint32_t goodBytes = stats->iFrameBytes + stats->pFrameBytes;
 	uint32_t goodFrames = stats->numIFrames + stats->numPFrames;
-	uint32_t totalFrames = stats->numIFrames + stats->numPFrames + stats->numBrokenFrames;
+	uint32_t totalFrames = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1;
 
 	fprintf(stderr, "\nStatistics\n");
 
@@ -111,30 +111,30 @@ void printStats(flightLog_t *log, bool raw, bool limits)
 	}
 }
 
-int onChooseLog(int logCount, const char **logStarts)
+int chooseLog(flightLog_t *log)
 {
-	if (logCount == 0) {
+	if (log->logCount == 0) {
 		fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
 		return -1;
 	}
 
 	//Did the user pick a log to render?
 	if (optionLogNumber > 0) {
-		if (optionLogNumber > logCount) {
-			fprintf(stderr, "Couldn't load log #%d from this file, because there are only %d logs in total.\n", optionLogNumber, logCount);
+		if (optionLogNumber > log->logCount) {
+			fprintf(stderr, "Couldn't load log #%d from this file, because there are only %d logs in total.\n", optionLogNumber, log->logCount);
 			return -1;
 		}
 
 		return optionLogNumber - 1;
-	} else if (logCount == 1) {
+	} else if (log->logCount == 1) {
 		// If there's only one log, just parse that
 		return 0;
 	} else {
 		fprintf(stderr, "This file contains multiple flight logs, please choose one with the --index argument:\n\n");
 
 		fprintf(stderr, "Index  Start offset  Size (bytes)\n");
-		for (int i = 0; i < logCount; i++) {
-			fprintf(stderr, "%5d %13d %13d\n", i + 1, (int) (logStarts[i] - logStarts[0]), (int) (logStarts[i + 1] - logStarts[i]));
+		for (int i = 0; i < log->logCount; i++) {
+			fprintf(stderr, "%5d %13d %13d\n", i + 1, (int) (log->logBegin[i] - log->logBegin[0]), (int) (log->logBegin[i + 1] - log->logBegin[i]));
 		}
 
 		return -1;
@@ -177,6 +177,7 @@ int main(int argc, char **argv)
 {
 	flightLog_t *log;
 	int fd;
+	int logIndex;
 
 	parseCommandlineOptions(argc, argv);
 
@@ -191,9 +192,14 @@ int main(int argc, char **argv)
     	return -1;
     }
 
-	log = parseFlightLog(fd, onChooseLog, onMetadataReady, onFrameReady, optionRaw);
+    log = flightLogCreate(fd);
 
-	if (log) {
+    logIndex = chooseLog(log);
+
+    if (logIndex == -1)
+    	return -1;
+
+	if (flightLogParse(log, logIndex, onMetadataReady, onFrameReady, optionRaw)) {
 		printStats(log, optionRaw, optionStatsLimits);
 
 		// destroyFlightLog(log); Leaking it is faster.

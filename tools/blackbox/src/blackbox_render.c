@@ -64,6 +64,7 @@ typedef struct craftDrawingParameters_t {
 } craft_parameters_t;
 
 typedef struct renderOptions_t {
+	int logNumber;
 	int imageWidth, imageHeight;
 	int fps;
 	bool plotPids, plotPidSum, plotGyros;
@@ -139,9 +140,10 @@ static renderOptions_t options = {
 	.imageWidth = 1920, .imageHeight = 1080,
 	.fps = 30,
 	.plotPids = false, .plotPidSum = false, .plotGyros = false,
-	.pidSmoothing = 10, .gyroSmoothing = 4, .motorSmoothing = 4,
+	.pidSmoothing = 4, .gyroSmoothing = 1, .motorSmoothing = 1,
 	.filename = 0,
-	.timeBegin = 0, .timeEnd = 0
+	.timeBegin = 0, .timeEnd = 0,
+	.logNumber = 0
 };
 
 #ifdef __APPLE__
@@ -155,8 +157,6 @@ static Datapoints *points;
 
 //Information about fields we have classified
 static fieldIdentifications_t idents;
-
-static int32_t latestFrame = 0;
 
 static double doubleAbs(double a)
 {
@@ -191,24 +191,16 @@ static int32_t maxS32(int32_t a, int32_t b) {
 	return b;
 }
 
-void checkFrameIndexBounds(flightLog_t *log, int32_t *frame, int frameOffset, int frameSize)
-{
-	(void) log;
-	(void) frameSize;
-	(void) frameOffset;
-
-	if (frame[FLIGHT_LOG_FIELD_INDEX_ITERATION] > latestFrame) {
-		latestFrame = frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
-	}
-}
-
 void loadFrameIntoPoints(flightLog_t *log, int32_t *frame, int frameOffset, int frameSize)
 {
 	(void) log;
 	(void) frameSize;
 	(void) frameOffset;
 
-	//Pull the first two fields (iteration and time) off the front of the frame
+	/*
+	 *  Pull the first two fields (iteration and time) off the front of the frame fields,
+	 * since datapoints handles those as separate arguments in this call:
+	 */
 	datapointsSetFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_ITERATION], frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame + 2);
 }
 
@@ -300,7 +292,8 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 {
 	double rcCommand[4] = {0, 0, 0, 0};
 	const int stickSurroundRadius = imageHeight / 11, stickSpacing = stickSurroundRadius * 3;
-	const int pitchStickMax = 750, yawStickMax = 500;
+	const int pitchStickMax = 500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100,
+			yawStickMax = 500;
 
 	int stickIndex;
 
@@ -495,8 +488,6 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 
 	for (motorIndex = 0; motorIndex < parameters->numMotors; motorIndex++)
 		propAngles[motorIndex] += rotationThisFrame[motorIndex];
-
-	cairo_restore(cr);
 }
 
 void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int imageHeight)
@@ -776,6 +767,22 @@ void* pngRenderThread(void *arg)
     return 0;
 }
 
+void drawFrameNumber(cairo_t *cr, uint32_t frameIndex)
+{
+	char frameNumberBuf[16];
+	cairo_text_extents_t extent;
+
+	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "#%07u", frameIndex);
+
+	cairo_set_font_size(cr, 24);
+	cairo_set_source_rgba(cr, 1, 1, 1, 0.65);
+
+	cairo_text_extents(cr, "#0000000", &extent);
+
+	cairo_move_to(cr, options.imageWidth - extent.width - 8, options.imageHeight - 8);
+	cairo_show_text(cr, frameNumberBuf);
+}
+
 void renderPoints(uint32_t startTime, uint32_t endTime)
 {
 	//Change how much data is displayed at one time
@@ -959,18 +966,18 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 		cairo_stroke(cr);
 
 		//Draw the command stick positions from the centred frame
-		int centreFrameIndex = datapointsFindFrameAtTime(points, windowCenterTime);
+		int centerFrameIndex = datapointsFindFrameAtTime(points, windowCenterTime);
 
-		if (centreFrameIndex > -1) {
+		if (centerFrameIndex > -1) {
 			int64_t frameTime;
 
 			cairo_save(cr);
+			{
+				cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
 
-			cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
-
-			datapointsGetFrameAtIndex(points, centreFrameIndex, &frameTime, frameValues);
-			drawCommandSticks(frameValues, options.imageWidth, options.imageHeight, cr);
-
+				datapointsGetFrameAtIndex(points, centerFrameIndex, &frameTime, frameValues);
+				drawCommandSticks(frameValues, options.imageWidth, options.imageHeight, cr);
+			}
 			cairo_restore(cr);
 		}
 
@@ -989,6 +996,8 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 			drawCraft(cr, frameValues, outputFrameIndex > 0 ? windowCenterTime - lastCenterTime : 0, &craftParameters);
 		}
 		cairo_restore(cr);
+
+		drawFrameNumber(cr, centerFrameIndex > -1 ? centerFrameIndex : 0);
 
 	    cairo_destroy(cr);
 
@@ -1043,6 +1052,7 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"smoothing-pid", required_argument, 0, '1'},
 			{"smoothing-gyro", required_argument, 0, '2'},
 			{"smoothing-motor", required_argument, 0, '3'},
+			{"index", required_argument, 0, 'i'},
 			{0, 0, 0, 0}
 		};
 
@@ -1087,6 +1097,9 @@ void parseCommandlineOptions(int argc, char **argv)
 			case '3':
 				options.motorSmoothing = atoi(optarg);
 			break;
+			case 'i':
+				options.logNumber = atoi(optarg);
+			break;
 		}
 	}
 
@@ -1102,7 +1115,7 @@ static void applySmoothing() {
 
 	if (options.pidSmoothing && idents.hasPIDs) {
 		for (int pid = PID_P; pid <= PID_D; pid++)
-			for (int axis = 0; axis < 2; axis++)
+			for (int axis = 0; axis < 3; axis++)
 				datapointsSmoothField(points, idents.axisPIDFields[pid][axis], options.pidSmoothing);
 	}
 
@@ -1112,15 +1125,41 @@ static void applySmoothing() {
 	}
 }
 
-static int onChooseLog(int logCount, const char **logStarts)
+int chooseLog(flightLog_t *log)
 {
-	return 0;
+	if (log->logCount == 0) {
+		fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
+		return -1;
+	}
+
+	//Did the user pick a log to render?
+	if (options.logNumber > 0) {
+		if (options.logNumber > log->logCount) {
+			fprintf(stderr, "Couldn't load log #%d from this file, because there are only %d logs in total.\n", options.logNumber, log->logCount);
+			return -1;
+		}
+
+		return options.logNumber - 1;
+	} else if (log->logCount == 1) {
+		// If there's only one log, just parse that
+		return 0;
+	} else {
+		fprintf(stderr, "This file contains multiple flight logs, please choose one with the --index argument:\n\n");
+
+		fprintf(stderr, "Index  Start offset  Size (bytes)\n");
+		for (int i = 0; i < log->logCount; i++) {
+			fprintf(stderr, "%5d %13d %13d\n", i + 1, (int) (log->logBegin[i] - log->logBegin[0]), (int) (log->logBegin[i + 1] - log->logBegin[i]));
+		}
+
+		return -1;
+	}
 }
 
 int main(int argc, char **argv)
 {
 	uint32_t timeBegin, timeEnd;
 	int fd;
+	int logIndex;
 
 	parseCommandlineOptions(argc, argv);
 
@@ -1135,16 +1174,21 @@ int main(int argc, char **argv)
     	return -1;
     }
 
-	//First check out how many frames we need to store so we can pre-allocate (stored into the global latestFrame)
-	flightLog = parseFlightLog(fd, onChooseLog, 0, checkFrameIndexBounds, false);
+    flightLog = flightLogCreate(fd);
 
-	// Don't include the leading time or field index in the field names / counts
-	points = datapointsCreate(flightLog->fieldCount - 2, flightLog->fieldNames + 2, latestFrame + 1);
+    logIndex = chooseLog(flightLog);
 
-	//Now load that data in
-	destroyFlightLog(flightLog);
+    if (logIndex == -1)
+    	return -1;
 
-	flightLog = parseFlightLog(fd, onChooseLog, 0, loadFrameIntoPoints, false);
+	//First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
+	flightLogParse(flightLog, logIndex, 0, 0, false);
+
+	// Don't include the leading time or field index fields in the field names / counts
+	points = datapointsCreate(flightLog->fieldCount - 2, flightLog->fieldNames + 2, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
+
+	//Now decode that data into the points array
+	flightLogParse(flightLog, logIndex, 0, loadFrameIntoPoints, false);
 
 	identifyFields();
 
@@ -1162,8 +1206,6 @@ int main(int argc, char **argv)
 	}
 
 	renderPoints(timeBegin, timeEnd);
-
-	destroyFlightLog(flightLog);
 
     return 0;
 }

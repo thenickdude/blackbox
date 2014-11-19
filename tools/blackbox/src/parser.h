@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#define FLIGHT_LOG_MAX_LOGS_IN_FILE 31
 #define FLIGHT_LOG_MAX_FIELDS 128
 #define FLIGHT_LOG_MAX_FRAME_LENGTH 256
 
@@ -66,6 +67,10 @@ typedef struct FlightLog {
 
 	unsigned int minthrottle, rcRate, yawRate;
 
+	//Information about log sections:
+	const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];
+	int logCount;
+
 	int fieldSigned[FLIGHT_LOG_MAX_FIELDS];
 	int fieldCount;
 	char *fieldNames[FLIGHT_LOG_MAX_FIELDS];
@@ -73,12 +78,12 @@ typedef struct FlightLog {
 	struct flightLogPrivate_t *private;
 } flightLog_t;
 
-typedef int (*FlightLogChooseLog)(int logCount, const char **logStarts);
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);
 typedef void (*FlightLogFrameReady)(flightLog_t *log, int32_t *frame, int frameOffset, int frameSize);
 
-flightLog_t* parseFlightLog(int fd, FlightLogChooseLog onChooseLog, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw);
 
-void destroyFlightLog(flightLog_t *log);
+flightLog_t* flightLogCreate(int fd);
+bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw);
+void flightLogDestroy(flightLog_t *log);
 
 #endif

@@ -19,50 +19,47 @@ Datapoints *datapointsCreate(int fieldCount, char **fieldNames, int frameCount) 
 	return result;
 }
 
-void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowSize)
+/**
+ * Smooth the values for the field with the given index by replacing each value with an
+ * average over the a window of width (windowRadius*2+1) centered at the point.
+ */
+void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowRadius)
 {
-	// How many frames are inside the history window (this is less than windowSize at the beginning and end of the buffer)
-	int historySize = 0;
-
+	int windowSize = windowRadius * 2 + 1;
 	// How many of the frames in the history actually have a valid value in them (so we can average only those)
 	int valuesInHistory = 0;
 
 	int64_t accumulator = 0;
 
-	if (windowSize < 2)
-		return;
-
+	// Field values so that we know what they were originally before we overwrote them
 	int32_t *history = (int32_t*) malloc(sizeof(*history) * windowSize);
 	int historyHead = 0; //Points to the next location to insert into
-	int historyTail = 0; //Points to the last value in the history windowSize
+	int historyTail = 0; //Points to the last value in the window
 
-	for (int frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
-		//If history is full, oldest value falls out of the window
-		if (historySize >= windowSize) {
-			if (points->framePresent[historyTail]) {
-				accumulator -= history[historyTail];
-				valuesInHistory--;
-			}
+	int centerIndex = -windowRadius;
+	int leftIndex = centerIndex - windowRadius;
+	int rightIndex = centerIndex + windowRadius;
 
+	for (; centerIndex < points->frameCount; centerIndex++, leftIndex++, rightIndex++) {
+		// Oldest value falls out of the window
+		if (leftIndex >= 0 && points->framePresent[leftIndex]) {
+			accumulator -= history[historyTail];
+			valuesInHistory--;
 			historyTail = (historyTail + 1) % windowSize;
-			historySize--;
 		}
 
-		if (points->framePresent[frameIndex]) {
-			int32_t fieldValue = (int32_t) points->frames[points->fieldCount * frameIndex + fieldIndex];
-			accumulator += fieldValue;
+		//New value is added to the window
+		if (rightIndex < points->frameCount && points->framePresent[rightIndex]) {
+			int32_t fieldValue = (int32_t) points->frames[points->fieldCount * rightIndex + fieldIndex];
 
 			history[historyHead] = fieldValue;
+			accumulator += fieldValue;
 			valuesInHistory++;
+			historyHead = (historyHead + 1) % windowSize;
 		}
 
-		historyHead = (historyHead + 1) % windowSize;
-		historySize++;
-
 		// Store the average of the history window into the frame in the center of the window
-		int centerIndex = frameIndex - historySize / 2;
-
-		if (points->framePresent[centerIndex]) {
+		if (centerIndex >= 0 && points->framePresent[centerIndex]) {
 			points->frames[points->fieldCount * centerIndex + fieldIndex] = accumulator / valuesInHistory;
 		}
 	}
