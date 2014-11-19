@@ -37,6 +37,11 @@
 
 #define PNG_RENDERING_THREADS 3
 
+typedef enum PropStyle {
+	PROP_STYLE_BLADES = 0,
+	PROP_STYLE_PIE_CHART = 1
+} PropStyle;
+
 typedef struct color_t {
 	double r, g, b;
 } color_t;
@@ -70,6 +75,8 @@ typedef struct renderOptions_t {
 	bool plotPids, plotPidSum, plotGyros;
 
 	int pidSmoothing, gyroSmoothing, motorSmoothing;
+
+	PropStyle propStyle;
 
 	uint32_t timeBegin, timeEnd;
 
@@ -440,27 +447,53 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 				parameters->motorSpacing * parameters->motorY[motorIndex]
 			);
 
-			//Draw several copies of the prop along its movement path so we can simulate motion blur
-			for (onion = 1; onion <= onionLayers[motorIndex]; onion++) {
-				cairo_save(cr);
-				{
-					// Opacity falls when the motor is spinning closer to max speed
-					opacity = 1.0 / (onionLayers[motorIndex] / 2.0);
+			if (options.propStyle == PROP_STYLE_BLADES) {
+				//Draw several copies of the prop along its movement path so we can simulate motion blur
+				for (onion = 1; onion <= onionLayers[motorIndex]; onion++) {
+					cairo_save(cr);
+					{
+						// Opacity falls when the motor is spinning closer to max speed
+						opacity = 1.0 / (onionLayers[motorIndex] / 2.0);
 
-					cairo_set_source_rgba(
-						cr,
-						parameters->propColor[motorIndex].r,
-						parameters->propColor[motorIndex].g,
-						parameters->propColor[motorIndex].b,
-						/* Fade in the blade toward its rotational direction, but don't fade to zero */
-						opacity * ((((double) onion / onionLayers[motorIndex]) + 1.0) / 2)
-					);
+						cairo_set_source_rgba(
+							cr,
+							parameters->propColor[motorIndex].r,
+							parameters->propColor[motorIndex].g,
+							parameters->propColor[motorIndex].b,
+							/* Fade in the blade toward its rotational direction, but don't fade to zero */
+							opacity * ((((double) onion / onionLayers[motorIndex]) + 1.0) / 2)
+						);
 
-					cairo_rotate(cr, (propAngles[motorIndex] + (rotationThisFrame[motorIndex] * onion) / onionLayers[motorIndex]) * parameters->motorDirection[motorIndex]);
+						cairo_rotate(cr, (propAngles[motorIndex] + (rotationThisFrame[motorIndex] * onion) / onionLayers[motorIndex]) * parameters->motorDirection[motorIndex]);
 
-					drawPropeller(cr, parameters);
+						drawPropeller(cr, parameters);
+					}
+					cairo_restore(cr);
 				}
-				cairo_restore(cr);
+			} else {
+				cairo_set_source_rgba(
+					cr,
+					parameters->propColor[motorIndex].r / 2,
+					parameters->propColor[motorIndex].g / 2,
+					parameters->propColor[motorIndex].b / 2,
+					0.5
+				);
+
+				cairo_move_to(cr, 0, 0);
+				cairo_arc(cr, 0, 0, parameters->bladeLength, 0, M_PI * 2);
+				cairo_fill(cr);
+
+				cairo_set_source_rgba(
+					cr,
+					parameters->propColor[motorIndex].r,
+					parameters->propColor[motorIndex].g,
+					parameters->propColor[motorIndex].b,
+					1
+				);
+
+				cairo_move_to(cr, 0, 0);
+				cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 * doubleMax(frame[idents.motorFields[motorIndex]] - MINTHROTTLE, 0) / (MAXTHROTTLE - MINTHROTTLE));
+				cairo_fill(cr);
 			}
 
 			snprintf(motorLabel, sizeof(motorLabel), "%d", frame[idents.motorFields[motorIndex]]);
@@ -1052,6 +1085,7 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"smoothing-pid", required_argument, 0, '1'},
 			{"smoothing-gyro", required_argument, 0, '2'},
 			{"smoothing-motor", required_argument, 0, '3'},
+			{"prop-style", required_argument, 0, 'r'},
 			{"index", required_argument, 0, 'i'},
 			{0, 0, 0, 0}
 		};
@@ -1099,6 +1133,13 @@ void parseCommandlineOptions(int argc, char **argv)
 			break;
 			case 'i':
 				options.logNumber = atoi(optarg);
+			break;
+			case 'r':
+				if (strcmp(optarg, "pie") == 0) {
+					options.propStyle = PROP_STYLE_PIE_CHART;
+				} else {
+					options.propStyle = PROP_STYLE_BLADES;
+				}
 			break;
 		}
 	}
