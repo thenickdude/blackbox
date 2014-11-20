@@ -583,17 +583,16 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 			break;
 			case PARSER_STATE_DATA:
 				if (lastFrameType == 'P' || lastFrameType == 'I') {
+					unsigned int lastFrameSize = private->logPos - frameStart;
 
 					//If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
 					if (command == 'I' || command == 'P' || command == EOF) {
-						unsigned int lastFrameSize = private->logPos - frameStart;
-
 						if (lastFrameType == 'I') {
 							updateFrameSizeStats(log->stats.iFrameSizeCount, lastFrameSize);
 
 							// Only accept this frame as valid if time and iteration count are moving forward:
-							if (private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
-								&& private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME])
+							if (raw || (uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
+								&& (uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME])
 								streamIsValid = true;
 
 							log->stats.iFrameBytes += lastFrameSize;
@@ -608,16 +607,22 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
 						if (streamIsValid) {
 							updateFieldStatistics(log, private->blackboxHistory[0]);
-
-							if (onFrameReady)
-								onFrameReady(log, private->blackboxHistory[0], frameStart - private->logData, lastFrameSize);
+						} else {
+							log->stats.numUnusableFrames++;
 						}
+						if (onFrameReady)
+							onFrameReady(log, streamIsValid, private->blackboxHistory[0], frameStart - private->logData, lastFrameSize);
 					} else {
 						//Otherwise the previous frame was corrupt
 						log->stats.numBrokenFrames++;
+						log->stats.numUnusableFrames++;
 
 						//We need to resynchronise before we can deliver another frame:
 						streamIsValid = false;
+
+						//Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
+						if (onFrameReady)
+							onFrameReady(log, false, 0, frameStart - private->logData, lastFrameSize);
 					}
 				}
 

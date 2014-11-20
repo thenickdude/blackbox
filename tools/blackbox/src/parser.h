@@ -51,7 +51,15 @@ typedef enum FlightLogFieldEncoding
 
 typedef struct FlightLogStatistics {
 	uint32_t iFrameBytes, pFrameBytes, totalBytes;
-	uint32_t numIFrames, numPFrames, numBrokenFrames;
+	uint32_t numIFrames, numPFrames;
+
+	uint32_t numBrokenFrames; // Number of frames that failed to decode
+
+	/*
+	 * Number of frames that failed to decode, or were P frames that aren't usable because they were based on
+	 * a frame that failed to decode:
+	 */
+	uint32_t numUnusableFrames;
 
 	int64_t fieldMaximum[FLIGHT_LOG_MAX_FIELDS];
 	int64_t fieldMinimum[FLIGHT_LOG_MAX_FIELDS];
@@ -79,7 +87,7 @@ typedef struct FlightLog {
 } flightLog_t;
 
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);
-typedef void (*FlightLogFrameReady)(flightLog_t *log, int32_t *frame, int frameOffset, int frameSize);
+typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize);
 
 
 flightLog_t* flightLogCreate(int fd);
