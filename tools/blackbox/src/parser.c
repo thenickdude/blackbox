@@ -615,14 +615,13 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 						if (streamIsValid) {
 							updateFieldStatistics(log, private->blackboxHistory[0]);
 						} else {
-							log->stats.numUnusableFrames++;
+							log->stats.numUnusablePFrames++;
 						}
 						if (onFrameReady)
 							onFrameReady(log, streamIsValid, private->blackboxHistory[0], frameStart - private->logData, lastFrameSize);
 					} else {
 						//Otherwise the previous frame was corrupt
 						log->stats.numBrokenFrames++;
-						log->stats.numUnusableFrames++;
 
 						//We need to resynchronise before we can deliver another frame:
 						streamIsValid = false;
@@ -630,6 +629,15 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 						//Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
 						if (onFrameReady)
 							onFrameReady(log, false, 0, frameStart - private->logData, lastFrameSize);
+
+						/*
+						 * Start the search for a frame beginning at the first byte of the previous, corrupt frame.
+						 * This way we can find the start of the next frame after the corrupt frame
+						 * if the corrupt frame was truncated.
+						 */
+						private->logPos = frameStart;
+						lastFrameType = '\0';
+						continue;
 					}
 				}
 

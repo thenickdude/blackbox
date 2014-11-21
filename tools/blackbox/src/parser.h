@@ -53,13 +53,13 @@ typedef struct FlightLogStatistics {
 	uint32_t iFrameBytes, pFrameBytes, totalBytes;
 	uint32_t numIFrames, numPFrames;
 
-	uint32_t numBrokenFrames; // Number of frames that failed to decode
+	// Number of frames that failed to decode:
+	uint32_t numBrokenFrames;
 
 	/*
-	 * Number of frames that failed to decode, or were P frames that aren't usable because they were based on
-	 * a frame that failed to decode:
+	 * Number of P frames that aren't usable because they were based on a frame that failed to decode:
 	 */
-	uint32_t numUnusableFrames;
+	uint32_t numUnusablePFrames;
 
 	int64_t fieldMaximum[FLIGHT_LOG_MAX_FIELDS];
 	int64_t fieldMinimum[FLIGHT_LOG_MAX_FIELDS];

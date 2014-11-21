@@ -85,6 +85,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	uint32_t goodBytes = stats->iFrameBytes + stats->pFrameBytes;
 	uint32_t goodFrames = stats->numIFrames + stats->numPFrames;
 	uint32_t totalFrames = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1;
+	uint32_t missingFrames = totalFrames - goodFrames;
 
 	uint32_t runningTimeMS = intervalMS;
 	uint32_t runningTimeSecs = runningTimeMS / 1000;
@@ -116,10 +117,20 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 		fprintf(stderr, "Data rate: Unknown, no timing information available.\n");
 	}
 
-	if (totalFrames && (stats->numBrokenFrames || stats->numUnusableFrames))
-		fprintf(stderr, "\n%d frames failed to decode, rendering %d frames unusable in total (%ums, %.2f%%)\n",
-				stats->numBrokenFrames,
-				stats->numUnusableFrames, (unsigned int) (stats->numUnusableFrames * (intervalMS / totalFrames)), (double) stats->numUnusableFrames / totalFrames * 100);
+	if (totalFrames && (stats->numBrokenFrames || stats->numUnusablePFrames || missingFrames)) {
+		fprintf(stderr, "\n");
+
+		if (stats->numBrokenFrames || stats->numUnusablePFrames) {
+			fprintf(stderr, "%d frames failed to decode, rendering %d P-frames unusable. ", stats->numBrokenFrames, stats->numUnusablePFrames);
+			if (!missingFrames)
+				fprintf(stderr, "\n");
+		}
+		if (missingFrames) {
+			fprintf(stderr, "%d frames are missing in total (%ums, %.2f%%)\n",
+				missingFrames,
+				(unsigned int) (missingFrames * (intervalMS / totalFrames)), (double) missingFrames / totalFrames * 100);
+		}
+	}
 
 	if (limits) {
 		fprintf(stderr, "\n\n    Field name          Min          Max        Range\n");
