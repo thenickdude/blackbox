@@ -72,15 +72,18 @@ typedef struct renderOptions_t {
 	int logNumber;
 	int imageWidth, imageHeight;
 	int fps;
-	bool plotPids, plotPidSum, plotGyros;
+	int help;
+
+	bool plotPids, plotPidSum, plotGyros, plotMotors;
+	bool drawPidTable, drawSticks, drawCraft;
 
 	int pidSmoothing, gyroSmoothing, motorSmoothing;
 
 	PropStyle propStyle;
 
-	uint32_t timeBegin, timeEnd;
+	uint32_t timeStart, timeEnd;
 
-	const char *filename;
+	char *filename, *outputPrefix;
 } renderOptions_t;
 
 const double DASHED_LINE[] = {
@@ -143,15 +146,18 @@ const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
 const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
 const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 
-static renderOptions_t options = {
+static const renderOptions_t defaultOptions = {
 	.imageWidth = 1920, .imageHeight = 1080,
-	.fps = 30,
-	.plotPids = false, .plotPidSum = false, .plotGyros = false,
-	.pidSmoothing = 4, .gyroSmoothing = 1, .motorSmoothing = 1,
+	.fps = 30, .help = 0, .propStyle = PROP_STYLE_PIE_CHART,
+	.plotPids = false, .plotPidSum = false, .plotGyros = false, .plotMotors = true,
+	.pidSmoothing = 4, .gyroSmoothing = 1, .motorSmoothing = 2,
+	.drawCraft = true, .drawPidTable = true, .drawSticks = true,
 	.filename = 0,
-	.timeBegin = 0, .timeEnd = 0,
+	.timeStart = 0, .timeEnd = 0,
 	.logNumber = 0
 };
+
+static renderOptions_t options;
 
 #ifdef __APPLE__
 static dispatch_semaphore_t pngRenderingSem;
@@ -198,7 +204,7 @@ static int32_t maxS32(int32_t a, int32_t b) {
 	return b;
 }
 
-void loadFrameIntoPoints(flightLog_t *log, int32_t *frame, int frameOffset, int frameSize)
+void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize)
 {
 	(void) log;
 	(void) frameSize;
@@ -208,7 +214,8 @@ void loadFrameIntoPoints(flightLog_t *log, int32_t *frame, int frameOffset, int 
 	 *  Pull the first two fields (iteration and time) off the front of the frame fields,
 	 * since datapoints handles those as separate arguments in this call:
 	 */
-	datapointsSetFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_ITERATION], frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame + 2);
+	if (frameValid)
+		datapointsSetFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_ITERATION], frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame + 2);
 }
 
 void identifyFields()
@@ -299,10 +306,12 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 {
 	double rcCommand[4] = {0, 0, 0, 0};
 	const int stickSurroundRadius = imageHeight / 11, stickSpacing = stickSurroundRadius * 3;
-	const int pitchStickMax = 500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100,
+	const int pitchStickMax = 250 /*500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100*/,
 			yawStickMax = 500;
-
 	int stickIndex;
+
+	char stickLabel[16];
+	cairo_text_extents_t extent;
 
 	(void) imageWidth;
 
@@ -337,11 +346,14 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 
 	cairo_translate(cr, -stickSpacing / 2, 0);
 
+	//For each stick
 	for (int i = 0; i < 2; i++) {
+		//Fill in background
 		cairo_set_source_rgba(cr, stickAreaColor.r, stickAreaColor.g, stickAreaColor.b, stickAreaColor.a);
 		cairo_rectangle(cr, -stickSurroundRadius, -stickSurroundRadius, stickSurroundRadius * 2, stickSurroundRadius * 2);
 		cairo_fill(cr);
 
+		//Draw crosshair
 		cairo_set_line_width(cr, 1);
 		cairo_set_source_rgba(cr, crosshairColor.r, crosshairColor.g, crosshairColor.b, crosshairColor.a);
 		cairo_move_to(cr, -stickSurroundRadius, 0);
@@ -350,10 +362,37 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 		cairo_line_to(cr, 0, stickSurroundRadius);
 		cairo_stroke(cr);
 
+		//Draw circle to represent stick position
 		cairo_set_source_rgba(cr, stickColor.r, stickColor.g, stickColor.b, stickColor.a);
 		cairo_arc(cr, stickPositions[i * 2 + 0], stickPositions[i * 2 + 1], stickSurroundRadius / 5, 0, 2 * M_PI);
 		cairo_fill(cr);
 
+		cairo_set_source_rgba(cr, 1,1,1, 1);
+		cairo_set_font_size(cr, 32);
+
+		//Draw horizontal stick label
+		int32_t labelValue;
+
+		//Invert yaw so moving to the left goes into negative values
+		if (i == 0)
+			labelValue = -frame[idents.rcCommandFields[2]];
+		else
+			labelValue = frame[idents.rcCommandFields[(1 - i) * 2 + 0]];
+
+		snprintf(stickLabel, sizeof(stickLabel), "%d", labelValue);
+		cairo_text_extents(cr, stickLabel, &extent);
+
+		cairo_move_to(cr, -extent.width / 2, stickSurroundRadius + extent.height + 8);
+		cairo_show_text(cr, stickLabel);
+
+		//Draw vertical stick label
+		snprintf(stickLabel, sizeof(stickLabel), "%d", frame[idents.rcCommandFields[(1 - i) * 2 + 1]]);
+		cairo_text_extents(cr, stickLabel, &extent);
+
+		cairo_move_to(cr, -stickSurroundRadius - extent.width - 8, extent.height / 2);
+		cairo_show_text(cr, stickLabel);
+
+		//Advance to next stick
 		cairo_translate(cr, stickSpacing, 0);
 	}
 
@@ -390,7 +429,7 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 	int motorIndex, onion;
 	double opacity;
 
-	char motorLabel[32];
+	char motorLabel[16];
 	cairo_text_extents_t extent;
 
 	//Draw arms
@@ -628,7 +667,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 
 	const int PADDING = 32;
 
-	char fieldLabel[64];
+	char fieldLabel[16];
 	int pidType, axisIndex;
 	const char *pidName;
 
@@ -712,7 +751,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 			} else
 				fieldValue = 0;
 
-			snprintf(fieldLabel, 64, "%d", fieldValue);
+			snprintf(fieldLabel, sizeof(fieldLabel), "%d", fieldValue);
 
 			switch (pidType) {
 				case PID_P - 1:
@@ -783,10 +822,10 @@ void drawAxisLabel(cairo_t *cr, const char *axisLabel)
 
 void* pngRenderThread(void *arg)
 {
-	char filename[16];
+	char filename[255];
 	pngRenderingTask_t *task = (pngRenderingTask_t *) arg;
 
-    snprintf(filename, sizeof(filename), "%06d.png", task->outputFrameIndex);
+    snprintf(filename, sizeof(filename), "%s%06d.png", options.outputPrefix, task->outputFrameIndex);
     cairo_surface_write_to_png (task->surface, filename);
     cairo_surface_destroy (task->surface);
 
@@ -800,23 +839,40 @@ void* pngRenderThread(void *arg)
     return 0;
 }
 
-void drawFrameNumber(cairo_t *cr, uint32_t frameIndex)
+void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 {
 	char frameNumberBuf[16];
-	cairo_text_extents_t extent;
+	cairo_text_extents_t extentFrameNumber, extentFrameTime;
 
 	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "#%07u", frameIndex);
 
 	cairo_set_font_size(cr, 24);
 	cairo_set_source_rgba(cr, 1, 1, 1, 0.65);
 
-	cairo_text_extents(cr, "#0000000", &extent);
+	cairo_text_extents(cr, "#0000000", &extentFrameNumber);
 
-	cairo_move_to(cr, options.imageWidth - extent.width - 8, options.imageHeight - 8);
+	cairo_move_to(cr, options.imageWidth - extentFrameNumber.width - 8, options.imageHeight - 8);
+	cairo_show_text(cr, frameNumberBuf);
+
+	int frameMsec, frameSec, frameMins;
+
+	frameMsec = frameTime / 1000;
+
+	frameSec = frameMsec / 1000;
+	frameMsec %= 1000;
+
+	frameMins = frameSec / 60;
+	frameSec %= 60;
+
+	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "%02d:%02d.%04d", frameMins, frameSec, frameMsec);
+
+	cairo_text_extents(cr, "00:00.0000", &extentFrameTime);
+
+	cairo_move_to(cr, options.imageWidth - extentFrameTime.width - 8, options.imageHeight - 8 - extentFrameNumber.height - 8);
 	cairo_show_text(cr, frameNumberBuf);
 }
 
-void renderPoints(uint32_t startTime, uint32_t endTime)
+void renderPoints(int64_t startTime, uint64_t endTime)
 {
 	//Change how much data is displayed at one time
 	const int windowWidthMicros = 1000 * 1000;
@@ -827,11 +883,12 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 	//Bring the current time into the centre of the plot
 	const int startXTimeOffset = windowWidthMicros / 2;
 
-	int outputFrameIndex, i;
+	int i;
 
-	uint32_t lastCenterTime;
+	uint64_t lastCenterTime;
+	int64_t frameTime;
 	uint32_t totalDurationMicro = endTime - startTime;
-	int32_t outputFrames = (int32_t) (((int64_t) totalDurationMicro * options.fps + (1000000 - 1)) / 1000000);
+	int32_t outputFrames = (int32_t) (((int64_t) totalDurationMicro * options.fps) / 1000000 + 1);
 	int32_t frameValues[FLIGHT_LOG_MAX_FIELDS];
 
 	struct craftDrawingParameters_t craftParameters;
@@ -844,14 +901,17 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 
 	decideCraftParameters(&craftParameters, options.imageWidth, options.imageHeight);
 
-	fprintf(stderr, "Log duration: %d seconds\n", (endTime - startTime) / 1000000);
-	fprintf(stderr, "%d frames to be rendered at %d FPS\n", outputFrames, options.fps);
+	int durationSecs = (endTime - startTime) / 1000000;
+	int durationMins = durationSecs / 60;
+	durationSecs %= 60;
+
+	fprintf(stderr, "%d frames to be rendered at %d FPS [%d:%2d]\n", outputFrames, options.fps, durationMins, durationSecs);
 	fprintf(stderr, "\n");
 
-	for (outputFrameIndex = 0; outputFrameIndex < outputFrames; outputFrameIndex++) {
-		int32_t windowCenterTime = (int32_t) (startTime + ((int64_t) outputFrameIndex * 1000000) / options.fps);
-		int32_t windowStartTime = windowCenterTime - startXTimeOffset;
-		int32_t windowEndTime = windowStartTime + windowWidthMicros;
+	for (int outputFrameIndex = 0; outputFrameIndex < outputFrames; outputFrameIndex++) {
+		int64_t windowCenterTime = (int32_t) (startTime + ((int64_t) outputFrameIndex * 1000000) / options.fps);
+		int64_t windowStartTime = windowCenterTime - startXTimeOffset;
+		int64_t windowEndTime = windowStartTime + windowWidthMicros;
 
 	    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, options.imageWidth, options.imageHeight);
 	    cairo_t *cr = cairo_create (surface);
@@ -866,28 +926,30 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 		cairo_select_font_face (cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 
 	    //Plot the upper motor graph
-	    cairo_save(cr);
-	    {
-	    	if (options.plotPids) {
-	    		cairo_translate(cr, 0, options.imageHeight * 0.15);
-	    	} else {
-	    		cairo_translate(cr, 0, options.imageHeight * 0.25);
-	    	}
+	    if (options.plotMotors) {
+			cairo_save(cr);
+			{
+				if (options.plotPids) {
+					cairo_translate(cr, 0, options.imageHeight * 0.15);
+				} else {
+					cairo_translate(cr, 0, options.imageHeight * 0.25);
+				}
 
-	    	drawCenterline(cr);
+				drawCenterline(cr);
 
-	    	cairo_set_line_width(cr, 2.5);
+				cairo_set_line_width(cr, 2.5);
 
-			for (i = 0; i < idents.numMotors; i++) {
-				plotLine(cr, idents.motorColors[i], windowStartTime,
-						windowEndTime, firstFrameIndex, idents.motorFields[i], -(MINTHROTTLE + MAXTHROTTLE) / 2,
-						(MAXTHROTTLE - MINTHROTTLE) / 2, options.imageHeight * (options.plotPids ? 0.15 : 0.20),
-						false);
+				for (i = 0; i < idents.numMotors; i++) {
+					plotLine(cr, idents.motorColors[i], windowStartTime,
+							windowEndTime, firstFrameIndex, idents.motorFields[i], -(MINTHROTTLE + MAXTHROTTLE) / 2,
+							(MAXTHROTTLE - MINTHROTTLE) / 2, options.imageHeight * (options.plotPids ? 0.15 : 0.20),
+							false);
+				}
+
+				drawAxisLabel(cr, "Motors");
 			}
-
-			drawAxisLabel(cr, "Motors");
+			cairo_restore(cr);
 		}
-	    cairo_restore(cr);
 
 	    //Plot the lower PID graphs
 	    cairo_save(cr);
@@ -998,39 +1060,40 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 		cairo_line_to(cr, centerX, options.imageHeight);
 		cairo_stroke(cr);
 
-		//Draw the command stick positions from the centred frame
 		int centerFrameIndex = datapointsFindFrameAtTime(points, windowCenterTime);
 
-		if (centerFrameIndex > -1) {
-			int64_t frameTime;
+		//Draw the command stick positions from the centered frame
+		if (datapointsGetFrameAtIndex(points, centerFrameIndex, &frameTime, frameValues)) {
+			if (options.drawSticks) {
+				cairo_save(cr);
+				{
+					cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
 
-			cairo_save(cr);
-			{
-				cairo_translate(cr, 0.75 * options.imageWidth, 0.20 * options.imageHeight);
-
-				datapointsGetFrameAtIndex(points, centerFrameIndex, &frameTime, frameValues);
-				drawCommandSticks(frameValues, options.imageWidth, options.imageHeight, cr);
+					drawCommandSticks(frameValues, options.imageWidth, options.imageHeight, cr);
+				}
+				cairo_restore(cr);
 			}
-			cairo_restore(cr);
+
+			if (options.drawPidTable) {
+				cairo_save(cr);
+				{
+					cairo_translate(cr, 0.25 * options.imageWidth, 0.75 * options.imageHeight);
+					drawPIDTable(cr, frameValues);
+				}
+				cairo_restore(cr);
+			}
+
+			if (options.drawCraft) {
+				cairo_save(cr);
+				{
+					cairo_translate(cr, 0.25 * options.imageWidth, 0.20 * options.imageHeight);
+					drawCraft(cr, frameValues, outputFrameIndex > 0 ? windowCenterTime - lastCenterTime : 0, &craftParameters);
+				}
+				cairo_restore(cr);
+			}
 		}
 
-		//Draw PID tables
-		cairo_save(cr);
-		{
-			cairo_translate(cr, 0.25 * options.imageWidth, 0.75 * options.imageHeight);
-			drawPIDTable(cr, frameValues);
-		}
-		cairo_restore(cr);
-
-		//Draw motor diagram
-		cairo_save(cr);
-		{
-			cairo_translate(cr, 0.25 * options.imageWidth, 0.20 * options.imageHeight);
-			drawCraft(cr, frameValues, outputFrameIndex > 0 ? windowCenterTime - lastCenterTime : 0, &craftParameters);
-		}
-		cairo_restore(cr);
-
-		drawFrameNumber(cr, centerFrameIndex > -1 ? centerFrameIndex : 0);
+		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]);
 
 	    cairo_destroy(cr);
 
@@ -1067,39 +1130,80 @@ void renderPoints(uint32_t startTime, uint32_t endTime)
 	}
 }
 
+void printUsage(const char *argv0)
+{
+	fprintf(stderr,
+		"Blackbox flight log renderer by Nicholas Sherlock\n\n"
+		"Usage:\n"
+		"     %s [options] <logfilename.txt>\n\n"
+		"Options:\n"
+		"   --help                 This page\n"
+		"   --index <num>          Choose the log from the file that should be rendered\n"
+		"   --width <px>           Choose the width of the image (default %d)\n"
+		"   --height <px>          Choose the height of the image (default %d)\n"
+		"   --fps                  FPS of the resulting video (default %d)\n"
+		"   --start <x:xx>         Begin the log at this time offset (default 0:00)\n"
+		"   --end <x:xx>           End the log at this time offset\n"
+		"   --[no-]draw-pid-table  Show table with PIDs and gyros (default on)\n"
+		"   --[no-]draw-craft      Show craft drawing (default on)\n"
+		"   --[no-]draw-sticks     Show RC command sticks (default on)\n"
+		"   --[no-]plot-motor      Draw motors on the upper graph (default on)\n"
+		"   --[no-]plot-pid        Draw PIDs on the lower graph (default off)\n"
+		"   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)\n"
+		"   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
+		"   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
+		"   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
+		"   --prop-style           Style of propeller display (pie/blades, default %s)\n"
+		"\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.pidSmoothing,
+			defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, defaultOptions.propStyle == PROP_STYLE_BLADES ? "blades" : "pie"
+	);
+}
+
 void parseCommandlineOptions(int argc, char **argv)
 {
+	int option_index = 0;
 	int c;
+
+	memcpy(&options, &defaultOptions, sizeof(options));
 
 	while (1)
 	{
 		static struct option long_options[] = {
+			{"index", required_argument, 0, 'i'},
 			{"width", required_argument, 0, 'w'},
 			{"height", required_argument, 0, 'h'},
 			{"fps", required_argument, 0, 'f'},
-			{"begin", required_argument, 0, 'b'},
+			{"start", required_argument, 0, 'b'},
 			{"end", required_argument, 0, 'e'},
 			{"plot-pid", no_argument, 0, 'p'},
-			{"plot-pidsum", no_argument, 0, 's'},
 			{"plot-gyro", no_argument, 0, 'g'},
+			{"plot-motor", no_argument, 0, 'm'},
+			{"no-plot-pid", no_argument, 0, 'P'},
+			{"no-plot-gyro", no_argument, 0, 'G'},
+			{"no-plot-motor", no_argument, 0, 'M'},
+			{"draw-pid-table", no_argument, 0, 't'},
+			{"draw-craft", no_argument, 0, 'c'},
+			{"draw-sticks", no_argument, 0, 's'},
+			{"no-draw-pid-table", no_argument, 0, 'T'},
+			{"no-draw-craft", no_argument, 0, 'C'},
+			{"no-draw-sticks", no_argument, 0, 'S'},
 			{"smoothing-pid", required_argument, 0, '1'},
 			{"smoothing-gyro", required_argument, 0, '2'},
 			{"smoothing-motor", required_argument, 0, '3'},
 			{"prop-style", required_argument, 0, 'r'},
-			{"index", required_argument, 0, 'i'},
 			{0, 0, 0, 0}
 		};
 
-		int option_index = 0;
+		opterr = 0;
 
-		c = getopt_long (argc, argv, "", long_options, &option_index);
+		c = getopt_long (argc, argv, ":", long_options, &option_index);
 
 		if (c == -1)
 			break;
 
 		switch (c) {
 			case 'b':
-				options.timeBegin = atoi(optarg);
+				options.timeStart = atoi(optarg);
 			break;
 			case 'e':
 				options.timeEnd = atoi(optarg);
@@ -1116,11 +1220,38 @@ void parseCommandlineOptions(int argc, char **argv)
 			case 'p':
 				options.plotPids = true;
 			break;
-			case 's':
-				options.plotPidSum = true;
-			break;
 			case 'g':
 				options.plotGyros = true;
+			break;
+			case 'm':
+				options.plotMotors = true;
+			break;
+			case 'P':
+				options.plotPids = false;
+			break;
+			case 'G':
+				options.plotGyros = false;
+			break;
+			case 'M':
+				options.plotMotors = false;
+			break;
+			case 't':
+				options.drawPidTable = true;
+			break;
+			case 'c':
+				options.drawCraft = true;
+			break;
+			case 's':
+				options.drawSticks = true;
+			break;
+			case 'T':
+				options.drawPidTable = false;
+			break;
+			case 'C':
+				options.drawCraft = false;
+			break;
+			case 'S':
+				options.drawSticks = false;
 			break;
 			case '1':
 				options.pidSmoothing = atoi(optarg);
@@ -1141,11 +1272,42 @@ void parseCommandlineOptions(int argc, char **argv)
 					options.propStyle = PROP_STYLE_BLADES;
 				}
 			break;
+		    case ':':
+		        /* missing option argument */
+		        fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
+		        exit(-1);
+			break;
+		    case '?':
+		    default:
+		        /* invalid option */
+		        fprintf(stderr, "%s: option '-%c' is invalid: ignored\n", argv[0], optopt);
+		        exit(-1);
+			break;
 		}
 	}
 
-	if (optind < argc)
+	if (optind < argc) {
 		options.filename = argv[optind];
+
+		char *extension = strrchr(options.filename, '.');
+		int sourceLen, prefixLen;
+
+		if (extension) {
+			sourceLen = extension - options.filename;
+		} else {
+			sourceLen = strlen(options.filename);
+		}
+
+		prefixLen = sourceLen + 1;
+
+		options.outputPrefix = malloc(prefixLen * sizeof(*options.outputPrefix));
+
+		for (int i = 0; i < sourceLen; i++)
+			options.outputPrefix[i] = options.filename[i];
+
+		options.outputPrefix[sourceLen] = '.';
+		options.outputPrefix[prefixLen] = '\0';
+	}
 }
 
 static void applySmoothing() {
@@ -1198,14 +1360,14 @@ int chooseLog(flightLog_t *log)
 
 int main(int argc, char **argv)
 {
-	uint32_t timeBegin, timeEnd;
+	uint32_t timeStart, timeEnd;
 	int fd;
 	int logIndex;
 
 	parseCommandlineOptions(argc, argv);
 
-	if (!options.filename) {
-		fprintf(stderr, "Missing log filename argument\n");
+	if (options.help || !options.filename) {
+		printUsage(argv[0]);
 		return -1;
 	}
 
@@ -1235,7 +1397,7 @@ int main(int argc, char **argv)
 
 	applySmoothing();
 
-	timeBegin = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] + options.timeBegin * 1000000u;
+	timeStart = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] + options.timeStart * 1000000u;
 
 	if (options.timeEnd == 0)
 		timeEnd = flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
@@ -1246,7 +1408,12 @@ int main(int argc, char **argv)
 			timeEnd = flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
 	}
 
-	renderPoints(timeBegin, timeEnd);
+	if (timeEnd < timeStart) {
+		fprintf(stderr, "Selected time range excludes all datapoints\n");
+		return -1;
+	}
+
+	renderPoints(timeStart, timeEnd);
 
     return 0;
 }
