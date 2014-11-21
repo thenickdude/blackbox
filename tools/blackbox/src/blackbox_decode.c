@@ -77,7 +77,7 @@ void onMetadataReady(flightLog_t *log)
 	printf("\n");
 }
 
-void printStats(flightLog_t *log, bool raw, bool limits)
+void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 {
 	flightLogStatistics_t *stats = &log->stats;
 	int64_t intervalMS = (stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000;
@@ -86,7 +86,15 @@ void printStats(flightLog_t *log, bool raw, bool limits)
 	uint32_t goodFrames = stats->numIFrames + stats->numPFrames;
 	uint32_t totalFrames = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1;
 
-	fprintf(stderr, "\nStatistics\n");
+	uint32_t runningTimeMS = intervalMS;
+	uint32_t runningTimeSecs = runningTimeMS / 1000;
+	runningTimeMS %= 1000;
+	uint32_t runningTimeMins = runningTimeSecs / 60;
+	runningTimeSecs %= 60;
+
+	fprintf(stderr, "\nLog #%d [%d:%02d.%03d]\n\n", logIndex, runningTimeMins, runningTimeSecs, runningTimeMS);
+
+	fprintf(stderr, "Statistics\n");
 
 	if (stats->numIFrames)
 		fprintf(stderr, "I frames %7d %6d bytes avg %8d bytes total\n", stats->numIFrames, stats->iFrameBytes / stats->numIFrames, stats->iFrameBytes);
@@ -234,7 +242,7 @@ int main(int argc, char **argv)
     	return -1;
 
 	if (flightLogParse(log, logIndex, onMetadataReady, onFrameReady, options.raw)) {
-		printStats(log, options.raw, options.limits);
+		printStats(log, logIndex, options.raw, options.limits);
 
 		// destroyFlightLog(log); Leaking it is faster.
 	} else {
