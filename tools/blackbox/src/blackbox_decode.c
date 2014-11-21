@@ -92,7 +92,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	uint32_t runningTimeMins = runningTimeSecs / 60;
 	runningTimeSecs %= 60;
 
-	fprintf(stderr, "\nLog #%d [%d:%02d.%03d]\n\n", logIndex, runningTimeMins, runningTimeSecs, runningTimeMS);
+	fprintf(stderr, "\nLog #%d [%d:%02d.%03d]\n\n", logIndex + 1, runningTimeMins, runningTimeSecs, runningTimeMS);
 
 	fprintf(stderr, "Statistics\n");
 
