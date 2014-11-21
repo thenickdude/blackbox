@@ -33,7 +33,7 @@ BIN_DIR		 = $(ROOT)/obj
 # Source files common to all targets
 COMMON_SRC	 = parser.c
 DECODER_SRC	 = $(COMMON_SRC) blackbox_decode.c
-RENDERER_SRC = $(COMMON_SRC) blackbox_render.c datapoints.c
+RENDERER_SRC = $(COMMON_SRC) blackbox_render.c datapoints.c embeddedfont.c
 ENCODER_TESTBED_SRC = $(COMMON_SRC) encoder_testbed.c
 
 # In some cases, %.s regarded as intermediate file, which is actually not.
@@ -71,8 +71,14 @@ CFLAGS		 = $(ARCH_FLAGS) \
 		   -pthread \
 		   -Wall -pedantic -Wextra -Wshadow
 
-CFLAGS += `pkg-config --cflags cairo` `pkg-config --cflags libpng`
-LDFLAGS += `pkg-config --libs cairo` `pkg-config --libs libpng`
+CFLAGS += `pkg-config --cflags cairo` `pkg-config --cflags freetype2`
+
+ifdef BUILD_STATICALLY
+# For cairo built with ./configure --enable-quartz=no  --without-x --enable-pdf=no --enable-ps=no --enable-script=no --enable-xcb=no --enable-ft=yes --enable-fc=no --enable-xlib=no
+LDFLAGS += -Llib/static -lcairo -lpixman-1 -lpng16 -lz -lfreetype -lbz2
+else
+LDFLAGS += `pkg-config --libs cairo` `pkg-config --libs freetype2`
+endif
 
 LDFLAGS += -lm
 
@@ -114,16 +120,6 @@ $(OBJECT_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	@echo %% $(notdir $<)
 	@$(CC) -c -o $@ $(CFLAGS) $<
-
-# Assemble
-$(OBJECT_DIR)/%.o: %.s
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $< 
-$(OBJECT_DIR)/%.o: %.S
-	@mkdir -p $(dir $@)
-	@echo %% $(notdir $<)
-	@$(CC) -c -o $@ $(ASFLAGS) $< 
 
 clean:
 	rm -f $(RENDERER_ELF) $(DECODER_ELF) $(ENCODER_TESTBED_ELF) $(ENCODER_TESTBED_OBJS) $(RENDERER_OBJS) $(DECODER_OBJS) $(TARGET_MAP)

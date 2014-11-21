@@ -187,6 +187,8 @@ static void parseHeader(flightLog_t *log)
 		parseCommaSeparatedIntegers(fieldValue, log->fieldSigned, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "minthrottle") == 0) {
 		log->minthrottle = atoi(fieldValue);
+	} else if (strcmp(fieldName, "maxthrottle") == 0) {
+		log->maxthrottle = atoi(fieldValue);
 	} else if (strcmp(fieldName, "rcRate") == 0) {
 		log->rcRate = atoi(fieldValue);
 	}
@@ -532,6 +534,11 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	free(log->private->fieldNamesCombined);
 	log->private->fieldNamesCombined = NULL;
 	log->fieldCount = 0;
+
+	//Default to MW's defaults
+	log->minthrottle = 1150;
+	log->maxthrottle = 1850;
+
 	private->motor0Index = -1;
 
 	//Set parsing ranges up for the log the caller selected
@@ -591,8 +598,8 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 							updateFrameSizeStats(log->stats.iFrameSizeCount, lastFrameSize);
 
 							// Only accept this frame as valid if time and iteration count are moving forward:
-							if (raw || (uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
-								&& (uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME])
+							if (raw || ((uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
+								&& (uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME]))
 								streamIsValid = true;
 
 							log->stats.iFrameBytes += lastFrameSize;

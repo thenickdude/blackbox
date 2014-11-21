@@ -73,7 +73,8 @@ struct flightLogPrivate_t;
 typedef struct FlightLog {
 	flightLogStatistics_t stats;
 
-	unsigned int minthrottle, rcRate, yawRate;
+	unsigned int minthrottle, maxthrottle;
+	unsigned int rcRate, yawRate;
 
 	//Information about log sections:
 	const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];
@@ -88,7 +89,6 @@ typedef struct FlightLog {
 
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);
 typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize);
-
 
 flightLog_t* flightLogCreate(int fd);
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw);

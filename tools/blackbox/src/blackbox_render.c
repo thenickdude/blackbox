@@ -21,7 +21,10 @@
 #endif
 
 #include <cairo.h>
-#include <png.h>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include "embeddedfont.h"
 
 #include "parser.h"
 #include "datapoints.h"
@@ -31,9 +34,10 @@
 //Controls how fast the props spin on the video
 #define MOTOR_MAX_RPS 25
 
-//TODO read me from flight log
-#define MINTHROTTLE 1150
-#define MAXTHROTTLE 1850
+#define FONTSIZE_CURRENT_VALUE_LABEL 36
+#define FONTSIZE_PID_TABLE_LABEL 34
+#define FONTSIZE_AXIS_LABEL 34
+#define FONTSIZE_FRAME_LABEL 32
 
 #define PNG_RENDERING_THREADS 3
 
@@ -170,6 +174,8 @@ static Datapoints *points;
 
 //Information about fields we have classified
 static fieldIdentifications_t idents;
+
+FT_Library  library;
 
 static double doubleAbs(double a)
 {
@@ -368,7 +374,7 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 		cairo_fill(cr);
 
 		cairo_set_source_rgba(cr, 1,1,1, 1);
-		cairo_set_font_size(cr, 32);
+		cairo_set_font_size(cr, FONTSIZE_CURRENT_VALUE_LABEL);
 
 		//Draw horizontal stick label
 		int32_t labelValue;
@@ -457,9 +463,9 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 	//Compute prop speed and position
 	for (motorIndex = 0; motorIndex < parameters->numMotors; motorIndex++) {
 		if (idents.motorFields[motorIndex] > -1) {
-			double scaled = doubleMax(frame[idents.motorFields[motorIndex]] - MINTHROTTLE, 0) / (MAXTHROTTLE - MINTHROTTLE);
+			double scaled = doubleMax(frame[idents.motorFields[motorIndex]] - (int32_t) flightLog->minthrottle, 0) / (flightLog->maxthrottle - flightLog->minthrottle);
 
-			//If motors are armed (above MINTHROTTLE), keep them spinning at least a bit
+			//If motors are armed (above minthrottle), keep them spinning at least a bit
 			if (scaled > 0)
 				scaled = scaled * 0.9 + 0.1;
 
@@ -474,7 +480,7 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 		}
 	}
 
-	cairo_set_font_size(cr, 32);
+	cairo_set_font_size(cr, FONTSIZE_CURRENT_VALUE_LABEL);
 
 	for (motorIndex = 0; motorIndex < parameters->numMotors; motorIndex++) {
 		cairo_save(cr);
@@ -531,7 +537,7 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 				);
 
 				cairo_move_to(cr, 0, 0);
-				cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 * doubleMax(frame[idents.motorFields[motorIndex]] - MINTHROTTLE, 0) / (MAXTHROTTLE - MINTHROTTLE));
+				cairo_arc(cr, 0, 0, parameters->bladeLength, -M_PI_2, -M_PI_2 + M_PI * 2 * doubleMax(frame[idents.motorFields[motorIndex]] - (int32_t) flightLog->minthrottle, 0) / (flightLog->maxthrottle - flightLog->minthrottle));
 				cairo_fill(cr);
 			}
 
@@ -660,7 +666,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 	const int INTERROW_SPACING = 32;
 	const int VERT_SPACING = fontExtent.height + INTERROW_SPACING;
 	const int FIRST_ROW_TOP = fontExtent.height + INTERROW_SPACING;
-	const int HORZ_SPACING = 110, FIRST_COL_LEFT = 140;
+	const int HORZ_SPACING = 100, FIRST_COL_LEFT = 140;
 
 	const int HORZ_EXTENT = FIRST_COL_LEFT + HORZ_SPACING * 5 - 30;
 	const int VERT_EXTENT = FIRST_ROW_TOP + fontExtent.height * 3 + INTERROW_SPACING * 2;
@@ -683,7 +689,7 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 
 	cairo_fill(cr);
 
-	cairo_set_font_size(cr, 30);
+	cairo_set_font_size(cr, FONTSIZE_PID_TABLE_LABEL);
 	cairo_set_source_rgb(cr, 1, 1, 1);
 
 	//Draw field labels first
@@ -812,7 +818,7 @@ void drawAxisLabel(cairo_t *cr, const char *axisLabel)
 {
 	cairo_text_extents_t extent;
 
-	cairo_set_font_size(cr, 28);
+	cairo_set_font_size(cr, FONTSIZE_AXIS_LABEL);
 	cairo_set_source_rgba(cr, 1, 1, 1, 0.9);
 
 	cairo_text_extents(cr, axisLabel, &extent);
@@ -846,7 +852,7 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 
 	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "#%07u", frameIndex);
 
-	cairo_set_font_size(cr, 24);
+	cairo_set_font_size(cr, FONTSIZE_FRAME_LABEL);
 	cairo_set_source_rgba(cr, 1, 1, 1, 0.65);
 
 	cairo_text_extents(cr, "#0000000", &extentFrameNumber);
@@ -872,6 +878,8 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 	cairo_show_text(cr, frameNumberBuf);
 }
 
+extern cairo_font_face_t* cairo_ft_font_face_create_for_ft_face(FT_Face face, int load_flags);
+
 void renderPoints(int64_t startTime, uint64_t endTime)
 {
 	//Change how much data is displayed at one time
@@ -891,6 +899,9 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 	int32_t outputFrames = (int32_t) (((int64_t) totalDurationMicro * options.fps) / 1000000 + 1);
 	int32_t frameValues[FLIGHT_LOG_MAX_FIELDS];
 
+	FT_Face ft_face;
+	cairo_font_face_t *cairo_face;
+
 	struct craftDrawingParameters_t craftParameters;
 
 #ifdef __APPLE__
@@ -898,6 +909,12 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 #else
 	sem_init(&pngRenderingSem, 0, PNG_RENDERING_THREADS);
 #endif
+
+	if (FT_New_Memory_Face(library, (const FT_Byte*)SourceSansPro_Regular_otf, SourceSansPro_Regular_otf_len, 0, &ft_face)) {
+		fprintf(stderr, "Failed to load font file\n");
+		exit(-1);
+	}
+	cairo_face = cairo_ft_font_face_create_for_ft_face(ft_face, 0);
 
 	decideCraftParameters(&craftParameters, options.imageWidth, options.imageHeight);
 
@@ -913,8 +930,8 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 		int64_t windowStartTime = windowCenterTime - startXTimeOffset;
 		int64_t windowEndTime = windowStartTime + windowWidthMicros;
 
-	    cairo_surface_t *surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, options.imageWidth, options.imageHeight);
-	    cairo_t *cr = cairo_create (surface);
+	    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, options.imageWidth, options.imageHeight);
+	    cairo_t *cr = cairo_create(surface);
 
 		// Find the frame just to the left of the first pixel so we can start drawing lines from there
 		int firstFrameIndex = datapointsFindFrameAtTime(points, windowStartTime - 1);
@@ -923,7 +940,7 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 			firstFrameIndex = 0;
 		}
 
-		cairo_select_font_face (cr, "sans-serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+		cairo_set_font_face(cr, cairo_face);
 
 	    //Plot the upper motor graph
 	    if (options.plotMotors) {
@@ -941,8 +958,8 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 
 				for (i = 0; i < idents.numMotors; i++) {
 					plotLine(cr, idents.motorColors[i], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.motorFields[i], -(MINTHROTTLE + MAXTHROTTLE) / 2,
-							(MAXTHROTTLE - MINTHROTTLE) / 2, options.imageHeight * (options.plotPids ? 0.15 : 0.20),
+							windowEndTime, firstFrameIndex, idents.motorFields[i], -(flightLog->minthrottle + flightLog->maxthrottle) / 2,
+							(flightLog->maxthrottle - flightLog->minthrottle) / 2, options.imageHeight * (options.plotPids ? 0.15 : 0.20),
 							false);
 				}
 
@@ -1376,6 +1393,8 @@ int main(int argc, char **argv)
     	fprintf(stderr, "Failed to open log file '%s': %s\n", options.filename, strerror(errno));
     	return -1;
     }
+
+    FT_Init_FreeType(&library);
 
     flightLog = flightLogCreate(fd);
 
