@@ -401,13 +401,6 @@ bool canUseBlackboxWithCurrentConfiguration(void)
     if (!feature(FEATURE_BLACKBOX))
         return false;
 
-    if (!feature(FEATURE_SOFTSERIAL)) {
-        if (mcfg.blackbox_port == TELEMETRY_PORT_SOFTSERIAL_1 || mcfg.blackbox_port == TELEMETRY_PORT_SOFTSERIAL_2) {
-            // softserial feature must be enabled to use blackbox on softserial ports
-            return false;
-        }
-    }
-
     return true;
 }
 
@@ -421,12 +414,6 @@ void initBlackbox(void)
     switch (mcfg.blackbox_port) {
     	case TELEMETRY_PORT_UART:
     		blackboxPort = core.mainport;
-    	break;
-    	case TELEMETRY_PORT_SOFTSERIAL_1:
-    		blackboxPort = &(softSerialPorts[0].port);
-    	break;
-    	case TELEMETRY_PORT_SOFTSERIAL_2:
-    		blackboxPort = &(softSerialPorts[1].port);
     	break;
     	default:
         	blackboxState = BLACKBOX_STATE_DISABLED;
