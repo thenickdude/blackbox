@@ -864,9 +864,9 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 	frameMins = frameSec / 60;
 	frameSec %= 60;
 
-	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "%02d:%02d.%04d", frameMins, frameSec, frameMsec);
+	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "%02d:%02d.%03d", frameMins, frameSec, frameMsec);
 
-	cairo_text_extents(cr, "00:00.0000", &extentFrameTime);
+	cairo_text_extents(cr, "00:00.000", &extentFrameTime);
 
 	cairo_move_to(cr, options.imageWidth - extentFrameTime.width - 8, options.imageHeight - 8 - extentFrameNumber.height - 8);
 	cairo_show_text(cr, frameNumberBuf);
