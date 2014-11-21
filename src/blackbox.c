@@ -361,6 +361,9 @@ void handleBlackbox(void)
 				case 1:
 					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
 				break;
+				case 2:
+					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+				break;
 				default:
 					blackboxState = BLACKBOX_STATE_RUNNING;
 			}
