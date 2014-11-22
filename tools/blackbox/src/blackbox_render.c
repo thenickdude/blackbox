@@ -56,7 +56,7 @@ typedef struct colorAlpha_t {
 
 typedef struct pngRenderingTask_t {
 	cairo_surface_t *surface;
-	int outputFrameIndex;
+	int outputLogIndex, outputFrameIndex;
 } pngRenderingTask_t;
 
 typedef struct craftDrawingParameters_t {
@@ -153,7 +153,7 @@ const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 static const renderOptions_t defaultOptions = {
 	.imageWidth = 1920, .imageHeight = 1080,
 	.fps = 30, .help = 0, .propStyle = PROP_STYLE_PIE_CHART,
-	.plotPids = false, .plotPidSum = false, .plotGyros = false, .plotMotors = true,
+	.plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
 	.pidSmoothing = 4, .gyroSmoothing = 1, .motorSmoothing = 2,
 	.drawCraft = true, .drawPidTable = true, .drawSticks = true,
 	.filename = 0,
@@ -164,13 +164,15 @@ static const renderOptions_t defaultOptions = {
 static renderOptions_t options;
 
 #ifdef __APPLE__
-static dispatch_semaphore_t pngRenderingSem;
+	static dispatch_semaphore_t pngRenderingSem;
 #else
-static sem_t pngRenderingSem;
+	static sem_t pngRenderingSem;
 #endif
 
 static flightLog_t *flightLog;
 static Datapoints *points;
+
+int selectedLogIndex;
 
 //Information about fields we have classified
 static fieldIdentifications_t idents;
@@ -831,7 +833,7 @@ void* pngRenderThread(void *arg)
 	char filename[255];
 	pngRenderingTask_t *task = (pngRenderingTask_t *) arg;
 
-    snprintf(filename, sizeof(filename), "%s%06d.png", options.outputPrefix, task->outputFrameIndex);
+    snprintf(filename, sizeof(filename), "%s%02d.%06d.png", options.outputPrefix, task->outputLogIndex + 1, task->outputFrameIndex);
     cairo_surface_write_to_png (task->surface, filename);
     cairo_surface_destroy (task->surface);
 
@@ -947,6 +949,7 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 			cairo_save(cr);
 			{
 				if (options.plotPids) {
+					//Move up a little bit to make room for the pid graphs
 					cairo_translate(cr, 0, options.imageHeight * 0.15);
 				} else {
 					cairo_translate(cr, 0, options.imageHeight * 0.25);
@@ -958,7 +961,7 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 
 				for (i = 0; i < idents.numMotors; i++) {
 					plotLine(cr, idents.motorColors[i], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.motorFields[i], -(flightLog->minthrottle + flightLog->maxthrottle) / 2,
+							windowEndTime, firstFrameIndex, idents.motorFields[i], -(int)(flightLog->minthrottle + flightLog->maxthrottle) / 2,
 							(flightLog->maxthrottle - flightLog->minthrottle) / 2, options.imageHeight * (options.plotPids ? 0.15 : 0.20),
 							false);
 				}
@@ -1059,11 +1062,11 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 			}
 
 			//Plot other misc fields
-			for (i = 0; i < idents.numMisc; i++) {
+			/*for (i = 0; i < idents.numMisc; i++) {
 				plotLine(cr, idents.miscColors[i], windowStartTime,
 						windowEndTime, firstFrameIndex, idents.miscFields[i], 0, 400, options.imageHeight / 4,
 						false);
-			}
+			}*/
 		}
 		cairo_restore(cr);
 
@@ -1121,6 +1124,7 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 	    pngRenderingTask_t *task = (pngRenderingTask_t*) malloc(sizeof(*task));
 
 	    task->surface = surface;
+	    task->outputLogIndex = selectedLogIndex;
 	    task->outputFrameIndex = outputFrameIndex;
 
 	    // Reserve a slot in the rendering pool...
@@ -1306,11 +1310,11 @@ void parseCommandlineOptions(int argc, char **argv)
 	if (optind < argc) {
 		options.filename = argv[optind];
 
-		char *extension = strrchr(options.filename, '.');
+		char *fileExtensionPeriod = strrchr(options.filename, '.');
 		int sourceLen, prefixLen;
 
-		if (extension) {
-			sourceLen = extension - options.filename;
+		if (fileExtensionPeriod) {
+			sourceLen = fileExtensionPeriod - options.filename;
 		} else {
 			sourceLen = strlen(options.filename);
 		}
@@ -1379,7 +1383,6 @@ int main(int argc, char **argv)
 {
 	uint32_t timeStart, timeEnd;
 	int fd;
-	int logIndex;
 
 	parseCommandlineOptions(argc, argv);
 
@@ -1398,19 +1401,19 @@ int main(int argc, char **argv)
 
     flightLog = flightLogCreate(fd);
 
-    logIndex = chooseLog(flightLog);
+    selectedLogIndex = chooseLog(flightLog);
 
-    if (logIndex == -1)
+    if (selectedLogIndex == -1)
     	return -1;
 
 	//First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
-	flightLogParse(flightLog, logIndex, 0, 0, false);
+	flightLogParse(flightLog, selectedLogIndex, 0, 0, false);
 
 	// Don't include the leading time or field index fields in the field names / counts
 	points = datapointsCreate(flightLog->fieldCount - 2, flightLog->fieldNames + 2, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
 
 	//Now decode that data into the points array
-	flightLogParse(flightLog, logIndex, 0, loadFrameIntoPoints, false);
+	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, false);
 
 	identifyFields();
 
