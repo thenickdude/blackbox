@@ -21,7 +21,7 @@ static const char * const blackboxHeaderFields[] = {
 	 * loopIteration merely increments, time advances in a straight line, motors and gyros predict an average of the
 	 * last two measurements (to reduce the impact of noise), all others predict the previous frame:
 	 */
-	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,1,1,1,3,3,3,3,3,3,3,3",
+	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3",
 
 	// RC fields are encoded together as a group, other fields use signed-VB
      "H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
@@ -264,12 +264,12 @@ static void writeInterframe(void)
 	 */
 	writeTag8_4S16(rcDeltas);
 
-	//Since gyros and motors are noisy, base the prediction on the average of the history:
+	//Since gyros, accs and motors are noisy, base the prediction on the average of the history:
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
 
 	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->accSmooth[x] - blackboxLast->accSmooth[x]);
+		writeSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
 
 	for (x = 0; x < numberMotor; x++)
 		writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
