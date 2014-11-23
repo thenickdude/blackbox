@@ -11,29 +11,29 @@ static const char blackboxHeader[] =
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
 static const char * const blackboxHeaderFields[] = {
 	"H Field name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2]"
-		",rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],gyroData[0],gyroData[1],gyroData[2],motor[0],motor[1],motor[2]"
-		",motor[3],motor[4],motor[5],motor[6],motor[7]",
+		",rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],gyroData[0],gyroData[1],gyroData[2],accSmooth[0],accSmooth[1],accSmooth[2]"
+		",motor[0],motor[1],motor[2],motor[3],motor[4],motor[5],motor[6],motor[7]",
 
 	/* loopIteration, time, throttle and motors values aren't signed */
-         "H Field signed:0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,0,0,0,0,0,0,0",
+         "H Field signed:0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0",
 
 	/*
 	 * loopIteration merely increments, time advances in a straight line, motors and gyros predict an average of the
 	 * last two measurements (to reduce the impact of noise), all others predict the previous frame:
 	 */
-	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3",
+	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,1,1,1,3,3,3,3,3,3,3,3",
 
 	// RC fields are encoded together as a group, other fields use signed-VB
-     "H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0",
+     "H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
 
 	/*
 	 * Throttle and motor[0] are predicted to be minthrottle, the other motors predict to be the same as motor[0].
 	 * Other fields have no predictions:
 	 */
-	"H Field I-predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,4,5,5,5,5,5,5,5",
+	"H Field I-predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,4,5,5,5,5,5,5,5",
 
 	// loopIteration, time, throttle and motor[0] are stored with unsigned-VB, the rest with signed-VB:
-     "H Field I-encoding:1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,0,0"
+     "H Field I-encoding:1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0"
 };
 
 typedef enum BlackboxState {
@@ -208,6 +208,9 @@ static void writeIntraframe(void)
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxCurrent->gyroData[x]);
 
+	for (x = 0; x < 3; x++)
+		writeSignedVB(blackboxCurrent->accSmooth[x]);
+
 	//Motors can be below minthrottle when disarmed, but that doesn't happen much
 	writeUnsignedVB(blackboxCurrent->motor[0] - mcfg.minthrottle);
 
@@ -265,6 +268,9 @@ static void writeInterframe(void)
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
 
+	for (x = 0; x < 3; x++)
+		writeSignedVB(blackboxCurrent->accSmooth[x] - blackboxLast->accSmooth[x]);
+
 	for (x = 0; x < numberMotor; x++)
 		writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
 
@@ -309,6 +315,10 @@ void handleBlackbox(void)
 	const int SERIAL_CHUNK_SIZE = 16;
 	static int charXmitIndex = 0;
 	int motorsToRemove, endIndex;
+	union floatConvert_t {
+		float f;
+		uint32_t u;
+	} floatConvert;
 
 	switch (blackboxState) {
 		case BLACKBOX_STATE_SEND_HEADER:
@@ -364,6 +374,13 @@ void handleBlackbox(void)
 				case 2:
 					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
 				break;
+				case 3:
+					floatConvert.f = gyro.scale;
+					blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
+				break;
+				case 4:
+					blackboxPrintf("H acc_1G:%u\n", acc_1G);
+				break;
 				default:
 					blackboxState = BLACKBOX_STATE_RUNNING;
 			}
@@ -382,6 +399,9 @@ void handleBlackbox(void)
 
         	for (i = 0; i < 3; i++)
         		blackboxCurrent->gyroData[i] = gyroData[i];
+
+        	for (i = 0; i < 3; i++)
+        		blackboxCurrent->accSmooth[i] = accSmooth[i];
 
 			// Write a keyframe every 32 frames so we can resynchronise upon missing frames
 			if ((blackboxIteration & 0x1F) == 0)

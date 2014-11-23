@@ -17,30 +17,35 @@
 static const char blackboxHeader[] =
 	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 	"H Blackbox version:1\n"
-	"H Data version:1\n"
+	"H Data version:1\n";
+
+/* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
+static const char * const blackboxHeaderFields[] = {
 	"H Field name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2]"
-		",rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],gyroData[0],gyroData[1],gyroData[2],motor[0],motor[1],motor[2],motor[3]\n"
+		",rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],gyroData[0],gyroData[1],gyroData[2],accSmooth[0],accSmooth[1],accSmooth[2]"
+		",motor[0],motor[1],motor[2],motor[3],motor[4],motor[5],motor[6],motor[7]",
 
 	/* loopIteration, time, throttle and motors values aren't signed */
-	"H Field signed:0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,0,0,0\n"
+         "H Field signed:0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0",
 
 	/*
 	 * loopIteration merely increments, time advances in a straight line, motors and gyros predict an average of the
 	 * last two measurements (to reduce the impact of noise), all others predict the previous frame:
 	 */
-	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3\n"
+	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,1,1,1,3,3,3,3,3,3,3,3",
 
 	// RC fields are encoded together as a group, other fields use signed-VB
-	"H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0\n"
+     "H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
 
 	/*
 	 * Throttle and motor[0] are predicted to be minthrottle, the other motors predict to be the same as motor[0].
 	 * Other fields have no predictions:
 	 */
-	"H Field I-predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,4,5,5,5\n"
+	"H Field I-predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,4,5,5,5,5,5,5,5",
 
 	// loopIteration, time, throttle and motor[0] are stored with unsigned-VB, the rest with signed-VB:
-	"H Field I-encoding:1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0\n";
+     "H Field I-encoding:1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0"
+};
 
 typedef struct blackbox_values_t {
 	uint32_t time;
@@ -49,6 +54,7 @@ typedef struct blackbox_values_t {
 
 	int16_t rcCommand[4];
 	int16_t gyroData[3];
+	int16_t accSmooth[3];
 	int16_t motor[4];
 } blackbox_values_t;
 
@@ -161,12 +167,13 @@ static void writeTag8_4S16(int32_t *values) {
 
 	blackboxWrite(selector);
 
-	while (selector) {
+	for (x = 0; x < 4; x++, selector >>= 2) {
 		switch (selector & 0x03) {
 			case FIELD_4BIT:
 				blackboxWrite((values[x] & 0x0F) | (values[x + 1] << 4));
 
-				//We wrote two selector fields, so remove the extra one
+				//We write two selector fields:
+				x++;
 				selector >>= 2;
 			break;
 			case FIELD_8BIT:
@@ -177,7 +184,6 @@ static void writeTag8_4S16(int32_t *values) {
 				blackboxWrite(values[x] >> 8);
 			break;
 		}
-		selector >>= 2;
 	}
 }
 
@@ -206,6 +212,9 @@ static void writeIntraframe(void)
 
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxCurrent->gyroData[x]);
+
+	for (x = 0; x < 3; x++)
+		writeSignedVB(blackboxCurrent->accSmooth[x]);
 
 	//Motors can be below minthrottle when disarmed, but that doesn't happen much
 	writeUnsignedVB(blackboxCurrent->motor[0] - mcfg.minthrottle);
@@ -264,6 +273,9 @@ static void writeInterframe(void)
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
 
+	for (x = 0; x < 3; x++)
+		writeSignedVB(blackboxCurrent->accSmooth[x] - blackboxLast->accSmooth[x]);
+
 	for (x = 0; x < numberMotor; x++)
 		writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
 
@@ -314,6 +326,10 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 
 		for (x = 0; x < 3; x++) {
 			blackboxCurrent->gyroData[x] = frame[src++];
+		}
+
+		for (x = 0; x < 3; x++) {
+			blackboxCurrent->accSmooth[x] = frame[src++];
 		}
 
 		for (x = 0; x < 4; x++) {
@@ -425,6 +441,23 @@ void printStats(flightLogStatistics_t *stats)
 	}
 }
 
+void writeHeader()
+{
+	int motorsToRemove = 8 - numberMotor;
+
+	printf("%s", blackboxHeader);
+	writtenBytes = strlen(blackboxHeader);
+
+	for (unsigned int i = 0; i < sizeof(blackboxHeaderFields) / sizeof(blackboxHeaderFields[0]); i++) {
+		int endIndex = strlen(blackboxHeaderFields[i]) - (i == 0 ? strlen(",motor[x]") : strlen(",x")) * motorsToRemove;
+
+		for (int j = 0; j < endIndex; j++)
+			blackboxWrite(blackboxHeaderFields[i][j]);
+
+		blackboxWrite('\n');
+	}
+}
+
 int main(int argc, char **argv)
 {
 	FILE *input;
@@ -444,8 +477,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	printf("%s", blackboxHeader);
-	writtenBytes = strlen(blackboxHeader);
+	writeHeader();
 
 	blackboxHistory[0] = &blackboxHistoryRing[0];
 	blackboxHistory[1] = &blackboxHistoryRing[1];
