@@ -28,6 +28,7 @@
 
 #include "parser.h"
 #include "datapoints.h"
+#include "expo.h"
 
 #define MAX_MOTORS 8
 
@@ -123,6 +124,10 @@ typedef struct fieldIdentifications_t {
 	int gyroFields[3];
 	color_t gyroColors[3];
 
+	bool hasAccs;
+	int accFields[3];
+	color_t accColors[3];
+
 	int numMisc;
 	int miscFields[FLIGHT_LOG_MAX_FIELDS];
 	color_t miscColors[FLIGHT_LOG_MAX_FIELDS];
@@ -145,39 +150,43 @@ color_t lineColors[] = {
 
 #define NUM_LINE_COLORS (sizeof(lineColors) / sizeof(lineColors[0]))
 
-const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
-const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
-const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
-const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
+static const colorAlpha_t stickColor = {1, 0.4, 0.4, 1.0};
+static const colorAlpha_t stickAreaColor = {0.3, 0.3, 0.3, 0.8};
+static const colorAlpha_t craftColor = {0.3, 0.3, 0.3, 1};
+static const colorAlpha_t crosshairColor = {0.75, 0.75, 0.75, 0.5};
 
 static const renderOptions_t defaultOptions = {
 	.imageWidth = 1920, .imageHeight = 1080,
 	.fps = 30, .help = 0, .propStyle = PROP_STYLE_PIE_CHART,
 	.plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
-	.pidSmoothing = 4, .gyroSmoothing = 1, .motorSmoothing = 2,
+	.pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
 	.drawCraft = true, .drawPidTable = true, .drawSticks = true,
 	.filename = 0,
 	.timeStart = 0, .timeEnd = 0,
 	.logNumber = 0
 };
 
+//Cairo doesn't include this in any header (apparently it is considered private?)
+extern cairo_font_face_t* cairo_ft_font_face_create_for_ft_face(FT_Face face, int load_flags);
+
 static renderOptions_t options;
+static expoCurve_t *pitchStickCurve, *pidCurve, *gyroCurve, *accCurve, *motorCurve;
 
 #ifdef __APPLE__
 	static dispatch_semaphore_t pngRenderingSem;
 #else
 	static sem_t pngRenderingSem;
 #endif
+static bool pngRenderingSemCreated = false;
 
 static flightLog_t *flightLog;
 static Datapoints *points;
-
-int selectedLogIndex;
+static int selectedLogIndex;
 
 //Information about fields we have classified
 static fieldIdentifications_t idents;
 
-FT_Library  library;
+static FT_Library freetypeLibrary;
 
 static double doubleAbs(double a)
 {
@@ -200,18 +209,6 @@ static double doubleMax(double a, double b)
 	return b;
 }
 
-static int32_t minS32(int32_t a, int32_t b) {
-	if (a < b)
-		return a;
-	return b;
-}
-
-static int32_t maxS32(int32_t a, int32_t b) {
-	if (a > b)
-		return a;
-	return b;
-}
-
 void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize)
 {
 	(void) log;
@@ -226,6 +223,9 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, int 
 		datapointsSetFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_ITERATION], frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame + 2);
 }
 
+/**
+ * Examine the field metadata from the flight log and assign their details to the "idents" global.
+ */
 void identifyFields()
 {
 	unsigned int i;
@@ -296,12 +296,18 @@ void identifyFields()
 			idents.PIDAxisColors[PID_D][axisIndex].b *= 0.9;
 
 			idents.PIDLineStyle[axisIndex] = 0; //TODO
-		} else if(strncmp(points->fieldNames[fieldIndex], "gyroData[", strlen("gyroData[")) == 0) {
+		} else if (strncmp(points->fieldNames[fieldIndex], "gyroData[", strlen("gyroData[")) == 0) {
 			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("gyroData["));
 
 			idents.hasGyros = true;
 			idents.gyroFields[axisIndex] = fieldIndex;
 			idents.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+		} else if (strncmp(points->fieldNames[fieldIndex], "accSmooth[", strlen("accSmooth[")) == 0) {
+			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("accSmooth["));
+
+			idents.hasAccs = true;
+			idents.accFields[axisIndex] = fieldIndex;
+			idents.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
 		} else {
 			idents.miscFields[idents.numMisc] = fieldIndex;
 			idents.miscColors[idents.numMisc] = lineColors[idents.numMisc % NUM_LINE_COLORS];
@@ -314,8 +320,7 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 {
 	double rcCommand[4] = {0, 0, 0, 0};
 	const int stickSurroundRadius = imageHeight / 11, stickSpacing = stickSurroundRadius * 3;
-	const int pitchStickMax = 250 /*500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100*/,
-			yawStickMax = 500;
+	const int yawStickMax = 500;
 	int stickIndex;
 
 	char stickLabel[16];
@@ -331,23 +336,20 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 		rcCommand[stickIndex] = frame[idents.rcCommandFields[stickIndex]];
 	}
 
-	//Compute the position of the sticks in the range [0..1] (left stick x, left stick y, right stick x, right stick y)
+	//Compute the position of the sticks in the range [-1..1] (left stick x, left stick y, right stick x, right stick y)
 	double stickPositions[4];
 
-	stickPositions[0] = -rcCommand[2] / (yawStickMax * 2) + 0.5;
-	stickPositions[1] = (2000 - rcCommand[3]) / 1000;
-	stickPositions[2] = rcCommand[0] / (pitchStickMax * 2) + 0.5;
-	stickPositions[3] = (pitchStickMax - rcCommand[1]) / (pitchStickMax * 2);
+	stickPositions[0] = -rcCommand[2] / yawStickMax; //Yaw
+	stickPositions[1] = (1500 - rcCommand[3]) / 500; //Throttle
+	stickPositions[2] = expoCurveLookup(pitchStickCurve, rcCommand[0]); //Roll
+	stickPositions[3] = expoCurveLookup(pitchStickCurve, -rcCommand[1]); //Pitch
 
 	for (stickIndex = 0; stickIndex < 4; stickIndex++) {
-		//Clamp to [0..1]
-		stickPositions[stickIndex] = stickPositions[stickIndex] > 1 ? 1 : (stickPositions[stickIndex] < 0 ? 0 : stickPositions[stickIndex]);
-
-		//Shift to [-0.5..0.5]
-		stickPositions[stickIndex] -= 0.5;
+		//Clamp to [-1..1]
+		stickPositions[stickIndex] = stickPositions[stickIndex] > 1 ? 1 : (stickPositions[stickIndex] < -1 ? -1 : stickPositions[stickIndex]);
 
 		//Scale to our stick size
-		stickPositions[stickIndex] *= stickSurroundRadius * 2;
+		stickPositions[stickIndex] *= stickSurroundRadius;
 	}
 
 	cairo_save(cr);
@@ -605,8 +607,8 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
  * plotting. When the value reaches valueYRange it'll be drawn plotHeight pixels away from the origin.
  */
 void plotLine(cairo_t *cr, color_t color, uint32_t windowStartTime, uint32_t windowEndTime, int firstFrameIndex,
-		int fieldIndex, int valueYOffset, int valueYRange, int plotHeight, bool stretchedScale) {
-
+		int fieldIndex, expoCurve_t *curve, int plotHeight)
+{
 	uint32_t windowWidthMicros = windowEndTime - windowStartTime;
 	int32_t fieldValue;
 	int64_t frameTime;
@@ -618,26 +620,9 @@ void plotLine(cairo_t *cr, color_t color, uint32_t windowStartTime, uint32_t win
 		if (datapointsGetFieldAtIndex(points, frameIndex, fieldIndex, &fieldValue)) {
 			datapointsGetTimeAtIndex(points, frameIndex, &frameTime);
 
-			fieldValue += valueYOffset;
-
 			double nextX, nextY;
 
-			if (stretchedScale) {
-				//Exaggerate the values close to zero (used for PIDs which spend most of their time there)
-				uint32_t fieldValueAbs = fieldValue < 0 ? -fieldValue : fieldValue;
-
-				nextY = 0;
-
-				nextY += minS32(fieldValueAbs, 25) * 3;
-				nextY += maxS32(fieldValueAbs - 25, 0) / 2.0;
-				nextY -= maxS32(fieldValueAbs - 100, 0) / 4.0;
-
-				nextY *= fieldValue < 0 ? -1 : 1;
-			} else {
-				nextY = fieldValue;
-			}
-
-			nextY = (double) -nextY / valueYRange * plotHeight;
+			nextY = (double) -expoCurveLookup(curve, fieldValue) * plotHeight;
 			nextX = (double)(frameTime - windowStartTime) / windowWidthMicros * options.imageWidth;
 
 			if (drawingLine) {
@@ -754,6 +739,12 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 			} else if (idents.hasPIDs) {
 				if (pidType == PID_TOTAL)
 					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]] + frame[idents.axisPIDFields[PID_I][axisIndex]] - frame[idents.axisPIDFields[PID_D][axisIndex]];
+				else if (pidType == PID_D)
+					/*
+					 * It seems kinda confusing that D is subtracted from the PID sum, how about I just negate it so that
+					 * the sum is a simple P + I + D?
+					 */
+					fieldValue = -frame[idents.axisPIDFields[pidType][axisIndex]];
 				else
 					fieldValue = frame[idents.axisPIDFields[pidType][axisIndex]];
 			} else
@@ -828,25 +819,6 @@ void drawAxisLabel(cairo_t *cr, const char *axisLabel)
 	cairo_show_text(cr, axisLabel);
 }
 
-void* pngRenderThread(void *arg)
-{
-	char filename[255];
-	pngRenderingTask_t *task = (pngRenderingTask_t *) arg;
-
-    snprintf(filename, sizeof(filename), "%s%02d.%06d.png", options.outputPrefix, task->outputLogIndex + 1, task->outputFrameIndex);
-    cairo_surface_write_to_png (task->surface, filename);
-    cairo_surface_destroy (task->surface);
-
-    //Release our slot in the rendering pool, we're done
-#ifdef __APPLE__
-    dispatch_semaphore_signal(pngRenderingSem);
-#else
-    sem_post(&pngRenderingSem);
-#endif
-
-    return 0;
-}
-
 void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 {
 	char frameNumberBuf[16];
@@ -880,15 +852,77 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 	cairo_show_text(cr, frameNumberBuf);
 }
 
-extern cairo_font_face_t* cairo_ft_font_face_create_for_ft_face(FT_Face face, int load_flags);
+void* pngRenderThread(void *arg)
+{
+	char filename[255];
+	pngRenderingTask_t *task = (pngRenderingTask_t *) arg;
 
-void renderPoints(int64_t startTime, uint64_t endTime)
+    snprintf(filename, sizeof(filename), "%s%02d.%06d.png", options.outputPrefix, task->outputLogIndex + 1, task->outputFrameIndex);
+    cairo_surface_write_to_png (task->surface, filename);
+    cairo_surface_destroy (task->surface);
+
+    //Release our slot in the rendering pool, we're done
+#ifdef __APPLE__
+    dispatch_semaphore_signal(pngRenderingSem);
+#else
+    sem_post(&pngRenderingSem);
+#endif
+
+    return 0;
+}
+
+/**
+ * PNG encoding is so slow and so easily run in parallel, so save the frames using this function
+ * (which'll use extra threads to do the work). Be sure to call waitForFramesToSave() before
+ * the program ends.
+ */
+void saveSurfaceAsync(cairo_surface_t *surface, int selectedLogIndex, int outputFrameIndex)
+{
+	if (!pngRenderingSemCreated) {
+#ifdef __APPLE__
+		pngRenderingSem = dispatch_semaphore_create(PNG_RENDERING_THREADS);
+#else
+		sem_init(&pngRenderingSem, 0, PNG_RENDERING_THREADS);
+#endif
+		pngRenderingSemCreated = true;
+	}
+
+    pthread_t thread;
+    pngRenderingTask_t *task = (pngRenderingTask_t*) malloc(sizeof(*task));
+
+    task->surface = surface;
+    task->outputLogIndex = selectedLogIndex;
+    task->outputFrameIndex = outputFrameIndex;
+
+    // Reserve a slot in the rendering pool...
+#ifdef __APPLE__
+    dispatch_semaphore_wait(pngRenderingSem, DISPATCH_TIME_FOREVER);
+#else
+    sem_wait(&pngRenderingSem);
+#endif
+
+    pthread_create(&thread, NULL, pngRenderThread, task);
+}
+
+void waitForFramesToSave()
+{
+	int i;
+
+	if (pngRenderingSemCreated) {
+		for (i = 0; i < PNG_RENDERING_THREADS; i++) {
+#ifdef __APPLE__
+			dispatch_semaphore_wait(pngRenderingSem, DISPATCH_TIME_FOREVER);
+#else
+			sem_wait(&pngRenderingSem);
+#endif
+		}
+	}
+}
+
+void renderAnimation(int64_t startTime, uint64_t endTime)
 {
 	//Change how much data is displayed at one time
 	const int windowWidthMicros = 1000 * 1000;
-
-	const int PID_SCALE = 200;
-	const int GYRO_SCALE = PID_SCALE;
 
 	//Bring the current time into the centre of the plot
 	const int startXTimeOffset = windowWidthMicros / 2;
@@ -906,19 +940,23 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 
 	struct craftDrawingParameters_t craftParameters;
 
-#ifdef __APPLE__
-	pngRenderingSem = dispatch_semaphore_create(PNG_RENDERING_THREADS);
-#else
-	sem_init(&pngRenderingSem, 0, PNG_RENDERING_THREADS);
-#endif
-
-	if (FT_New_Memory_Face(library, (const FT_Byte*)SourceSansPro_Regular_otf, SourceSansPro_Regular_otf_len, 0, &ft_face)) {
+	if (FT_New_Memory_Face(freetypeLibrary, (const FT_Byte*)SourceSansPro_Regular_otf, SourceSansPro_Regular_otf_len, 0, &ft_face)) {
 		fprintf(stderr, "Failed to load font file\n");
 		exit(-1);
 	}
 	cairo_face = cairo_ft_font_face_create_for_ft_face(ft_face, 0);
 
 	decideCraftParameters(&craftParameters, options.imageWidth, options.imageHeight);
+
+	//Exaggerate values around the origin and compress values near the edges:
+	pitchStickCurve = expoCurveCreate(0, 0.700, 500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100, 1.0, 10);
+
+	gyroCurve = expoCurveCreate(0, 0.666, 500, 1.0, 10);
+	accCurve = expoCurveCreate(0, 0.7, 5000, 1.0, 10);
+	pidCurve = expoCurveCreate(0, 0.7, 500, 1.0, 10);
+
+	motorCurve = expoCurveCreate(-(flightLog->maxthrottle + flightLog->minthrottle) / 2, 1.0,
+			(flightLog->maxthrottle - flightLog->minthrottle) / 2, 1.0, 2);
 
 	int durationSecs = (endTime - startTime) / 1000000;
 	int durationMins = durationSecs / 60;
@@ -961,9 +999,8 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 
 				for (i = 0; i < idents.numMotors; i++) {
 					plotLine(cr, idents.motorColors[i], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.motorFields[i], -(int)(flightLog->minthrottle + flightLog->maxthrottle) / 2,
-							(flightLog->maxthrottle - flightLog->minthrottle) / 2, options.imageHeight * (options.plotPids ? 0.15 : 0.20),
-							false);
+							windowEndTime, firstFrameIndex, idents.motorFields[i],
+							motorCurve, options.imageHeight * (options.plotPids ? 0.15 : 0.20));
 				}
 
 				drawAxisLabel(cr, "Motors");
@@ -998,8 +1035,7 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 						}
 
 						plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime,
-								windowEndTime, firstFrameIndex, idents.axisPIDFields[pidType][axis], 0, PID_SCALE, options.imageHeight * 0.15,
-								true);
+								windowEndTime, firstFrameIndex, idents.axisPIDFields[pidType][axis], pidCurve, options.imageHeight * 0.15);
 
 						cairo_set_dash(cr, 0, 0, 0);
 					}
@@ -1009,8 +1045,7 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 						cairo_set_line_width(cr, 2);
 
 						plotLine(cr, idents.gyroColors[axis], windowStartTime,
-								windowEndTime, firstFrameIndex, idents.gyroFields[axis], 0, GYRO_SCALE, options.imageHeight * 0.15,
-								true);
+								windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve, options.imageHeight * 0.15);
 
 						cairo_set_dash(cr, 0, 0, 0);
 					}
@@ -1054,8 +1089,10 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 
 				for (int axis = 0; axis < 3; axis++) {
 					plotLine(cr, idents.gyroColors[axis], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.gyroFields[axis], 0, GYRO_SCALE, options.imageHeight * 0.25,
-							true);
+							windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve, options.imageHeight * 0.25);
+
+					/*plotLine(cr, idents.gyroColors[axis], windowStartTime,
+							windowEndTime, firstFrameIndex, idents.accFields[axis], accCurve, options.imageHeight * 0.25);*/
 				}
 
 				drawAxisLabel(cr, "Gyro");
@@ -1071,10 +1108,10 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 		cairo_restore(cr);
 
 		//Draw a bar highlighting the current time
+		double centerX = options.imageWidth / 2.0;
+
 		cairo_set_source_rgba(cr, 1, 0.25, 0.25, 0.2);
 		cairo_set_line_width(cr, 20);
-
-		double centerX = options.imageWidth / 2.0;
 
 		cairo_move_to(cr, centerX, 0);
 		cairo_line_to(cr, centerX, options.imageHeight);
@@ -1119,36 +1156,14 @@ void renderPoints(int64_t startTime, uint64_t endTime)
 
 		lastCenterTime = windowCenterTime;
 
-		//Encode the PNG using the thread pool, since it's really expensive
-	    pthread_t thread;
-	    pngRenderingTask_t *task = (pngRenderingTask_t*) malloc(sizeof(*task));
+		saveSurfaceAsync(surface, selectedLogIndex, outputFrameIndex);
 
-	    task->surface = surface;
-	    task->outputLogIndex = selectedLogIndex;
-	    task->outputFrameIndex = outputFrameIndex;
-
-	    // Reserve a slot in the rendering pool...
-#ifdef __APPLE__
-	    dispatch_semaphore_wait(pngRenderingSem, DISPATCH_TIME_FOREVER);
-#else
-	    sem_wait(&pngRenderingSem);
-#endif
-
-	    pthread_create(&thread, NULL, pngRenderThread, task);
-
-	    if ((outputFrameIndex + 1) % 500 == 0) {
+	    if ((outputFrameIndex + 1) % 500 == 0 || outputFrameIndex == outputFrames - 1) {
 			fprintf(stderr, "Rendered %d frames (%.1f%%)...\n", outputFrameIndex + 1, (double)(outputFrameIndex + 1) / outputFrames * 100);
 	    }
 	}
 
-	// Wait for all the PNG rendering to complete
-	for (i = 0; i < PNG_RENDERING_THREADS; i++) {
-#ifdef __APPLE__
-		dispatch_semaphore_wait(pngRenderingSem, DISPATCH_TIME_FOREVER);
-#else
-		sem_wait(&pngRenderingSem);
-#endif
-	}
+	waitForFramesToSave();
 }
 
 void printUsage(const char *argv0)
@@ -1163,6 +1178,7 @@ void printUsage(const char *argv0)
 		"   --width <px>           Choose the width of the image (default %d)\n"
 		"   --height <px>          Choose the height of the image (default %d)\n"
 		"   --fps                  FPS of the resulting video (default %d)\n"
+		"   --prefix <filename>    Set the prefix of the output frame filenames\n"
 		"   --start <x:xx>         Begin the log at this time offset (default 0:00)\n"
 		"   --end <x:xx>           End the log at this time offset\n"
 		"   --[no-]draw-pid-table  Show table with PIDs and gyros (default on)\n"
@@ -1194,6 +1210,7 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"width", required_argument, 0, 'w'},
 			{"height", required_argument, 0, 'h'},
 			{"fps", required_argument, 0, 'f'},
+			{"prefix", required_argument, 0, 'x'},
 			{"start", required_argument, 0, 'b'},
 			{"end", required_argument, 0, 'e'},
 			{"plot-pid", no_argument, 0, 'p'},
@@ -1237,6 +1254,9 @@ void parseCommandlineOptions(int argc, char **argv)
 			break;
 			case 'f':
 				options.fps = atoi(optarg);
+			break;
+			case 'x':
+				options.outputPrefix = optarg;
 			break;
 			case 'p':
 				options.plotPids = true;
@@ -1310,24 +1330,27 @@ void parseCommandlineOptions(int argc, char **argv)
 	if (optind < argc) {
 		options.filename = argv[optind];
 
-		char *fileExtensionPeriod = strrchr(options.filename, '.');
-		int sourceLen, prefixLen;
+		//If the user didn't supply an output filename prefix, create our own based on the input filename
+		if (!options.outputPrefix) {
+			// Try replacing the file extension with our suffix:
+			char *fileExtensionPeriod = strrchr(options.filename, '.');
+			int sourceLen;
 
-		if (fileExtensionPeriod) {
-			sourceLen = fileExtensionPeriod - options.filename;
-		} else {
-			sourceLen = strlen(options.filename);
+			if (fileExtensionPeriod) {
+				sourceLen = fileExtensionPeriod - options.filename;
+			} else {
+				//If the original had no extension, just append:
+				sourceLen = strlen(options.filename);
+			}
+
+			options.outputPrefix = malloc((sourceLen + 2 /*Room for an extra period and the null terminator*/) * sizeof(*options.outputPrefix));
+
+			for (int i = 0; i < sourceLen; i++)
+				options.outputPrefix[i] = options.filename[i];
+
+			options.outputPrefix[sourceLen] = '.';
+			options.outputPrefix[sourceLen + 1] = '\0';
 		}
-
-		prefixLen = sourceLen + 1;
-
-		options.outputPrefix = malloc(prefixLen * sizeof(*options.outputPrefix));
-
-		for (int i = 0; i < sourceLen; i++)
-			options.outputPrefix[i] = options.filename[i];
-
-		options.outputPrefix[sourceLen] = '.';
-		options.outputPrefix[prefixLen] = '\0';
 	}
 }
 
@@ -1351,7 +1374,7 @@ static void applySmoothing() {
 
 int chooseLog(flightLog_t *log)
 {
-	if (log->logCount == 0) {
+	if (!log || log->logCount == 0) {
 		fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
 		return -1;
 	}
@@ -1397,7 +1420,7 @@ int main(int argc, char **argv)
     	return -1;
     }
 
-    FT_Init_FreeType(&library);
+    FT_Init_FreeType(&freetypeLibrary);
 
     flightLog = flightLogCreate(fd);
 
@@ -1435,7 +1458,7 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	renderPoints(timeStart, timeEnd);
+	renderAnimation(timeStart, timeEnd);
 
     return 0;
 }
