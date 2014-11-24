@@ -445,9 +445,9 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 	char motorLabel[16];
 	cairo_text_extents_t extent;
 
-	if (idents.heading) {
+	/*if (idents.heading) {
 		cairo_rotate(cr, intToFloat(frame[idents.heading]));
-	}
+	}*/
 
 	//Draw arms
 	cairo_set_line_width(cr, parameters->bladeLength * 0.30);
@@ -859,6 +859,47 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 	cairo_show_text(cr, frameNumberBuf);
 }
 
+void drawAccelerometerData(cairo_t *cr, int32_t *frame)
+{
+	int16_t accSmooth[3];
+	attitude_t attitude;
+	t_fp_vector acceleration;
+	float magnitude;
+	static float lastAccel = 0;
+
+	char labelBuf[32];
+
+	if (flightLog->acc_1G) {
+		for (int axis = 0; axis < 3; axis++)
+			accSmooth[axis] = frame[idents.accFields[axis]];
+
+		attitude.roll = intToFloat(frame[idents.roll]);
+		attitude.pitch = intToFloat(frame[idents.pitch]);
+		attitude.heading = intToFloat(frame[idents.heading]);
+
+		//Need to calculate acc in earth frame in order to subtract the 1G of gravity from the result
+		acceleration = calculateAccelerationInEarthFrame(accSmooth, &attitude, flightLog->acc_1G);
+
+		//Now that G has been subtracted, work out the length of the acceleration vector
+		acceleration.V.X /= flightLog->acc_1G;
+		acceleration.V.Y /= flightLog->acc_1G;
+		acceleration.V.Z /= flightLog->acc_1G;
+
+		magnitude = sqrt(acceleration.V.X * acceleration.V.X + acceleration.V.Y * acceleration.V.Y + acceleration.V.Z * acceleration.V.Z);
+
+		//Weighted moving average with the recent history to smooth out noise
+		lastAccel = (lastAccel * 2 + magnitude) / 3;
+
+		snprintf(labelBuf, sizeof(labelBuf), "Acceleration %.2fG", lastAccel);
+
+		cairo_set_font_size(cr, FONTSIZE_FRAME_LABEL);
+		cairo_set_source_rgba(cr, 1, 1, 1, 0.65);
+
+		cairo_move_to(cr, 8, options.imageHeight - 8);
+		cairo_show_text(cr, labelBuf);
+	}
+}
+
 void* pngRenderThread(void *arg)
 {
 	char filename[255];
@@ -1155,6 +1196,8 @@ void renderAnimation(int64_t startTime, uint64_t endTime)
 				}
 				cairo_restore(cr);
 			}
+
+			drawAccelerometerData(cr, frameValues);
 		}
 
 		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]);
