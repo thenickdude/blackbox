@@ -31,9 +31,9 @@ OBJECT_DIR	 = $(ROOT)/obj
 BIN_DIR		 = $(ROOT)/obj
 
 # Source files common to all targets
-COMMON_SRC	 = parser.c
+COMMON_SRC	 = parser.c tools.c
 DECODER_SRC	 = $(COMMON_SRC) blackbox_decode.c
-RENDERER_SRC = $(COMMON_SRC) blackbox_render.c datapoints.c embeddedfont.c
+RENDERER_SRC = $(COMMON_SRC) blackbox_render.c datapoints.c embeddedfont.c expo.c imu.c
 ENCODER_TESTBED_SRC = $(COMMON_SRC) encoder_testbed.c
 
 # In some cases, %.s regarded as intermediate file, which is actually not.
@@ -73,11 +73,14 @@ CFLAGS		 = $(ARCH_FLAGS) \
 
 CFLAGS += `pkg-config --cflags cairo` `pkg-config --cflags freetype2`
 
-ifdef BUILD_STATICALLY
-# For cairo built with ./configure --enable-quartz=no  --without-x --enable-pdf=no --enable-ps=no --enable-script=no --enable-xcb=no --enable-ft=yes --enable-fc=no --enable-xlib=no
-LDFLAGS += -Llib/static -lcairo -lpixman-1 -lpng16 -lz -lfreetype -lbz2
+ifeq ($(BUILD_STATIC), MACOS)
+	# For cairo built with ./configure --enable-quartz=no  --without-x --enable-pdf=no --enable-ps=no --enable-script=no --enable-xcb=no --enable-ft=yes --enable-fc=no --enable-xlib=no
+	LDFLAGS += -Llib/static/macos -lcairo -lpixman-1 -lpng16 -lz -lfreetype -lbz2
+else ifeq ($(BUILD_STATIC), LINUX64)
+	LDFLAGS += -Llib/static/linux64 -lcairo -lpixman-1 -lpng12 -lz -lfreetype
 else
-LDFLAGS += `pkg-config --libs cairo` `pkg-config --libs freetype2`
+	# Dynamic linking
+	LDFLAGS += `pkg-config --libs cairo` `pkg-config --libs freetype2`
 endif
 
 LDFLAGS += -lm

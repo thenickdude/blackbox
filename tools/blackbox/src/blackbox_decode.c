@@ -87,13 +87,33 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	uint32_t totalFrames = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1;
 	uint32_t missingFrames = totalFrames - goodFrames;
 
-	uint32_t runningTimeMS = intervalMS;
-	uint32_t runningTimeSecs = runningTimeMS / 1000;
+	uint32_t runningTimeMS, runningTimeSecs, runningTimeMins;
+	uint32_t startTimeMS, startTimeSecs, startTimeMins;
+	uint32_t endTimeMS, endTimeSecs, endTimeMins;
+
+	runningTimeMS = intervalMS;
+	runningTimeSecs = runningTimeMS / 1000;
 	runningTimeMS %= 1000;
-	uint32_t runningTimeMins = runningTimeSecs / 60;
+	runningTimeMins = runningTimeSecs / 60;
 	runningTimeSecs %= 60;
 
-	fprintf(stderr, "\nLog #%d [%d:%02d.%03d]\n\n", logIndex + 1, runningTimeMins, runningTimeSecs, runningTimeMS);
+	startTimeMS = stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] / 1000;
+	startTimeSecs = startTimeMS / 1000;
+	startTimeMS %= 1000;
+	startTimeMins = startTimeSecs / 60;
+	startTimeSecs %= 60;
+
+	endTimeMS = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] / 1000;
+	endTimeSecs = endTimeMS / 1000;
+	endTimeMS %= 1000;
+	endTimeMins = endTimeSecs / 60;
+	endTimeSecs %= 60;
+
+	fprintf(stderr, "\nLog #%d/%d, start %02d:%02d.%03d, end %02d:%02d.%03d, duration %02d:%02d.%03d\n\n", logIndex + 1, log->logCount,
+		startTimeMins, startTimeSecs, startTimeMS,
+		endTimeMins, endTimeSecs, endTimeMS,
+		runningTimeMins, runningTimeSecs, runningTimeMS
+	);
 
 	fprintf(stderr, "Statistics\n");
 
@@ -147,7 +167,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	}
 }
 
-int chooseLog(flightLog_t *log)
+int validateLogIndex(flightLog_t *log)
 {
 	if (log->logCount == 0) {
 		fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
@@ -247,7 +267,10 @@ int main(int argc, char **argv)
 
     log = flightLogCreate(fd);
 
-    logIndex = chooseLog(log);
+    if (!log)
+    	return -1;
+
+    logIndex = validateLogIndex(log);
 
     if (logIndex == -1)
     	return -1;

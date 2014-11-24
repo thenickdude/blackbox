@@ -26,9 +26,11 @@
 #include FT_FREETYPE_H
 #include "embeddedfont.h"
 
+#include "tools.h"
 #include "parser.h"
 #include "datapoints.h"
 #include "expo.h"
+#include "imu.h"
 
 #define MAX_MOTORS 8
 
@@ -41,6 +43,8 @@
 #define FONTSIZE_FRAME_LABEL 32
 
 #define PNG_RENDERING_THREADS 3
+
+#define DATAPOINTS_EXTRA_COMPUTED_FIELDS 6
 
 typedef enum PropStyle {
 	PROP_STYLE_BLADES = 0,
@@ -131,6 +135,9 @@ typedef struct fieldIdentifications_t {
 	int numMisc;
 	int miscFields[FLIGHT_LOG_MAX_FIELDS];
 	color_t miscColors[FLIGHT_LOG_MAX_FIELDS];
+
+	int roll, pitch, heading;
+	int axisPIDSum[3];
 } fieldIdentifications_t;
 
 color_t lineColors[] = {
@@ -188,27 +195,6 @@ static fieldIdentifications_t idents;
 
 static FT_Library freetypeLibrary;
 
-static double doubleAbs(double a)
-{
-	if (a < 0)
-		return -a;
-	return a;
-}
-
-static double doubleMin(double a, double b)
-{
-	if (a < b)
-		return a;
-	return b;
-}
-
-static double doubleMax(double a, double b)
-{
-	if (a > b)
-		return a;
-	return b;
-}
-
 void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize)
 {
 	(void) log;
@@ -216,7 +202,7 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, int 
 	(void) frameOffset;
 
 	/*
-	 *  Pull the first two fields (iteration and time) off the front of the frame fields,
+	 * Pull the first two fields (iteration and time) off the front of the frame fields,
 	 * since datapoints handles those as separate arguments in this call:
 	 */
 	if (frameValid)
@@ -242,8 +228,15 @@ void identifyFields()
 		for (int axis = 0; axis < 3; axis++)
 			idents.axisPIDFields[pidType][axis] = -1;
 
+	for (int axis = 0; axis < 3; axis++) {
+		idents.axisPIDSum[axis] = -1;
+		idents.accFields[axis] = -1;
+	}
+
+	idents.roll = idents.pitch = idents.heading = -1;
 	idents.hasGyros = false;
 	idents.hasPIDs = false;
+	idents.hasAccs = false;
 
 	for (i = 0; i < sizeof(idents.miscFields) / sizeof(idents.miscFields[0]); i++)
 		idents.miscFields[i] = -1;
@@ -264,6 +257,10 @@ void identifyFields()
 			if (rcCommandIndex >= 0 && rcCommandIndex < 4) {
 				idents.rcCommandFields[rcCommandIndex] = fieldIndex;
 			}
+		} else if (strncmp(points->fieldNames[fieldIndex], "axisPID[", strlen("axisPID[")) == 0) {
+			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("axisPID["));
+
+			idents.axisPIDSum[axisIndex] = fieldIndex;
 		} else if (strncmp(points->fieldNames[fieldIndex], "axis", strlen("axis")) == 0) {
 			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("axisX["));
 
@@ -308,6 +305,12 @@ void identifyFields()
 			idents.hasAccs = true;
 			idents.accFields[axisIndex] = fieldIndex;
 			idents.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+		} else if (strcmp(points->fieldNames[fieldIndex], "roll") == 0) {
+			idents.roll = fieldIndex;
+		} else if (strcmp(points->fieldNames[fieldIndex], "pitch") == 0) {
+			idents.pitch = fieldIndex;
+		} else if (strcmp(points->fieldNames[fieldIndex], "heading") == 0) {
+			idents.heading = fieldIndex;
 		} else {
 			idents.miscFields[idents.numMisc] = fieldIndex;
 			idents.miscColors[idents.numMisc] = lineColors[idents.numMisc % NUM_LINE_COLORS];
@@ -441,6 +444,10 @@ void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_para
 
 	char motorLabel[16];
 	cairo_text_extents_t extent;
+
+	if (idents.heading) {
+		cairo_rotate(cr, intToFloat(frame[idents.heading]));
+	}
 
 	//Draw arms
 	cairo_set_line_width(cr, parameters->bladeLength * 0.30);
@@ -876,7 +883,7 @@ void* pngRenderThread(void *arg)
  * (which'll use extra threads to do the work). Be sure to call waitForFramesToSave() before
  * the program ends.
  */
-void saveSurfaceAsync(cairo_surface_t *surface, int selectedLogIndex, int outputFrameIndex)
+void saveSurfaceAsync(cairo_surface_t *surface, int logIndex, int outputFrameIndex)
 {
 	if (!pngRenderingSemCreated) {
 #ifdef __APPLE__
@@ -891,7 +898,7 @@ void saveSurfaceAsync(cairo_surface_t *surface, int selectedLogIndex, int output
     pngRenderingTask_t *task = (pngRenderingTask_t*) malloc(sizeof(*task));
 
     task->surface = surface;
-    task->outputLogIndex = selectedLogIndex;
+    task->outputLogIndex = logIndex;
     task->outputFrameIndex = outputFrameIndex;
 
     // Reserve a slot in the rendering pool...
@@ -1364,11 +1371,55 @@ static void applySmoothing() {
 		for (int pid = PID_P; pid <= PID_D; pid++)
 			for (int axis = 0; axis < 3; axis++)
 				datapointsSmoothField(points, idents.axisPIDFields[pid][axis], options.pidSmoothing);
+
+		//Smooth the synthetic PID sum field too
+		for (int axis = 0; axis < 3; axis++)
+			datapointsSmoothField(points, idents.axisPIDSum[axis], options.pidSmoothing);
 	}
 
 	if (options.motorSmoothing) {
 		for (int motor = 0; motor < idents.numMotors; motor++)
 			datapointsSmoothField(points, idents.motorFields[motor], options.motorSmoothing);
+	}
+}
+
+void computeExtraFields() {
+	int16_t accSmooth[3], gyroData[3];
+	int64_t frameTime;
+	int32_t frameIndex;
+	int32_t frame[FLIGHT_LOG_MAX_FIELDS];
+	attitude_t attitude;
+
+	imuInit();
+
+ 	if (idents.hasAccs && flightLog->acc_1G) {
+		for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
+			if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
+				for (int axis = 0; axis < 3; axis++) {
+					accSmooth[axis] = frame[idents.accFields[axis]];
+					gyroData[axis] = frame[idents.gyroFields[axis]];
+				}
+
+				getEstimatedAttitude(gyroData, accSmooth, frameTime, flightLog->acc_1G, flightLog->gyroScale, &attitude);
+
+				//Pack those floats into signed ints to store into the datapoints array:
+				datapointsSetFieldAtIndex(points, frameIndex, idents.roll, floatToInt(attitude.roll));
+				datapointsSetFieldAtIndex(points, frameIndex, idents.pitch, floatToInt(attitude.pitch));
+				datapointsSetFieldAtIndex(points, frameIndex, idents.heading, floatToInt(attitude.heading));
+			}
+		}
+	}
+
+	if (idents.hasPIDs) {
+		for (frameIndex = 0; frameIndex < points->frameCount; frameIndex++) {
+			if (datapointsGetFrameAtIndex(points, frameIndex, &frameTime, frame)) {
+				for (int axis = 0; axis < 3; axis++) {
+					int32_t pidSum = frame[idents.axisPIDFields[PID_P][axis]] + frame[idents.axisPIDFields[PID_I][axis]] - frame[idents.axisPIDFields[PID_D][axis]];
+
+					datapointsSetFieldAtIndex(points, frameIndex, idents.axisPIDSum[axis], pidSum);
+				}
+			}
+		}
 	}
 }
 
@@ -1404,6 +1455,7 @@ int chooseLog(flightLog_t *log)
 
 int main(int argc, char **argv)
 {
+	char **fieldNames;
 	uint32_t timeStart, timeEnd;
 	int fd;
 
@@ -1432,13 +1484,32 @@ int main(int argc, char **argv)
 	//First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
 	flightLogParse(flightLog, selectedLogIndex, 0, 0, false);
 
-	// Don't include the leading time or field index fields in the field names / counts
-	points = datapointsCreate(flightLog->fieldCount - 2, flightLog->fieldNames + 2, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
+	/* Configure our data points array.
+	 *
+	 * Don't include the leading time or field index fields in the field names / counts, but add on fields
+	 * that we'll synthesize
+	 */
+	fieldNames = malloc(sizeof(*fieldNames) * (flightLog->fieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS));
 
-	//Now decode that data into the points array
+	for (int i = 2; i < flightLog->fieldCount; i++) {
+		fieldNames[i - 2] = strdup(flightLog->fieldNames[i]);
+	}
+
+	fieldNames[flightLog->fieldCount - 2] = strdup("roll");
+	fieldNames[flightLog->fieldCount - 1] = strdup("pitch");
+	fieldNames[flightLog->fieldCount + 0] = strdup("heading");
+	fieldNames[flightLog->fieldCount + 1] = strdup("axisPID[0]");
+	fieldNames[flightLog->fieldCount + 2] = strdup("axisPID[1]");
+	fieldNames[flightLog->fieldCount + 3] = strdup("axisPID[2]");
+
+	points = datapointsCreate(flightLog->fieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
+
+	//Now decode the flight log into the points array
 	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, false);
 
 	identifyFields();
+
+	computeExtraFields();
 
 	applySmoothing();
 

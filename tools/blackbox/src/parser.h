@@ -73,8 +73,12 @@ struct flightLogPrivate_t;
 typedef struct FlightLog {
 	flightLogStatistics_t stats;
 
-	unsigned int minthrottle, maxthrottle;
+	int minthrottle, maxthrottle;
 	unsigned int rcRate, yawRate;
+
+	// Calibration constants from the hardware sensors:
+	uint16_t acc_1G;
+	float gyroScale;
 
 	//Information about log sections:
 	const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];

@@ -128,6 +128,10 @@ static void parseHeader(flightLog_t *log)
 	const char *lineStart, *lineEnd, *separatorPos;
 	int i, c;
 	char valueBuffer[1024];
+	union {
+		float f;
+		uint32_t u;
+	} floatConvert;
 
 	if (*log->private->logPos != ' ')
 		return;
@@ -191,6 +195,12 @@ static void parseHeader(flightLog_t *log)
 		log->maxthrottle = atoi(fieldValue);
 	} else if (strcmp(fieldName, "rcRate") == 0) {
 		log->rcRate = atoi(fieldValue);
+	} else if (strcmp(fieldName, "gyro.scale") == 0) {
+		floatConvert.u = strtoul(fieldValue, 0, 16);
+
+		log->gyroScale = floatConvert.f;
+	} else if (strcmp(fieldName, "acc_1G") == 0) {
+		log->acc_1G = atoi(fieldValue);
 	}
 }
 
@@ -471,6 +481,11 @@ flightLog_t * flightLogCreate(int fd)
 	}
 
 	fileSize = stats.st_size;
+
+	if (fileSize == 0) {
+		fprintf(stderr, "Error: This log is zero-bytes long!\n");
+		return 0;
+	}
 
 	mapped = mmap(0, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
 

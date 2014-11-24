@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -30,6 +31,11 @@ void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowRadius)
 	int valuesInHistory = 0;
 
 	int64_t accumulator = 0;
+
+	if (fieldIndex < 0 || fieldIndex >= points->fieldCount) {
+		fprintf(stderr, "Attempt to smooth field that doesn't exist %d\n", fieldIndex);
+		exit(-1);
+	}
 
 	// Field values so that we know what they were originally before we overwrote them
 	int32_t *history = (int32_t*) malloc(sizeof(*history) * windowSize);
@@ -106,6 +112,16 @@ bool datapointsGetFieldAtIndex(Datapoints *points, int frameIndex, int fieldInde
 		return false;
 
 	*frameValue = points->frames[frameIndex * points->fieldCount + fieldIndex];
+
+	return true;
+}
+
+bool datapointsSetFieldAtIndex(Datapoints *points, int frameIndex, int fieldIndex, int32_t frameValue)
+{
+	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
+		return false;
+
+	points->frames[frameIndex * points->fieldCount + fieldIndex] = frameValue;
 
 	return true;
 }
