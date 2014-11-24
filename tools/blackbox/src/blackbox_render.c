@@ -90,6 +90,7 @@ typedef struct renderOptions_t {
 
 	PropStyle propStyle;
 
+	//Start and end time of video in seconds offset from the beginning of the log
 	uint32_t timeStart, timeEnd;
 
 	char *filename, *outputPrefix;
@@ -869,7 +870,7 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 
 	char labelBuf[32];
 
-	if (flightLog->acc_1G) {
+	if (flightLog->acc_1G && idents.hasAccs) {
 		for (int axis = 0; axis < 3; axis++)
 			accSmooth[axis] = frame[idents.accFields[axis]];
 
@@ -967,26 +968,35 @@ void waitForFramesToSave()
 	}
 }
 
-void renderAnimation(int64_t startTime, uint64_t endTime)
+void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 {
 	//Change how much data is displayed at one time
 	const int windowWidthMicros = 1000 * 1000;
 
-	//Bring the current time into the centre of the plot
+	//Bring the current time into the center of the plot
 	const int startXTimeOffset = windowWidthMicros / 2;
 
 	int i;
 
+	int64_t logStartTime = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME];
+	int64_t logEndTime = flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
+	int64_t logDurationMicro = logEndTime - logStartTime;
+
+	uint32_t outputFrames;
+
+	int32_t frameValues[FLIGHT_LOG_MAX_FIELDS];
 	uint64_t lastCenterTime;
 	int64_t frameTime;
-	uint32_t totalDurationMicro = endTime - startTime;
-	int32_t outputFrames = (int32_t) (((int64_t) totalDurationMicro * options.fps) / 1000000 + 1);
-	int32_t frameValues[FLIGHT_LOG_MAX_FIELDS];
 
 	FT_Face ft_face;
 	cairo_font_face_t *cairo_face;
 
 	struct craftDrawingParameters_t craftParameters;
+
+	if (endFrame == (uint32_t) -1) {
+		endFrame = (logDurationMicro * options.fps + (1000000 - 1)) / 1000000;
+	}
+	outputFrames = endFrame - startFrame;
 
 	if (FT_New_Memory_Face(freetypeLibrary, (const FT_Byte*)SourceSansPro_Regular_otf, SourceSansPro_Regular_otf_len, 0, &ft_face)) {
 		fprintf(stderr, "Failed to load font file\n");
@@ -1006,15 +1016,15 @@ void renderAnimation(int64_t startTime, uint64_t endTime)
 	motorCurve = expoCurveCreate(-(flightLog->maxthrottle + flightLog->minthrottle) / 2, 1.0,
 			(flightLog->maxthrottle - flightLog->minthrottle) / 2, 1.0, 2);
 
-	int durationSecs = (endTime - startTime) / 1000000;
+	int durationSecs = (outputFrames + (options.fps - 1)) / (options.fps);
 	int durationMins = durationSecs / 60;
 	durationSecs %= 60;
 
 	fprintf(stderr, "%d frames to be rendered at %d FPS [%d:%2d]\n", outputFrames, options.fps, durationMins, durationSecs);
 	fprintf(stderr, "\n");
 
-	for (int outputFrameIndex = 0; outputFrameIndex < outputFrames; outputFrameIndex++) {
-		int64_t windowCenterTime = (int32_t) (startTime + ((int64_t) outputFrameIndex * 1000000) / options.fps);
+	for (uint32_t outputFrameIndex = startFrame; outputFrameIndex < endFrame; outputFrameIndex++) {
+		int64_t windowCenterTime = logStartTime + ((int64_t) outputFrameIndex * 1000000) / options.fps;
 		int64_t windowStartTime = windowCenterTime - startXTimeOffset;
 		int64_t windowEndTime = windowStartTime + windowWidthMicros;
 
@@ -1208,8 +1218,11 @@ void renderAnimation(int64_t startTime, uint64_t endTime)
 
 		saveSurfaceAsync(surface, selectedLogIndex, outputFrameIndex);
 
-	    if ((outputFrameIndex + 1) % 500 == 0 || outputFrameIndex == outputFrames - 1) {
-			fprintf(stderr, "Rendered %d frames (%.1f%%)...\n", outputFrameIndex + 1, (double)(outputFrameIndex + 1) / outputFrames * 100);
+		uint32_t frameWrittenCount = outputFrameIndex - startFrame + 1;
+	    if (frameWrittenCount % 500 == 0 || frameWrittenCount == outputFrames) {
+			fprintf(stderr, "Rendered %d frames (%.1f%%)%s\n",
+				frameWrittenCount, (double)frameWrittenCount / outputFrames * 100,
+				frameWrittenCount < outputFrames ? "..." : ".");
 	    }
 	}
 
@@ -1499,7 +1512,7 @@ int chooseLog(flightLog_t *log)
 int main(int argc, char **argv)
 {
 	char **fieldNames;
-	uint32_t timeStart, timeEnd;
+	uint32_t frameStart, frameEnd;
 	int fd;
 
 	parseCommandlineOptions(argc, argv);
@@ -1556,23 +1569,20 @@ int main(int argc, char **argv)
 
 	applySmoothing();
 
-	timeStart = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] + options.timeStart * 1000000u;
+	frameStart = options.timeStart * options.fps;
 
 	if (options.timeEnd == 0)
-		timeEnd = flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
+		frameEnd = (uint32_t) -1;
 	else {
-		timeEnd = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] + options.timeEnd * 1000000u;
-
-		if (timeEnd > flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME])
-			timeEnd = flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
+		frameEnd = options.timeEnd * options.fps;
 	}
 
-	if (timeEnd < timeStart) {
-		fprintf(stderr, "Selected time range excludes all datapoints\n");
+	if (frameEnd <= frameStart) {
+		fprintf(stderr, "Error: Selected end time would make this video zero frames long.\n");
 		return -1;
 	}
 
-	renderAnimation(timeStart, timeEnd);
+	renderAnimation(frameStart, frameEnd);
 
     return 0;
 }
