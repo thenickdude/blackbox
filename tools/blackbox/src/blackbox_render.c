@@ -1237,7 +1237,7 @@ void printUsage(const char *argv0)
 		"     %s [options] <logfilename.txt>\n\n"
 		"Options:\n"
 		"   --help                 This page\n"
-		"   --index <num>          Choose the log from the file that should be rendered\n"
+		"   --index <num>          Choose which log from the file should be rendered\n"
 		"   --width <px>           Choose the width of the image (default %d)\n"
 		"   --height <px>          Choose the height of the image (default %d)\n"
 		"   --fps                  FPS of the resulting video (default %d)\n"
@@ -1253,7 +1253,7 @@ void printUsage(const char *argv0)
 		"   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
 		"   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
 		"   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
-		"   --prop-style           Style of propeller display (pie/blades, default %s)\n"
+		"   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
 		"\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.pidSmoothing,
 			defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, defaultOptions.propStyle == PROP_STYLE_BLADES ? "blades" : "pie"
 	);
@@ -1269,6 +1269,7 @@ void parseCommandlineOptions(int argc, char **argv)
 	while (1)
 	{
 		static struct option long_options[] = {
+			{"help", no_argument, &options.help, 1},
 			{"index", required_argument, 0, 'i'},
 			{"width", required_argument, 0, 'w'},
 			{"height", required_argument, 0, 'h'},
@@ -1376,15 +1377,19 @@ void parseCommandlineOptions(int argc, char **argv)
 					options.propStyle = PROP_STYLE_BLADES;
 				}
 			break;
+			case '\0':
+				//Longopt which has set a flag
+			break;
 		    case ':':
-		        /* missing option argument */
-		        fprintf(stderr, "%s: option '-%c' requires an argument\n", argv[0], optopt);
+		        fprintf(stderr, "%s: option '%s' requires an argument\n", argv[0], argv[optind-1]);
 		        exit(-1);
 			break;
-		    case '?':
 		    default:
-		        /* invalid option */
-		        fprintf(stderr, "%s: option '-%c' is invalid: ignored\n", argv[0], optopt);
+		        if (optopt == 0)
+		        	fprintf(stderr, "%s: option '%s' is invalid\n", argv[0], argv[optind-1]);
+				else
+					fprintf(stderr, "%s: option '-%c' is invalid\n", argv[0], optopt);
+
 		        exit(-1);
 			break;
 		}
