@@ -10,7 +10,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
+
+#ifdef WIN32
+	#include "getopt.h"
+#else
+	#include <getopt.h>
+#endif
 
 #include "parser.h"
 
@@ -413,7 +418,7 @@ void printFrameSizeComparison(flightLogStatistics_t *oldStats, flightLogStatisti
 
 void printStats(flightLogStatistics_t *stats)
 {
-	uint32_t intervalMS = (stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000;
+	uint32_t intervalMS = (uint32_t) ((stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000);
 	uint32_t totalBytes = stats->iFrameBytes + stats->pFrameBytes;
 	uint32_t totalFrames = stats->numIFrames + stats->numPFrames;
 

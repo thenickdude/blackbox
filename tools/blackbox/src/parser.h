@@ -46,7 +46,9 @@ typedef enum FlightLogFieldEncoding
 	FLIGHT_LOG_FIELD_ENCODING_S8              = 5,
 	FLIGHT_LOG_FIELD_ENCODING_S16             = 6,
 	FLIGHT_LOG_FIELD_ENCODING_S32             = 7,
-	FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16       = 8
+	FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16       = 8,
+
+	FLIGHT_LOG_FIELD_ENCODING_NULL            = 9
 } FlightLogFieldEncoding;
 
 typedef struct FlightLogStatistics {

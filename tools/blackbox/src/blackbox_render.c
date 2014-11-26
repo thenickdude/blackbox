@@ -4,21 +4,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+//For msvcrt to define M_PI:
+#define _USE_MATH_DEFINES
 #include <math.h>
+
 #include <getopt.h>
 #include <errno.h>
 
-#include <unistd.h>
 #include <fcntl.h>
-
-#include <pthread.h>
-
-#ifdef __APPLE__
-//MacOS doesn't have POSIX unnamed semaphores. Grand Central Dispatch provides an alternative:
-#include <dispatch/dispatch.h>
-#else
-#include <semaphore.h>
-#endif
 
 #include <cairo.h>
 
@@ -26,6 +20,7 @@
 #include FT_FREETYPE_H
 #include "embeddedfont.h"
 
+#include "platform.h"
 #include "tools.h"
 #include "parser.h"
 #include "datapoints.h"
@@ -180,11 +175,7 @@ extern cairo_font_face_t* cairo_ft_font_face_create_for_ft_face(FT_Face face, in
 static renderOptions_t options;
 static expoCurve_t *pitchStickCurve, *pidCurve, *gyroCurve, *accCurve, *motorCurve;
 
-#ifdef __APPLE__
-	static dispatch_semaphore_t pngRenderingSem;
-#else
-	static sem_t pngRenderingSem;
-#endif
+static semaphore_t pngRenderingSem;
 static bool pngRenderingSemCreated = false;
 
 static flightLog_t *flightLog;
@@ -911,11 +902,7 @@ void* pngRenderThread(void *arg)
     cairo_surface_destroy (task->surface);
 
     //Release our slot in the rendering pool, we're done
-#ifdef __APPLE__
-    dispatch_semaphore_signal(pngRenderingSem);
-#else
-    sem_post(&pngRenderingSem);
-#endif
+    semaphore_signal(&pngRenderingSem);
 
     return 0;
 }
@@ -928,15 +915,11 @@ void* pngRenderThread(void *arg)
 void saveSurfaceAsync(cairo_surface_t *surface, int logIndex, int outputFrameIndex)
 {
 	if (!pngRenderingSemCreated) {
-#ifdef __APPLE__
-		pngRenderingSem = dispatch_semaphore_create(PNG_RENDERING_THREADS);
-#else
-		sem_init(&pngRenderingSem, 0, PNG_RENDERING_THREADS);
-#endif
+		semaphore_create(&pngRenderingSem, PNG_RENDERING_THREADS);
 		pngRenderingSemCreated = true;
 	}
 
-    pthread_t thread;
+    thread_t thread;
     pngRenderingTask_t *task = (pngRenderingTask_t*) malloc(sizeof(*task));
 
     task->surface = surface;
@@ -944,13 +927,9 @@ void saveSurfaceAsync(cairo_surface_t *surface, int logIndex, int outputFrameInd
     task->outputFrameIndex = outputFrameIndex;
 
     // Reserve a slot in the rendering pool...
-#ifdef __APPLE__
-    dispatch_semaphore_wait(pngRenderingSem, DISPATCH_TIME_FOREVER);
-#else
-    sem_wait(&pngRenderingSem);
-#endif
+    semaphore_wait(&pngRenderingSem);
 
-    pthread_create(&thread, NULL, pngRenderThread, task);
+    thread_create(&thread, pngRenderThread, task);
 }
 
 void waitForFramesToSave()
@@ -959,11 +938,7 @@ void waitForFramesToSave()
 
 	if (pngRenderingSemCreated) {
 		for (i = 0; i < PNG_RENDERING_THREADS; i++) {
-#ifdef __APPLE__
-			dispatch_semaphore_wait(pngRenderingSem, DISPATCH_TIME_FOREVER);
-#else
-			sem_wait(&pngRenderingSem);
-#endif
+			semaphore_wait(&pngRenderingSem);
 		}
 	}
 }
@@ -1020,7 +995,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	int durationMins = durationSecs / 60;
 	durationSecs %= 60;
 
-	fprintf(stderr, "%d frames to be rendered at %d FPS [%d:%2d]\n", outputFrames, options.fps, durationMins, durationSecs);
+	fprintf(stderr, "%d frames to be rendered at %d FPS [%d:%02d]\n", outputFrames, options.fps, durationMins, durationSecs);
 	fprintf(stderr, "\n");
 
 	for (uint32_t outputFrameIndex = startFrame; outputFrameIndex < endFrame; outputFrameIndex++) {

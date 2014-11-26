@@ -7,7 +7,16 @@
 #include <string.h>
 
 #include <sys/stat.h>
-#include <sys/mman.h>
+
+// Support for memory-mapped files:
+#ifdef WIN32
+	#include <windows.h>
+	#include <io.h>
+#else
+	// Posix-y systems:
+	#include <sys/mman.h>
+#endif
+
 #include <errno.h>
 #include <string.h>
 #include <stdarg.h>
@@ -236,7 +245,7 @@ static int32_t readSignedVB(flightLog_t *log)
 	uint32_t i = readUnsignedVB(log);
 
 	// Apply ZigZag decoding to recover the signed value
-	return (i >> 1) ^ (-(i & 1));
+	return (i >> 1) ^ -(int32_t) (i & 1);
 }
 
 
@@ -487,6 +496,23 @@ flightLog_t * flightLogCreate(int fd)
 		return 0;
 	}
 
+#ifdef WIN32
+	intptr_t fileHandle = _get_osfhandle(fd);
+	HANDLE mapping = CreateFileMapping((HANDLE) fileHandle, NULL, PAGE_READONLY, 0, 0, NULL);
+
+	if (mapping == NULL) {
+		fprintf(stderr, "Failed to map log file into memory\n");
+		return 0;
+	}
+
+	mapped = MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, fileSize);
+
+	if (mapped == NULL) {
+		fprintf(stderr, "Failed to map log file into memory: %s\n", strerror(errno));
+
+		return 0;
+	}
+#else
 	mapped = mmap(0, fileSize, PROT_READ, MAP_PRIVATE, fd, 0);
 
 	if (mapped == MAP_FAILED) {
@@ -494,6 +520,7 @@ flightLog_t * flightLogCreate(int fd)
 
 		return 0;
 	}
+#endif
 
 	log = (flightLog_t *) malloc(sizeof(flightLog_t));
 	private = (flightLogPrivate_t *) malloc(sizeof(flightLogPrivate_t));
@@ -683,7 +710,11 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
 void flightLogDestroy(flightLog_t *log)
 {
+#ifdef WIN32
+	UnmapViewOfFile(log->private->logData);
+#else
 	munmap((void*)log->private->logData, log->private->logEnd - log->private->logData);
+#endif
 
 	free(log->private->fieldNamesCombined);
 	free(log->private);

@@ -5,10 +5,19 @@
 #include <errno.h>
 #include <fcntl.h>
 
+#ifdef WIN32
+	#include <io.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
+
+#ifdef WIN32
+	#include "getopt.h"
+#else
+	#include <getopt.h>
+#endif
 
 #include "parser.h"
 
@@ -80,11 +89,11 @@ void onMetadataReady(flightLog_t *log)
 void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 {
 	flightLogStatistics_t *stats = &log->stats;
-	int64_t intervalMS = (stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000;
+	uint32_t intervalMS = (uint32_t) ((stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000);
 
 	uint32_t goodBytes = stats->iFrameBytes + stats->pFrameBytes;
 	uint32_t goodFrames = stats->numIFrames + stats->numPFrames;
-	uint32_t totalFrames = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1;
+	uint32_t totalFrames = (uint32_t) (stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
 	uint32_t missingFrames = totalFrames - goodFrames;
 
 	uint32_t runningTimeMS, runningTimeSecs, runningTimeMins;
@@ -97,13 +106,13 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	runningTimeMins = runningTimeSecs / 60;
 	runningTimeSecs %= 60;
 
-	startTimeMS = stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] / 1000;
+	startTimeMS = (uint32_t) (stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] / 1000);
 	startTimeSecs = startTimeMS / 1000;
 	startTimeMS %= 1000;
 	startTimeMins = startTimeSecs / 60;
 	startTimeSecs %= 60;
 
-	endTimeMS = stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] / 1000;
+	endTimeMS = (uint32_t) (stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] / 1000);
 	endTimeSecs = endTimeMS / 1000;
 	endTimeMS %= 1000;
 	endTimeMins = endTimeSecs / 60;
@@ -118,13 +127,13 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	fprintf(stderr, "Statistics\n");
 
 	if (stats->numIFrames)
-		fprintf(stderr, "I frames %7d %6d bytes avg %8d bytes total\n", stats->numIFrames, stats->iFrameBytes / stats->numIFrames, stats->iFrameBytes);
+		fprintf(stderr, "I frames %7d %6.1f bytes avg %8d bytes total\n", stats->numIFrames, (float) stats->iFrameBytes / stats->numIFrames, stats->iFrameBytes);
 
 	if (stats->numPFrames)
-		fprintf(stderr, "P frames %7d %6d bytes avg %8d bytes total\n", stats->numPFrames, stats->pFrameBytes / stats->numPFrames, stats->pFrameBytes);
+		fprintf(stderr, "P frames %7d %6.1f bytes avg %8d bytes total\n", stats->numPFrames, (float) stats->pFrameBytes / stats->numPFrames, stats->pFrameBytes);
 
 	if (goodFrames)
-		fprintf(stderr, "Frames %9d %6d bytes avg %8d bytes total\n", goodFrames, goodBytes / goodFrames, goodBytes);
+		fprintf(stderr, "Frames %9d %6.1f bytes avg %8d bytes total\n", goodFrames, (float) goodBytes / goodFrames, goodBytes);
 	else
 		fprintf(stderr, "Frames %8d\n", 0);
 

@@ -2,6 +2,10 @@
  * This IMU code is used for attitude estimation, and is directly derived from Baseflight's imu.c.
  */
 #include <stdint.h>
+
+//For msvcrt to define M_PI:
+#define _USE_MATH_DEFINES
+
 #include <math.h>
 
 #include "imu.h"
@@ -33,7 +37,7 @@ static float fc_acc;
 
 void imuInit(void)
 {
-    fc_acc = 0.5f / (M_PI * accz_lpf_cutoff); // calculate RC time constant used in the accZ lpf
+    fc_acc = (float) (0.5f / (M_PI * accz_lpf_cutoff)); // calculate RC time constant used in the accZ lpf
 }
 
 // **************************************************
@@ -132,10 +136,10 @@ static float calculateHeading(t_fp_vector *vec, float angleradRoll, float angler
     float sinePitch = sinf(angleradPitch);
     float Xh = vec->A[X] * cosinePitch + vec->A[Y] * sineRoll * sinePitch + vec->A[Z] * sinePitch * cosineRoll;
     float Yh = vec->A[Y] * cosineRoll - vec->A[Z] * sineRoll;
-    float hd = atan2f(Yh, Xh) + magneticDeclination / 10.0f * RAD;
+    float hd = (float) (atan2f(Yh, Xh) + magneticDeclination / 10.0f * RAD);
 
     if (hd < 0)
-        hd += 2 * M_PI;
+        hd += (float) (2 * M_PI);
 
     return hd;
 }

@@ -66,7 +66,7 @@ void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowRadius)
 
 		// Store the average of the history window into the frame in the center of the window
 		if (centerIndex >= 0 && points->framePresent[centerIndex]) {
-			points->frames[points->fieldCount * centerIndex + fieldIndex] = accumulator / valuesInHistory;
+			points->frames[points->fieldCount * centerIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
 		}
 	}
 
