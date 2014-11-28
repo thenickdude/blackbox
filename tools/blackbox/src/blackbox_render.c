@@ -78,8 +78,8 @@ typedef struct renderOptions_t {
 	int fps;
 	int help;
 
-	bool plotPids, plotPidSum, plotGyros, plotMotors;
-	bool drawPidTable, drawSticks, drawCraft;
+	int plotPids, plotPidSum, plotGyros, plotMotors;
+	int drawPidTable, drawSticks, drawCraft;
 
 	int pidSmoothing, gyroSmoothing, motorSmoothing;
 
@@ -1234,6 +1234,44 @@ void printUsage(const char *argv0)
 	);
 }
 
+/**
+ * Parse a time formatted as "%d" (secs) or "%d:%d" (mins:secs) into a count of seconds and
+ * store it into frameTime.
+ *
+ * If the text could not be parsed, false is returned and frameTime is not modified.
+ */
+bool parseFrameTime(const char *text, uint32_t *frameTime)
+{
+	const char *cur, *colon = 0, *end;
+
+	for (cur = text; *cur; cur++) {
+		if (*cur == ':') {
+			if (colon)
+				return false;
+			else
+				colon = cur;
+		} else if (!(*cur >= '0' && *cur <= '9'))
+			return false;
+	}
+
+	end = cur;
+
+	//Check that there are digits before and after the colon and the string wasn't empty...
+	if (end == text || (colon && (colon == text || colon == end - 1)))
+		return false;
+
+	if (colon) {
+		int mins = atoi(text);
+		int secs = atoi(colon + 1);
+
+		*frameTime = mins * 60 + secs;
+	} else {
+		*frameTime = atoi(text);
+	}
+
+	return true;
+}
+
 void parseCommandlineOptions(int argc, char **argv)
 {
 	int option_index = 0;
@@ -1252,18 +1290,18 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"prefix", required_argument, 0, 'x'},
 			{"start", required_argument, 0, 'b'},
 			{"end", required_argument, 0, 'e'},
-			{"plot-pid", no_argument, 0, 'p'},
-			{"plot-gyro", no_argument, 0, 'g'},
-			{"plot-motor", no_argument, 0, 'm'},
-			{"no-plot-pid", no_argument, 0, 'P'},
-			{"no-plot-gyro", no_argument, 0, 'G'},
-			{"no-plot-motor", no_argument, 0, 'M'},
-			{"draw-pid-table", no_argument, 0, 't'},
-			{"draw-craft", no_argument, 0, 'c'},
-			{"draw-sticks", no_argument, 0, 's'},
-			{"no-draw-pid-table", no_argument, 0, 'T'},
-			{"no-draw-craft", no_argument, 0, 'C'},
-			{"no-draw-sticks", no_argument, 0, 'S'},
+			{"plot-pid", no_argument, &options.plotPids, 1},
+			{"plot-gyro", no_argument, &options.plotGyros, 1},
+			{"plot-motor", no_argument, &options.plotMotors, 1},
+			{"no-plot-pid", no_argument, &options.plotPids, 0},
+			{"no-plot-gyro", no_argument, &options.plotGyros, 0},
+			{"no-plot-motor", no_argument, &options.plotMotors, 0},
+			{"draw-pid-table", no_argument, &options.drawPidTable, 1},
+			{"draw-craft", no_argument, &options.drawCraft, 1},
+			{"draw-sticks", no_argument, &options.drawSticks, 1},
+			{"no-draw-pid-table", no_argument, &options.drawPidTable, 0},
+			{"no-draw-craft", no_argument, &options.drawCraft, 0},
+			{"no-draw-sticks", no_argument, &options.drawSticks, 0},
 			{"smoothing-pid", required_argument, 0, '1'},
 			{"smoothing-gyro", required_argument, 0, '2'},
 			{"smoothing-motor", required_argument, 0, '3'},
@@ -1280,10 +1318,16 @@ void parseCommandlineOptions(int argc, char **argv)
 
 		switch (c) {
 			case 'b':
-				options.timeStart = atoi(optarg);
+				if (!parseFrameTime(optarg, &options.timeStart))  {
+					fprintf(stderr, "Bad --start time value\n");
+					exit(-1);
+				}
 			break;
 			case 'e':
-				options.timeEnd = atoi(optarg);
+				if (!parseFrameTime(optarg, &options.timeEnd))  {
+					fprintf(stderr, "Bad --end time value\n");
+					exit(-1);
+				}
 			break;
 			case 'w':
 				options.imageWidth = atoi(optarg);
@@ -1296,42 +1340,6 @@ void parseCommandlineOptions(int argc, char **argv)
 			break;
 			case 'x':
 				options.outputPrefix = optarg;
-			break;
-			case 'p':
-				options.plotPids = true;
-			break;
-			case 'g':
-				options.plotGyros = true;
-			break;
-			case 'm':
-				options.plotMotors = true;
-			break;
-			case 'P':
-				options.plotPids = false;
-			break;
-			case 'G':
-				options.plotGyros = false;
-			break;
-			case 'M':
-				options.plotMotors = false;
-			break;
-			case 't':
-				options.drawPidTable = true;
-			break;
-			case 'c':
-				options.drawCraft = true;
-			break;
-			case 's':
-				options.drawSticks = true;
-			break;
-			case 'T':
-				options.drawPidTable = false;
-			break;
-			case 'C':
-				options.drawCraft = false;
-			break;
-			case 'S':
-				options.drawSticks = false;
 			break;
 			case '1':
 				options.pidSmoothing = atoi(optarg);
