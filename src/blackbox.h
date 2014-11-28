@@ -15,7 +15,7 @@ typedef struct blackbox_values_t {
 	int16_t rcCommand[4];
 	int16_t gyroData[3];
 	int16_t accSmooth[3];
-	int16_t motor[4];
+	int16_t motor[8];
 } blackbox_values_t;
 
 extern blackbox_values_t *blackboxCurrent;

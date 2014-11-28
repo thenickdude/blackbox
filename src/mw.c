@@ -367,9 +367,11 @@ static void pidMultiWii(void)
         axisPID[axis] = PTerm + ITerm - DTerm;
 
         // Values for Blackbox
-        blackboxCurrent->axisP[axis] = PTerm;
-        blackboxCurrent->axisI[axis] = ITerm;
-        blackboxCurrent->axisD[axis] = DTerm;
+        if (blackboxCurrent) {
+			blackboxCurrent->axisP[axis] = PTerm;
+			blackboxCurrent->axisI[axis] = ITerm;
+			blackboxCurrent->axisD[axis] = DTerm;
+		}
     }
 }
 

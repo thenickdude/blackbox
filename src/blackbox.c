@@ -1,6 +1,7 @@
 #include "board.h"
 #include "mw.h"
 
+#include "blackbox_fielddefs.h"
 #include "blackbox.h"
 
 static const char blackboxHeader[] =
@@ -8,42 +9,174 @@ static const char blackboxHeader[] =
 	"H Blackbox version:1\n"
 	"H Data version:1\n";
 
+// Some macros to make writing FLIGHT_LOG_FIELD_PREDICTOR_* constants shorter:
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define CONCAT_HELPER(x,y) x ## y
+#define CONCAT(x,y) CONCAT_HELPER(x, y)
+
+#define PREDICT(x) STR(CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x))
+#define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING, x))
+
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
 static const char * const blackboxHeaderFields[] = {
-	"H Field name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2]"
-		",rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],gyroData[0],gyroData[1],gyroData[2],accSmooth[0],accSmooth[1],accSmooth[2]"
-		",motor[0],motor[1],motor[2],motor[3],motor[4],motor[5],motor[6],motor[7]",
+	"H Field I name:"
+		"loopIteration,time,"
+		"axisP[0],axisP[1],axisP[2],"
+		"axisI[0],axisI[1],axisI[2],"
+		"axisD[0],axisD[1],axisD[2],"
+		"rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],"
+		"gyroData[0],gyroData[1],gyroData[2],"
+		"accSmooth[0],accSmooth[1],accSmooth[2],"
+		"motor[0],motor[1],motor[2],motor[3],"
+		"motor[4],motor[5],motor[6],motor[7]",
 
 	/* loopIteration, time, throttle and motors values aren't signed */
-         "H Field signed:0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0",
-
-	/*
-	 * loopIteration merely increments, time advances in a straight line, motors and gyros predict an average of the
-	 * last two measurements (to reduce the impact of noise), all others predict the previous frame:
-	 */
-	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3",
-
-	// RC fields are encoded together as a group, other fields use signed-VB
-     "H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+	"H Field I signed:"
+		/* loopIteration, time: */
+		"0,0,"
+		/* PIDs: */
+		"1,1,1,1,1,1,1,1,1,"
+		/* rcCommand[0..2] */
+		"1,1,1,"
+		/* rcCommand[3] (Throttle): */
+		"0,"
+		/* gyroData[0..2]: */
+		"1,1,1,"
+		/* accSmooth[0..2]: */
+		"1,1,1,"
+		/* Motor[0..7]: */
+		"0,0,0,0,0,0,0,0",
 
 	/*
 	 * Throttle and motor[0] are predicted to be minthrottle, the other motors predict to be the same as motor[0].
 	 * Other fields have no predictions:
 	 */
-	"H Field I-predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,4,5,5,5,5,5,5,5",
+	"H Field I predictor:"
+		/* loopIteration, time: */
+		PREDICT(0) "," PREDICT(0) ","
+		/* PIDs: */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* rcCommand[0..2] */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* rcCommand[3] (Throttle): */
+		PREDICT(MINTHROTTLE) ","
+		/* gyroData[0..2]: */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* accSmooth[0..2]: */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* Motor[0]: */
+		PREDICT(MINTHROTTLE) ","
+		/* Motor[1..7]: */
+		PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) ","
+		PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) ","
+		PREDICT(MOTOR_0),
 
-	// loopIteration, time, throttle and motor[0] are stored with unsigned-VB, the rest with signed-VB:
-     "H Field I-encoding:1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0"
+     "H Field I encoding:"
+		/* loopIteration, time: */
+		ENCODING(UNSIGNED_VB) "," ENCODING(UNSIGNED_VB) ","
+		/* PIDs: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* rcCommand[0..2] */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* rcCommand[3] (Throttle): */
+		ENCODING(UNSIGNED_VB) ","
+		/* gyroData[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* accSmooth[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* Motor[0]: */
+		ENCODING(UNSIGNED_VB) ","
+		/* Motor[1..7]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB),
+
+	//Motors and gyros predict an average of the last two measurements (to reduce the impact of noise):
+	"H Field P predictor:"
+		/* loopIteration, time: */
+		PREDICT(INC) "," PREDICT(STRAIGHT_LINE) ","
+		/* PIDs: */
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		/* rcCommand[0..2] */
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		/* rcCommand[3] (Throttle): */
+		PREDICT(PREVIOUS) ","
+		/* gyroData[0..2]: */
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		/* accSmooth[0..2]: */
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		/* Motor[0]: */
+		PREDICT(AVERAGE_2) ","
+		/* Motor[1..7]: */
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		PREDICT(AVERAGE_2),
+
+	/* RC fields are encoded together as a group, everything else is signed since they're diffs: */
+    "H Field P encoding:"
+		/* loopIteration, time: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
+		/* PIDs: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* rcCommand[0..3] */
+		ENCODING(TAG8_4S16) "," ENCODING(TAG8_4S16) ","  ENCODING(TAG8_4S16) ","
+		ENCODING(TAG8_4S16) ","
+		/* gyroData[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* accSmooth[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* Motor[0]: */
+		ENCODING(SIGNED_VB) ","
+		/* Motor[1..7]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB)
 };
+
+static const char blackboxGpsHeader[] =
+	"H Field G name:"
+		"GPS_numSat,GPS_coord[0],GPS_coord[1],GPS_altitude,GPS_speed\n"
+	"H Field G signed:"
+		"0,1,1,0,0\n"
+	"H Field G predictor:"
+		PREDICT(0) "," PREDICT(HOME_COORD) "," PREDICT(HOME_COORD) "," PREDICT(0) "," PREDICT(0) "\n"
+	"H Field G encoding:"
+		ENCODING(UNSIGNED_VB) "," ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
+		ENCODING(UNSIGNED_VB) "," ENCODING(UNSIGNED_VB) "\n"
+
+	"H Field H name:"
+		"GPS_home[0],GPS_home[1]\n"
+	"H Field H signed:"
+		"1,1\n"
+	"H Field H predictor:"
+		PREDICT(0) "," PREDICT(0) "\n"
+	"H Field H encoding:"
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) "\n";
 
 typedef enum BlackboxState {
 	BLACKBOX_STATE_DISABLED = 0,
 	BLACKBOX_STATE_STOPPED,
 	BLACKBOX_STATE_SEND_HEADER,
 	BLACKBOX_STATE_SEND_FIELDINFO,
+	BLACKBOX_STATE_SEND_GPS_HEADERS,
 	BLACKBOX_STATE_SEND_SYSINFO,
 	BLACKBOX_STATE_RUNNING
 } BlackboxState;
+
+typedef struct gpsState_t {
+	int32_t GPS_home[2], GPS_coord[2];
+	uint8_t GPS_numSat;
+} gpsState_t;
 
 //From mixer.c:
 extern uint8_t numberMotor;
@@ -62,7 +195,8 @@ static blackbox_values_t blackboxHistoryRing[3];
 static blackbox_values_t* blackboxHistory[3];
 
 // This points into the generation 0 buffer of blackboxHistoryRing, used to give a nice easy interface for MW to poke data in
-blackbox_values_t *blackboxCurrent;
+blackbox_values_t *blackboxCurrent = 0;
+gpsState_t gpsHistory;
 
 static void blackboxWrite(uint8_t value)
 {
@@ -309,6 +443,33 @@ void finishBlackbox(void)
 	}
 }
 
+static void writeGPSHomeFrame()
+{
+	blackboxWrite('H');
+
+	writeSignedVB(gpsHistory.GPS_home[0]);
+	writeSignedVB(gpsHistory.GPS_home[1]);
+	//TODO it'd be great if we could grab the GPS current time
+
+	gpsHistory.GPS_home[0] = GPS_home[0];
+	gpsHistory.GPS_home[1] = GPS_home[1];
+}
+
+static void writeGPSFrame()
+{
+	blackboxWrite('G');
+
+	writeUnsignedVB(GPS_numSat);
+	writeSignedVB(GPS_coord[0] - GPS_home[0]);
+	writeSignedVB(GPS_coord[1] - GPS_home[1]);
+	writeUnsignedVB(GPS_altitude);
+	writeUnsignedVB(GPS_speed);
+
+	gpsHistory.GPS_numSat = GPS_numSat;
+	gpsHistory.GPS_coord[0] = GPS_coord[0];
+	gpsHistory.GPS_coord[1] = GPS_coord[1];
+}
+
 void handleBlackbox(void)
 {
 	int i;
@@ -326,7 +487,7 @@ void handleBlackbox(void)
 			 * Once the UART has had time to init, transmit the header in chunks so we don't overflow our transmit
 			 * buffer.
 			 */
-			if (millis() > startTime + 100 /*&& isSerialTransmitBufferEmpty(blackboxPort)*/) {
+			if (millis() > startTime + 100) {
 				for (i = 0; i < SERIAL_CHUNK_SIZE && blackboxHeader[headerXmitIndex] != '\0'; i++, headerXmitIndex++)
 					blackboxWrite(blackboxHeader[headerXmitIndex]);
 
@@ -358,6 +519,19 @@ void handleBlackbox(void)
 					charXmitIndex = i;
 				}
 			} else {
+				if (feature(FEATURE_GPS)) {
+					blackboxState = BLACKBOX_STATE_SEND_GPS_HEADERS;
+				} else {
+					blackboxState = BLACKBOX_STATE_SEND_SYSINFO;
+				}
+				headerXmitIndex = 0;
+			}
+		break;
+		case BLACKBOX_STATE_SEND_GPS_HEADERS:
+			for (i = 0; i < SERIAL_CHUNK_SIZE && blackboxGpsHeader[headerXmitIndex] != '\0'; i++, headerXmitIndex++)
+				blackboxWrite(blackboxGpsHeader[headerXmitIndex]);
+
+			if (blackboxGpsHeader[headerXmitIndex] == '\0') {
 				blackboxState = BLACKBOX_STATE_SEND_SYSINFO;
 				headerXmitIndex = 0;
 			}
@@ -404,10 +578,34 @@ void handleBlackbox(void)
         		blackboxCurrent->accSmooth[i] = accSmooth[i];
 
 			// Write a keyframe every 32 frames so we can resynchronise upon missing frames
-			if ((blackboxIteration & 0x1F) == 0)
+			int blackboxIntercycleIndex = blackboxIteration % 32;
+			int blackboxIntracycleIndex = blackboxIteration / 32;
+
+			if (blackboxIntercycleIndex == 0)
 				writeIntraframe();
-			else
+			else {
 				writeInterframe();
+
+				if (feature(FEATURE_GPS)) {
+					/*
+					 * If the GPS home point has been updated, or every 128 intraframes (~10 seconds), write the
+					 * GPS home position.
+					 *
+					 * We write it periodically so that if one Home Frame goes missing, the GPS coordinates can
+					 * still be interpreted correctly.
+					 */
+					if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
+						|| (blackboxIntercycleIndex == 15 && blackboxIntracycleIndex % 128 == 0)) {
+
+						writeGPSHomeFrame();
+						writeGPSFrame();
+					} else if (GPS_numSat != gpsHistory.GPS_numSat || GPS_coord[0] != gpsHistory.GPS_coord[0]
+							|| GPS_coord[1] != gpsHistory.GPS_coord[1]) {
+						//We could check for velocity changes as well but I doubt it changes independent of position
+						writeGPSFrame();
+					}
+				}
+			}
 
 			blackboxIteration++;
 		break;
@@ -426,19 +624,21 @@ bool canUseBlackboxWithCurrentConfiguration(void)
 
 void initBlackbox(void)
 {
-    if (canUseBlackboxWithCurrentConfiguration())
-    	blackboxState = BLACKBOX_STATE_STOPPED;
-    else
-    	blackboxState = BLACKBOX_STATE_DISABLED;
+	if (canUseBlackboxWithCurrentConfiguration())
+		blackboxState = BLACKBOX_STATE_STOPPED;
+	else
+		blackboxState = BLACKBOX_STATE_DISABLED;
 
-    switch (mcfg.blackbox_port) {
-    	case TELEMETRY_PORT_UART:
-    		blackboxPort = core.mainport;
-    	break;
-    	default:
-        	blackboxState = BLACKBOX_STATE_DISABLED;
-    }
+	switch (mcfg.blackbox_port) {
+		case 0:
+			blackboxPort = core.mainport;
+		break;
+		default:
+			blackboxState = BLACKBOX_STATE_DISABLED;
+	}
 
-    //mw.c needs somewhere to poke its PIDs
-    blackboxCurrent = &blackboxHistoryRing[0];
+	//mw.c needs somewhere to poke its PIDs
+	blackboxCurrent = &blackboxHistoryRing[0];
+
+	memset(&gpsHistory, 0, sizeof(gpsHistory));
 }
