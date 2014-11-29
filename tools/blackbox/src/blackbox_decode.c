@@ -35,7 +35,7 @@ decodeOptions_t options = {
 
 uint32_t lastFrameIndex = (uint32_t) -1;
 
-void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize)
+void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
 	int i;
 
@@ -43,7 +43,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 		lastFrameIndex = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
 
 	if (frameValid) {
-		for (i = 0; i < log->mainFieldCount; i++) {
+		for (i = 0; i < fieldCount; i++) {
 			if (i == 0) {
 				printf("%u", (uint32_t) frame[i]);
 			} else {
@@ -55,7 +55,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 		}
 
 		if (options.debug) {
-			printf(", %c, offset %d, size %d\n", frame[FLIGHT_LOG_FIELD_INDEX_ITERATION] % 32 == 0 ? 'I' : 'P', frameOffset, frameSize);
+			printf(", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
 		} else
 			printf("\n");
 	} else if (options.debug) {
@@ -76,6 +76,11 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 void onMetadataReady(flightLog_t *log)
 {
 	int i;
+
+	if (log->mainFieldCount == 0) {
+		fprintf(stderr, "No fields found in log, is it missing its header?\n");
+		exit(-1);
+	}
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		if (i > 0)

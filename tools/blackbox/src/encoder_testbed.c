@@ -295,7 +295,7 @@ static void writeInterframe(void)
  * Treat each decoded frame as if it were a set of freshly read flight data ready to be
  * encoded.
  */
-void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize)
+void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
 	int x, src;
 	uint32_t start = writtenBytes;
@@ -304,6 +304,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 	(void) log;
 	(void) frameOffset;
 	(void) frameSize;
+	(void) fieldCount;
 
 	if (frameValid) {
 		blackboxIteration = (uint32_t) frame[0];
@@ -341,7 +342,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 			blackboxCurrent->motor[x] = frame[src++];
 		}
 
-		if ((blackboxIteration & 0x1F) == 0) {
+		if (frameType == 'I') {
 			writeIntraframe();
 
 			encodedFrameSize = writtenBytes - start;
@@ -350,7 +351,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 			encodedStats.iFrameBytes += encodedFrameSize;
 
 			encodedStats.iFrameSizeCount[encodedFrameSize]++;
-		} else {
+		} else if (frameType == 'P'){
 			writeInterframe();
 
 			encodedFrameSize = writtenBytes - start;
@@ -359,6 +360,9 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 			encodedStats.pFrameBytes += encodedFrameSize;
 
 			encodedStats.pFrameSizeCount[encodedFrameSize]++;
+		} else {
+			fprintf(stderr, "Unknown frame type %c\n", (char) frameType);
+			exit(-1);
 		}
 	}
 }

@@ -187,11 +187,13 @@ static fieldIdentifications_t idents;
 
 static FT_Library freetypeLibrary;
 
-void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, int frameOffset, int frameSize)
+void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
 	(void) log;
 	(void) frameSize;
 	(void) frameOffset;
+	(void) frameType;
+	(void) fieldCount;
 
 	/*
 	 * Pull the first two fields (iteration and time) off the front of the frame fields,

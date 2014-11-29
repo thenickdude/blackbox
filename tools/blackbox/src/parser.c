@@ -179,7 +179,7 @@ static void parseHeader(flightLog_t *log)
 	fieldValue = valueBuffer + (separatorPos - lineStart) + 1;
 	valueBuffer[lineEnd - lineStart - 1] = '\0';
 
-	if (strcmp(fieldName, "Field name") == 0) {
+	if (strcmp(fieldName, "Field I name") == 0) {
 		parseFieldNames(log, fieldValue);
 
 		for (i = 0; i < log->mainFieldCount; i++) {
@@ -197,7 +197,7 @@ static void parseHeader(flightLog_t *log)
 	} else if (strcmp(fieldName, "Field I encoding") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIEncoding, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "Field I signed") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->fieldMainSigned, FLIGHT_LOG_MAX_FIELDS);
+		parseCommaSeparatedIntegers(fieldValue, log->mainFieldSigned, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "minthrottle") == 0) {
 		log->minthrottle = atoi(fieldValue);
 	} else if (strcmp(fieldName, "maxthrottle") == 0) {
@@ -352,14 +352,14 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
 		case FLIGHT_LOG_FIELD_PREDICTOR_0:
 			// No correction to apply
 		break;
-		case FLIGHT_LOG_FIELD_PREDICTOR_1:
+		case FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS:
 			value += (uint32_t) log->private->mainHistory[0][fieldIndex];
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE:
 			value += 2 * (uint32_t) log->private->mainHistory[0][fieldIndex] - (uint32_t) log->private->mainHistory[1][fieldIndex];
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2:
-			if (log->fieldMainSigned[fieldIndex])
+			if (log->mainFieldSigned[fieldIndex])
 				value += (uint32_t) ((int32_t) ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2);
 			else
 				value += ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2;
@@ -420,6 +420,31 @@ static void parseInterframe(flightLog_t *log, bool raw)
 	log->private->mainHistory[0] = newFrame;
 }
 
+/**
+ * TODO
+ */
+static void parseGPSFrame(flightLog_t *log, bool raw)
+{
+	(void) raw;
+
+	readUnsignedVB(log);
+	readSignedVB(log);
+	readSignedVB(log);
+	readUnsignedVB(log);
+	readUnsignedVB(log);
+}
+
+/**
+ * TODO
+ */
+static void parseGPSHomeFrame(flightLog_t *log, bool raw)
+{
+	(void) raw;
+
+	readSignedVB(log);
+	readSignedVB(log);
+}
+
 static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 {
 	int i;
@@ -427,7 +452,7 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 	if (log->stats.numIFrames + log->stats.numPFrames <= 1) {
 		//If this is the first frame, there are no minimums or maximums in the stats to compare with
 		for (i = 0; i < log->mainFieldCount; i++) {
-			if (log->fieldMainSigned[i]) {
+			if (log->mainFieldSigned[i]) {
 				log->stats.fieldMaximum[i] = fields[i];
 				log->stats.fieldMinimum[i] = fields[i];
 			} else {
@@ -437,7 +462,7 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 		}
 	} else {
 		for (i = 0; i < log->mainFieldCount; i++) {
-			if (log->fieldMainSigned[i]) {
+			if (log->mainFieldSigned[i]) {
 				log->stats.fieldMaximum[i] = fields[i] > log->stats.fieldMaximum[i] ? fields[i] : log->stats.fieldMaximum[i];
 				log->stats.fieldMinimum[i] = fields[i] < log->stats.fieldMinimum[i] ? fields[i] : log->stats.fieldMinimum[i];
 			} else {
@@ -578,7 +603,8 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	memset(&log->stats, 0, sizeof(log->stats));
 	free(log->private->fieldNamesCombined);
 	log->private->fieldNamesCombined = NULL;
-	log->fieldCount = 0;
+	log->mainFieldCount = 0;
+	log->gpsFieldCount = 0;
 
 	//Default to MW's defaults
 	log->minthrottle = 1150;
@@ -673,7 +699,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 							log->stats.numBrokenFrames++;
 
 							//We need to resynchronise before we can deliver another frame:
-							streamIsValid = false;
+							mainStreamIsValid = false;
 						}
 
 						//Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
