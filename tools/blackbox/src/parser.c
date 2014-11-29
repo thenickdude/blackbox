@@ -49,7 +49,7 @@ typedef struct flightLogPrivate_t
 	int motor0Index;
 
 	int32_t blackboxHistoryRing[2][FLIGHT_LOG_MAX_FIELDS];
-	int32_t* blackboxHistory[2];
+	int32_t* mainHistory[2];
 
 	int fd;
 
@@ -94,7 +94,7 @@ static void parseFieldNames(flightLog_t *log, const char *names)
 			end++;
 		} while (*end != ',' && *end != 0);
 
-		log->fieldNames[log->fieldCount++] = start;
+		log->mainFieldNames[log->mainFieldCount++] = start;
 
 		if (*end == 0)
 			done = true;
@@ -182,22 +182,22 @@ static void parseHeader(flightLog_t *log)
 	if (strcmp(fieldName, "Field name") == 0) {
 		parseFieldNames(log, fieldValue);
 
-		for (i = 0; i < log->fieldCount; i++) {
-			if (strcmp(log->fieldNames[i], "motor[0]") == 0) {
+		for (i = 0; i < log->mainFieldCount; i++) {
+			if (strcmp(log->mainFieldNames[i], "motor[0]") == 0) {
 				log->private->motor0Index = i;
 				break;
 			}
 		}
-	} else if (strcmp(fieldName, "Field P-predictor") == 0) {
+	} else if (strcmp(fieldName, "Field P predictor") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldPPredictor, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field P-encoding") == 0) {
+	} else if (strcmp(fieldName, "Field P encoding") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldPEncoding, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field I-predictor") == 0) {
+	} else if (strcmp(fieldName, "Field I predictor") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIPredictor, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field I-encoding") == 0) {
+	} else if (strcmp(fieldName, "Field I encoding") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIEncoding, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field signed") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->fieldSigned, FLIGHT_LOG_MAX_FIELDS);
+	} else if (strcmp(fieldName, "Field I signed") == 0) {
+		parseCommaSeparatedIntegers(fieldValue, log->fieldMainSigned, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "minthrottle") == 0) {
 		log->minthrottle = atoi(fieldValue);
 	} else if (strcmp(fieldName, "maxthrottle") == 0) {
@@ -298,10 +298,10 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 {
 	int i;
 
-	log->private->blackboxHistory[0] = &log->private->blackboxHistoryRing[0][0];
-	log->private->blackboxHistory[1] = &log->private->blackboxHistoryRing[0][0];
+	log->private->mainHistory[0] = &log->private->blackboxHistoryRing[0][0];
+	log->private->mainHistory[1] = &log->private->blackboxHistoryRing[0][0];
 
-	for (i = 0; i < log->fieldCount; i++) {
+	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
 
 		switch (log->private->fieldIEncoding[i]) {
@@ -330,7 +330,7 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 						fprintf(stderr, "Attempted to base I-field prediction on motor0 before it was read\n");
 						exit(-1);
 					}
-					value += (uint32_t) log->private->blackboxHistory[0][log->private->motor0Index];
+					value += (uint32_t) log->private->mainHistory[0][log->private->motor0Index];
 				break;
 				default:
 					fprintf(stderr, "Unsupported I-field predictor %d\n", log->private->fieldIPredictor[i]);
@@ -338,7 +338,7 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 			}
 		}
 
-		log->private->blackboxHistory[0][i] = (int32_t) value;
+		log->private->mainHistory[0][i] = (int32_t) value;
 	}
 }
 
@@ -353,16 +353,16 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
 			// No correction to apply
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_1:
-			value += (uint32_t) log->private->blackboxHistory[0][fieldIndex];
+			value += (uint32_t) log->private->mainHistory[0][fieldIndex];
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE:
-			value += 2 * (uint32_t) log->private->blackboxHistory[0][fieldIndex] - (uint32_t) log->private->blackboxHistory[1][fieldIndex];
+			value += 2 * (uint32_t) log->private->mainHistory[0][fieldIndex] - (uint32_t) log->private->mainHistory[1][fieldIndex];
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2:
-			if (log->fieldSigned[fieldIndex])
-				value += (uint32_t) ((int32_t) ((uint32_t) log->private->blackboxHistory[0][fieldIndex] + (uint32_t) log->private->blackboxHistory[1][fieldIndex]) / 2);
+			if (log->fieldMainSigned[fieldIndex])
+				value += (uint32_t) ((int32_t) ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2);
 			else
-				value += ((uint32_t) log->private->blackboxHistory[0][fieldIndex] + (uint32_t) log->private->blackboxHistory[1][fieldIndex]) / 2;
+				value += ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2;
 		break;
 		default:
 			fprintf(stderr, "Unsupported P-field predictor %d\n", log->private->fieldPPredictor[fieldIndex]);
@@ -377,14 +377,14 @@ static void parseInterframe(flightLog_t *log, bool raw)
 	int i;
 
 	// The new frame gets stored over the top of the current oldest history
-	int32_t *newFrame = log->private->blackboxHistory[0] == &log->private->blackboxHistoryRing[0][0] ? &log->private->blackboxHistoryRing[1][0] : &log->private->blackboxHistoryRing[0][0];
+	int32_t *newFrame = log->private->mainHistory[0] == &log->private->blackboxHistoryRing[0][0] ? &log->private->blackboxHistoryRing[1][0] : &log->private->blackboxHistoryRing[0][0];
 
-	for (i = 0; i < log->fieldCount; i++) {
+	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
 		uint32_t values[4];
 
 		if (log->private->fieldPPredictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
-			newFrame[i] = log->private->blackboxHistory[0][i] + 1;
+			newFrame[i] = log->private->mainHistory[0][i] + 1;
 		} else {
 			switch (log->private->fieldPEncoding[i]) {
 				case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
@@ -404,6 +404,9 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					}
 					value = values[3];
 				break;
+				case FLIGHT_LOG_FIELD_ENCODING_NULL:
+					continue;
+				break;
 				default:
 					fprintf(stderr, "Unsupported P-field encoding %d\n", log->private->fieldPEncoding[i]);
 					exit(-1);
@@ -413,8 +416,8 @@ static void parseInterframe(flightLog_t *log, bool raw)
 		}
 	}
 
-	log->private->blackboxHistory[1] = log->private->blackboxHistory[0];
-	log->private->blackboxHistory[0] = newFrame;
+	log->private->mainHistory[1] = log->private->mainHistory[0];
+	log->private->mainHistory[0] = newFrame;
 }
 
 static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
@@ -423,8 +426,8 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 
 	if (log->stats.numIFrames + log->stats.numPFrames <= 1) {
 		//If this is the first frame, there are no minimums or maximums in the stats to compare with
-		for (i = 0; i < log->fieldCount; i++) {
-			if (log->fieldSigned[i]) {
+		for (i = 0; i < log->mainFieldCount; i++) {
+			if (log->fieldMainSigned[i]) {
 				log->stats.fieldMaximum[i] = fields[i];
 				log->stats.fieldMinimum[i] = fields[i];
 			} else {
@@ -433,8 +436,8 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 			}
 		}
 	} else {
-		for (i = 0; i < log->fieldCount; i++) {
-			if (log->fieldSigned[i]) {
+		for (i = 0; i < log->mainFieldCount; i++) {
+			if (log->fieldMainSigned[i]) {
 				log->stats.fieldMaximum[i] = fields[i] > log->stats.fieldMaximum[i] ? fields[i] : log->stats.fieldMaximum[i];
 				log->stats.fieldMinimum[i] = fields[i] < log->stats.fieldMinimum[i] ? fields[i] : log->stats.fieldMinimum[i];
 			} else {
@@ -561,7 +564,7 @@ flightLog_t * flightLogCreate(int fd)
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw)
 {
 	ParserState parserState = PARSER_STATE_HEADER;
-	bool streamIsValid = false;
+	bool mainStreamIsValid = false;
 
 	char lastFrameType = 0;
 	const char *frameStart = 0;
@@ -601,7 +604,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					case 'P':
 						unreadChar(log, command);
 
-						if (log->fieldCount == 0) {
+						if (log->mainFieldCount == 0) {
 							fprintf(stderr, "Data file is missing field name definitions\n");
 							return false;
 						}
@@ -635,42 +638,47 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					unsigned int lastFrameSize = private->logPos - frameStart;
 
 					//If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
-					if (command == 'I' || command == 'P' || command == EOF) {
-						if (lastFrameType == 'I') {
-							updateFrameSizeStats(log->stats.iFrameSizeCount, lastFrameSize);
+					if (command == 'I' || command == 'P' || command == 'G' || command == 'H' || command == EOF) {
+						if (lastFrameType == 'I' || lastFrameType == 'P') {
+							if (lastFrameType == 'I') {
+								updateFrameSizeStats(log->stats.iFrameSizeCount, lastFrameSize);
 
-							// Only accept this frame as valid if time and iteration count are moving forward:
-							if (raw || ((uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
-								&& (uint32_t)private->blackboxHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME]))
-								streamIsValid = true;
+								// Only accept this frame as valid if time and iteration count are moving forward:
+								if (raw || ((uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
+									&& (uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME]))
+									mainStreamIsValid = true;
 
-							log->stats.iFrameBytes += lastFrameSize;
-							log->stats.numIFrames++;
-						} else if (lastFrameType == 'P' && streamIsValid) {
-							updateFrameSizeStats(log->stats.pFrameSizeCount, lastFrameSize);
+								log->stats.iFrameBytes += lastFrameSize;
+								log->stats.numIFrames++;
+							} else if (lastFrameType == 'P' && mainStreamIsValid) {
+								updateFrameSizeStats(log->stats.pFrameSizeCount, lastFrameSize);
 
-							log->stats.pFrameBytes += lastFrameSize;
-							log->stats.numPFrames++;
-							//Receiving a P frame can't resynchronise the stream so it doesn't set stateIsValid to true
+								log->stats.pFrameBytes += lastFrameSize;
+								log->stats.numPFrames++;
+								//Receiving a P frame can't resynchronise the stream so it doesn't set stateIsValid to true
+							}
+
+							if (mainStreamIsValid) {
+								updateFieldStatistics(log, private->mainHistory[0]);
+							} else {
+								log->stats.numUnusablePFrames++;
+							}
+
+							if (onFrameReady)
+								onFrameReady(log, mainStreamIsValid, private->mainHistory[0], lastFrameType, log->mainFieldCount, frameStart - private->logData, lastFrameSize);
 						}
-
-						if (streamIsValid) {
-							updateFieldStatistics(log, private->blackboxHistory[0]);
-						} else {
-							log->stats.numUnusablePFrames++;
-						}
-						if (onFrameReady)
-							onFrameReady(log, streamIsValid, private->blackboxHistory[0], frameStart - private->logData, lastFrameSize);
 					} else {
 						//Otherwise the previous frame was corrupt
-						log->stats.numBrokenFrames++;
+						if (lastFrameType == 'I' || lastFrameType == 'P') {
+							log->stats.numBrokenFrames++;
 
-						//We need to resynchronise before we can deliver another frame:
-						streamIsValid = false;
+							//We need to resynchronise before we can deliver another frame:
+							streamIsValid = false;
+						}
 
 						//Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
 						if (onFrameReady)
-							onFrameReady(log, false, 0, frameStart - private->logData, lastFrameSize);
+							onFrameReady(log, false, 0, lastFrameType, 0, frameStart - private->logData, lastFrameSize);
 
 						/*
 						 * Start the search for a frame beginning at the first byte of the previous, corrupt frame.
@@ -693,10 +701,16 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					case 'P':
 						parseInterframe(log, raw);
 					break;
+					case 'G':
+						parseGPSFrame(log, raw);
+					break;
+					case 'H':
+						parseGPSHomeFrame(log, raw);
+					break;
 					case EOF:
 						goto done;
 					default:
-						streamIsValid = false;
+						mainStreamIsValid = false;
 				}
 			break;
 		}
@@ -720,5 +734,5 @@ void flightLogDestroy(flightLog_t *log)
 	free(log->private);
 	free(log);
 
-	//TODO clean up fieldNames
+	//TODO clean up mainFieldNames
 }

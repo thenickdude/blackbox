@@ -1533,20 +1533,20 @@ int main(int argc, char **argv)
 	 * Don't include the leading time or field index fields in the field names / counts, but add on fields
 	 * that we'll synthesize
 	 */
-	fieldNames = malloc(sizeof(*fieldNames) * (flightLog->fieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS));
+	fieldNames = malloc(sizeof(*fieldNames) * (flightLog->mainFieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS));
 
-	for (int i = 2; i < flightLog->fieldCount; i++) {
-		fieldNames[i - 2] = strdup(flightLog->fieldNames[i]);
+	for (int i = 2; i < flightLog->mainFieldCount; i++) {
+		fieldNames[i - 2] = strdup(flightLog->mainFieldNames[i]);
 	}
 
-	fieldNames[flightLog->fieldCount - 2] = strdup("roll");
-	fieldNames[flightLog->fieldCount - 1] = strdup("pitch");
-	fieldNames[flightLog->fieldCount + 0] = strdup("heading");
-	fieldNames[flightLog->fieldCount + 1] = strdup("axisPID[0]");
-	fieldNames[flightLog->fieldCount + 2] = strdup("axisPID[1]");
-	fieldNames[flightLog->fieldCount + 3] = strdup("axisPID[2]");
+	fieldNames[flightLog->mainFieldCount - 2] = strdup("roll");
+	fieldNames[flightLog->mainFieldCount - 1] = strdup("pitch");
+	fieldNames[flightLog->mainFieldCount + 0] = strdup("heading");
+	fieldNames[flightLog->mainFieldCount + 1] = strdup("axisPID[0]");
+	fieldNames[flightLog->mainFieldCount + 2] = strdup("axisPID[1]");
+	fieldNames[flightLog->mainFieldCount + 3] = strdup("axisPID[2]");
 
-	points = datapointsCreate(flightLog->fieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
+	points = datapointsCreate(flightLog->mainFieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
 
 	//Now decode the flight log into the points array
 	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, false);

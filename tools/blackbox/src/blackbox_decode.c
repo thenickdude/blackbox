@@ -43,11 +43,11 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, int frameOf
 		lastFrameIndex = (uint32_t) frame[FLIGHT_LOG_FIELD_INDEX_ITERATION];
 
 	if (frameValid) {
-		for (i = 0; i < log->fieldCount; i++) {
+		for (i = 0; i < log->mainFieldCount; i++) {
 			if (i == 0) {
 				printf("%u", (uint32_t) frame[i]);
 			} else {
-				if (log->fieldSigned[i] || options.raw)
+				if (log->mainFieldSigned[i] || options.raw)
 					printf(", %3d", frame[i]);
 				else
 					printf(", %3u", (uint32_t) frame[i]);
@@ -77,11 +77,11 @@ void onMetadataReady(flightLog_t *log)
 {
 	int i;
 
-	for (i = 0; i < log->fieldCount; i++) {
+	for (i = 0; i < log->mainFieldCount; i++) {
 		if (i > 0)
 			printf(", ");
 
-		printf("%s", log->fieldNames[i]);
+		printf("%s", log->mainFieldNames[i]);
 	}
 	printf("\n");
 }
@@ -118,7 +118,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	endTimeMins = endTimeSecs / 60;
 	endTimeSecs %= 60;
 
-	fprintf(stderr, "\nLog #%d/%d, start %02d:%02d.%03d, end %02d:%02d.%03d, duration %02d:%02d.%03d\n\n", logIndex + 1, log->logCount,
+	fprintf(stderr, "\nLog %d of %d, start %02d:%02d.%03d, end %02d:%02d.%03d, duration %02d:%02d.%03d\n\n", logIndex + 1, log->logCount,
 		startTimeMins, startTimeSecs, startTimeMS,
 		endTimeMins, endTimeSecs, endTimeMS,
 		runningTimeMins, runningTimeSecs, runningTimeMS
@@ -165,9 +165,9 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 		fprintf(stderr, "\n\n    Field name          Min          Max        Range\n");
 		fprintf(stderr,     "-----------------------------------------------------\n");
 
-		for (int i = 0; i < log->fieldCount; i++) {
+		for (int i = 0; i < log->mainFieldCount; i++) {
 			fprintf(stderr, "%14s %12" PRId64 " %12" PRId64 " %12" PRId64 "\n",
-				log->fieldNames[i],
+				log->mainFieldNames[i],
 				stats->fieldMinimum[i],
 				stats->fieldMaximum[i],
 				stats->fieldMaximum[i] - stats->fieldMinimum[i]
