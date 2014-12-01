@@ -17,7 +17,7 @@ static const char blackboxHeader[] =
 #define CONCAT(x,y) CONCAT_HELPER(x, y)
 
 #define PREDICT(x) STR(CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x))
-#define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING, x))
+#define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x))
 
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
 static const char * const blackboxHeaderFields[] = {
