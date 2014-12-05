@@ -1,5 +1,8 @@
 # Blackbox flight data recorder
 
+WARNING - This firmware is experimental, and may cause your craft to suddenly fall out of the sky (though I had
+no problems during 60 test flights). No warranty is offered: if your craft breaks, you get to keep both pieces.
+
 ## Introduction
 This is a modified version of Baseflight for the Naze32 which adds a flight data recorder function ("Blackbox"). Flight data
 information is transmitted over the serial port on every Baseflight loop iteration to an external logging 
@@ -21,8 +24,8 @@ fit about 18 days of flight logs on a 16GB MicroSD card, which ought to be enoug
 ## Supported configurations
 The flight log data is transferred in flight over the Naze32's main serial port to a data logger. 
 This is the serial port that connects to the Naze's USB port, the FrSky telemetry port, and the "Rx/Tx" two-pin header
-in the center of the board. If
-you're currently using FrSky telemetry on the FrSky pins, you'll need to [move it to one of the softserial ports](http://www.netraam.eu/nazewiki/pmwiki.php?n=Howto.FrskyTelemetry) 
+in the center of the board. If you're currently using FrSky telemetry on the FrSky pins, you'll need 
+to [move it to one of the softserial ports](http://www.netraam.eu/nazewiki/pmwiki.php?n=Howto.FrskyTelemetry) 
 instead. This is the serial port normally used for an OSD, so if you have an OSD, you'll need to remove that
 in order to use the flight data recorder.
 
@@ -44,11 +47,23 @@ as I don't fly with those modes, they have had minimal testing.
 The blackbox software is designed to be used with an [OpenLog serial data logger](https://www.sparkfun.com/products/9530)
 and a microSDHC card. You need a little prep to get the OpenLog ready for use, so here are the details:
 
+### Firmware
+The OpenLog should be flashed with the [OpenLog Lite firmware](https://github.com/sparkfun/OpenLog/tree/master/firmware/OpenLog_v3_Light) 
+using Arduino IDE in order to minimised dropped frames (target the "Arduino Uno"). Note that the .hex file currently in the 
+OpenLog repo is out of date with repsect to the .ino source file, use the version I've built in the `tools/blackbox/openlog/` 
+directory instead. You can build your own .hex file using the [required libraries](https://code.google.com/p/beta-lib/downloads/detail?name=SerialLoggerBeta20120108.zip&can=4&q=).
+
+To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout](https://www.sparkfun.com/products/9716)
+along with some way of switching the Tx and Rx pins over (since the OpenLog has them switched) like the
+[FTDI crossover](https://www.sparkfun.com/products/10660).
+
 ### Serial port
-Connect the "TX" pin from the two-pin TX/RX header on the center of the Naze32 to the OpenLog's "RXI" pin.
-The OpenLog accepts input power voltages from 3.3 to 12V, so if you're powering the Naze32 with
-something like 5 volts from a BEC, you can connect the VCC and GND pins on the OpenLog to one of the Naze32's spare motor
-headers in order to power it. 
+Connect the "TX" pin from the two-pin TX/RX header on the center of the Naze32 to the OpenLog's "RXI" pin. Don't
+connect the Naze32's RX pin to the OpenLog.
+
+The OpenLog accepts input power voltages from 3.3 to 12V, so if you're powering the Naze32 with something like 5
+volts from a BEC, you can connect the VCC and GND pins on the OpenLog to one of the Naze32's spare motor headers
+in order to power it. 
 
 ### microSDHC
 Your choice of microSDHC card is very important to the performance of the system. The OpenLog relies on being
@@ -116,10 +131,27 @@ render it into a series of PNG frames with `blackbox_render` which you could con
 another software package.  
 
 ### Using the blackbox_decode tool
-This tool is useful if you want to 
+This tool converts a flight log binary file into CSV format. Typical usage (from the command line) would be
+like:
+
+```bash
+blackbox_decode LOG00001.TXT > output.csv
+```
+
+Use the `--help` option for more details.
 
 ### Using the blackbox_render tool
-Todo
+This tool converts a flight log binary file into a series of transparent PNG images that you could overlay
+onto your flight video using a video edit (like DaVinci Resolve). Typical usage (from the command line) would be
+like:
+
+```bash
+blackbox_render LOG00001.TXT
+```
+
+This will create PNG files at 30 fps into the same directory as the log file.
+
+Use the `--help` option for more details.
 
 ## Building firmware
 If you want to rebuild the modified firmware for the Naze32, the procedure is the same as for Baseflight.
@@ -169,12 +201,20 @@ folder.
 
 This project is licensed under GPLv3.
 
-The binary version of `blackbox_render` contains these libraries:
+The binary version of `blackbox_render` for MacOSX is statically linked to these libraries:
 
  - libbz2 http://www.bzip.org/ (BSD-like)
  - libcairo & libpixman http://cairographics.org/ (LGPL)
  - libfreetype http://www.freetype.org/ (BSD-like/GPLv2)
  - libpng16 http://www.libpng.org/pub/png/libpng.html
+ 
+The windows binary of `blackbox_render` additionally ships with these DLLs:
+
+ - libiconv https://www.gnu.org/software/libiconv/ (LGPL)
+ - libfontconfig http://www.freedesktop.org/wiki/Software/fontconfig/
+ - libxml2 http://xmlsoft.org/ (MIT)
+ - zlib http://www.zlib.net/
+ - liblzma http://tukaani.org/xz/ (Public Domain)
  
 This font is included with both binary and source distributions:
 
