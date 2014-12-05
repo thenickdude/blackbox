@@ -1103,6 +1103,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 							case 2:
 								axisLabel = "Gyro + PID yaw";
 							break;
+							default:
+								axisLabel = "Unknown";
 						}
 					} else {
 						switch (axis) {
@@ -1115,6 +1117,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 							case 2:
 								axisLabel = "Yaw PIDs";
 							break;
+							default:
+								axisLabel = "Unknown";
 						}
 					}
 
