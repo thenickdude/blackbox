@@ -4,11 +4,11 @@
 *.dep
 *.bak
 *.uvgui.*
-.project
+/.project
 .settings
-.cproject
+/.cproject
 obj/
 patches/
-startup_stm32f10x_md_gcc.s
+/startup_stm32f10x_md_gcc.s
 /version.txt
 .DS_Store
