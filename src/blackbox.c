@@ -32,7 +32,6 @@ static const char * const blackboxHeaderFields[] = {
 		"motor[0],motor[1],motor[2],motor[3],"
 		"motor[4],motor[5],motor[6],motor[7]",
 
-	/* loopIteration, time, throttle and motors values aren't signed */
 	"H Field I signed:"
 		/* loopIteration, time: */
 		"0,0,"
@@ -49,10 +48,6 @@ static const char * const blackboxHeaderFields[] = {
 		/* Motor[0..7]: */
 		"0,0,0,0,0,0,0,0",
 
-	/*
-	 * Throttle and motor[0] are predicted to be minthrottle, the other motors predict to be the same as motor[0].
-	 * Other fields have no predictions:
-	 */
 	"H Field I predictor:"
 		/* loopIteration, time: */
 		PREDICT(0) "," PREDICT(0) ","
@@ -184,9 +179,11 @@ extern uint8_t numberMotor;
 static BlackboxState blackboxState = BLACKBOX_STATE_DISABLED;
 static uint32_t startTime;
 static unsigned int headerXmitIndex;
-uint32_t blackboxIteration;
+static uint32_t blackboxIteration;
 
 static serialPort_t *blackboxPort;
+
+static gpsState_t gpsHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
 static blackbox_values_t blackboxHistoryRing[3];
@@ -195,8 +192,8 @@ static blackbox_values_t blackboxHistoryRing[3];
 static blackbox_values_t* blackboxHistory[3];
 
 // This points into the generation 0 buffer of blackboxHistoryRing, used to give a nice easy interface for MW to poke data in
-blackbox_values_t *blackboxCurrent = 0;
-gpsState_t gpsHistory;
+blackbox_values_t *blackboxCurrent = &blackboxHistoryRing[0];
+
 
 static void blackboxWrite(uint8_t value)
 {
@@ -254,8 +251,7 @@ static void writeTag8_4S16(int32_t *values) {
 
 	/*
 	 * 4-bit fields can only be combined with their paired neighbor (there are two pairs), so choose a
-	 * larger encoding if that's not possible. This is the most compact representation of this logic
-	 * I could come up with:
+	 * larger encoding if that's not possible.
 	 */
 	const uint8_t rcSelectorCleanup[16] = {
 	//          Output selectors     <- Input selectors
@@ -426,6 +422,10 @@ void startBlackbox(void)
 		blackboxIteration = 0;
 		blackboxState = BLACKBOX_STATE_SEND_HEADER;
 
+		memset(&gpsHistory, 0, sizeof(gpsHistory));
+
+		//No need to clear the content of blackboxHistoryRing since our first frame will be an intra which overwrites it
+
 		blackboxHistory[0] = &blackboxHistoryRing[0];
 		blackboxHistory[1] = &blackboxHistoryRing[1];
 		blackboxHistory[2] = &blackboxHistoryRing[2];
@@ -439,6 +439,7 @@ void finishBlackbox(void)
 		blackboxState = BLACKBOX_STATE_STOPPED;
 
 	    if (mcfg.telemetry_port == TELEMETRY_PORT_UART)
+	    	//Give the serial port back to the CLI
 	        serialInit(mcfg.serial_baudrate);
 	}
 }
@@ -447,9 +448,9 @@ static void writeGPSHomeFrame()
 {
 	blackboxWrite('H');
 
-	writeSignedVB(gpsHistory.GPS_home[0]);
-	writeSignedVB(gpsHistory.GPS_home[1]);
-	//TODO it'd be great if we could grab the GPS current time
+	writeSignedVB(GPS_home[0]);
+	writeSignedVB(GPS_home[1]);
+	//TODO it'd be great if we could grab the GPS current time and write that too
 
 	gpsHistory.GPS_home[0] = GPS_home[0];
 	gpsHistory.GPS_home[1] = GPS_home[1];
@@ -460,8 +461,8 @@ static void writeGPSFrame()
 	blackboxWrite('G');
 
 	writeUnsignedVB(GPS_numSat);
-	writeSignedVB(GPS_coord[0] - GPS_home[0]);
-	writeSignedVB(GPS_coord[1] - GPS_home[1]);
+	writeSignedVB(GPS_coord[0] - gpsHistory.GPS_home[0]);
+	writeSignedVB(GPS_coord[1] - gpsHistory.GPS_home[1]);
 	writeUnsignedVB(GPS_altitude);
 	writeUnsignedVB(GPS_speed);
 
@@ -639,6 +640,4 @@ void initBlackbox(void)
 
 	//mw.c needs somewhere to poke its PIDs
 	blackboxCurrent = &blackboxHistoryRing[0];
-
-	memset(&gpsHistory, 0, sizeof(gpsHistory));
 }
