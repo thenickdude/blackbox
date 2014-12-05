@@ -83,7 +83,7 @@ endif
 
 LDFLAGS += -lm
 
-# Required with GCC. Clang warns when using flag while linking, so comment this line out if you're using clang:
+# Required with GCC. Clang warns when using flag while linking, so you can comment this line out if you're using clang:
 LDFLAGS += -pthread
 
 

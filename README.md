@@ -153,6 +153,9 @@ This will create PNG files at 30 fps into the same directory as the log file.
 
 Use the `--help` option for more details.
 
+(At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log 
+onto the blackbox_render program and it'll start generating the PNGs immediately.
+
 ## Building firmware
 If you want to rebuild the modified firmware for the Naze32, the procedure is the same as for Baseflight.
 Once your toolchain is set up, you merely need to run `make TARGET=NAZE` in the root directory.

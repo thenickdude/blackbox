@@ -5,7 +5,9 @@ VERSION_FILE = VERSION.txt
 COMMON_FILES = $(VERSION_FILE) obj/baseflight_NAZE.hex README.md tools/blackbox/src/SourceSansPro-Regular-License.txt 
 
 BASEFLIGHT_SOURCE = src/ lib/ support/ baseflight.uvproj JLinkSettings.ini Makefile stm32_flash.ld
-TOOLS_SOURCE = tools/blackbox/src tools/blackbox/Makefile
+TOOLS_SOURCE = tools/blackbox/src tools/blackbox/Makefile tools/blackbox/Visual\ Studio \
+			tools/blackbox/lib/cairo-1.14.0 tools/blackbox/lib/freetype-2.5.3 tools/blackbox/lib/getopt_mb_uni \
+			tools/blackbox/lib/macosx tools/blackbox/lib/win32 
 
 WINDOWS_ZIP = downloads/naze32-blackbox-$(VERSION)-windows.zip
 MACOSX_ZIP = downloads/naze32-blackbox-$(VERSION)-macosx.tar.gz 
@@ -25,8 +27,9 @@ $(SOURCE_ZIP) : $(COMMON_FILES) $(BASEFLIGHT_SOURCE) $(TOOLS_SOURCE)
 	
 # For binary releases, flatten out the directory structure to make it easier to find the files:
 
-$(WINDOWS_ZIP) : $(COMMON_FILES) dist/win32/blackbox_decode.exe dist/win32/blackbox_render.exe
-	zip --junk-paths $@ $^
+$(WINDOWS_ZIP) : $(COMMON_FILES) dist/win32/blackbox_decode.exe dist/win32/blackbox_render.exe dist/win32/blackbox_decode.pdb dist/win32/blackbox_render.pdb
+	cp lib/win32/*.dll dist/win32/
+	zip --junk-paths $@ $^ dist/win32/*.dll
 	
 $(MACOSX_ZIP) : $(COMMON_FILES) dist/macosx/blackbox_decode dist/macosx/blackbox_render
 	rm -rf .build_tmp
