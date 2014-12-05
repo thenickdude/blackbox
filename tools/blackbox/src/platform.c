@@ -1,9 +1,38 @@
 #include "platform.h"
 
-void thread_create(thread_t *thread, void*(*threadFunc)(void *data), void *data)
+#ifdef WIN32
+	/*
+	 * I don't want to have to define my thread routine stdcall on windows and cdecl on POSIX, so
+	 * this structure'll wrap things for me
+	 */
+	typedef struct win32ThreadFuncWrapper_t {
+		threadRoutine_t threadFunc;
+		void *data;
+	} win32ThreadFuncWrapper_t;
+
+	DWORD WINAPI win32ThreadFuncUnwrap(LPVOID data)
+	{
+		win32ThreadFuncWrapper_t *unwrapped = (win32ThreadFuncWrapper_t*)data;
+		DWORD result;
+
+		//Call the original thread routine with the original data and return that as our result
+		result = (DWORD) (unwrapped->threadFunc(unwrapped->data));
+
+		free(unwrapped);
+
+		return result;
+	}
+#endif
+
+void thread_create(thread_t *thread, threadRoutine_t threadFunc, void *data)
 {
 #if defined(WIN32)
-	*thread = CreateThread(NULL, 0, threadFunc, data, 0);
+	win32ThreadFuncWrapper_t *wrap = malloc(sizeof(*wrap));
+
+	wrap->threadFunc = threadFunc;
+	wrap->data = data;
+
+	*thread = CreateThread(NULL, 0, win32ThreadFuncUnwrap, wrap, 0, NULL);
 #else
     pthread_create(thread, NULL, threadFunc, data);
 #endif

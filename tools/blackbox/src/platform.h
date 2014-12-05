@@ -25,7 +25,13 @@
 	typedef sem_t semaphore_t;
 #endif
 
-void thread_create(thread_t *thread, void*(*threadFunc)(void *data), void *data);
+#ifdef WIN32
+	#define snprintf _snprintf
+#endif
+
+typedef void*(*threadRoutine_t)(void *data);
+
+void thread_create(thread_t *thread, threadRoutine_t threadFunc, void *data);
 
 void semaphore_create(semaphore_t *sem, int initialCount);
 void semaphore_destroy(semaphore_t *sem);

@@ -3,6 +3,6 @@
 
 /* Include the font file as a resource right into the application */
 extern const char SourceSansPro_Regular_otf[];
-extern int SourceSansPro_Regular_otf_len;
+extern unsigned int SourceSansPro_Regular_otf_len;
 
 #endif

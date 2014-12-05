@@ -1,0 +1,38 @@
+DATE = `date`
+
+VERSION_FILE = VERSION.txt
+
+COMMON_FILES = $(VERSION_FILE) obj/baseflight_NAZE.hex README.md tools/blackbox/src/SourceSansPro-Regular-License.txt 
+
+BASEFLIGHT_SOURCE = src/ lib/ support/ baseflight.uvproj JLinkSettings.ini Makefile stm32_flash.ld
+TOOLS_SOURCE = tools/blackbox/src tools/blackbox/Makefile
+
+WINDOWS_ZIP = downloads/naze32-blackbox-$(VERSION)-windows.zip
+MACOSX_ZIP = downloads/naze32-blackbox-$(VERSION)-macosx.tar.gz 
+SOURCE_ZIP = downloads/naze32-blackbox-$(VERSION)-source.tar.gz
+
+all : win32 source macosx
+
+clean :
+	rm -f $(VERSION_FILE) $(WINDOWS_ZIP) $(MACOSX_ZIP) $(SOURCE_ZIP)
+
+win32 : $(WINDOWS_ZIP)
+macosx : $(MACOSX_ZIP)
+source : $(SOURCE_ZIP)
+
+$(SOURCE_ZIP) : $(COMMON_FILES) $(BASEFLIGHT_SOURCE) $(TOOLS_SOURCE)
+	tar -cf $@ $^
+	
+# For binary releases, flatten out the directory structure to make it easier to find the files:
+
+$(WINDOWS_ZIP) : $(COMMON_FILES) dist/win32/blackbox_decode.exe dist/win32/blackbox_render.exe
+	zip --junk-paths $@ $^
+	
+$(MACOSX_ZIP) : $(COMMON_FILES) dist/macosx/blackbox_decode dist/macosx/blackbox_render
+	rm -rf .build_tmp
+	mkdir .build_tmp
+	cp $^ .build_tmp/
+	tar -cf $@ -C .build_tmp/ $(notdir $^)
+	
+$(VERSION_FILE): .git/HEAD .git/index
+	echo "This Blackbox version $(VERSION) was built $(DATE) from Blackbox commit $(shell git rev-parse HEAD)" > $@

@@ -14,6 +14,10 @@
 
 #include <fcntl.h>
 
+#ifdef WIN32
+	#include <io.h>
+#endif
+
 #include <cairo.h>
 
 #include <ft2build.h>
@@ -83,6 +87,8 @@ typedef struct renderOptions_t {
 
 	int pidSmoothing, gyroSmoothing, motorSmoothing;
 
+	int bottomGraphSplitAxes;
+
 	PropStyle propStyle;
 
 	//Start and end time of video in seconds offset from the beginning of the log
@@ -137,10 +143,10 @@ typedef struct fieldIdentifications_t {
 } fieldIdentifications_t;
 
 color_t lineColors[] = {
+	{0.984,	0.502,	0.447},
 	{0.553,	0.827,	0.78},
 	{1,	1,	0.702},
 	{0.745,	0.729,	0.855},
-	{0.984,	0.502,	0.447},
 	{0.502,	0.694,	0.827},
 	{0.992,	0.706,	0.384},
 	{0.702,	0.871,	0.412},
@@ -150,6 +156,8 @@ color_t lineColors[] = {
 	{0.8,	0.922,	0.773},
 	{1,	0.929,	0.435}
 };
+
+const color_t WHITE = {.r = 1, .g = 1, .b = 1};
 
 #define NUM_LINE_COLORS (sizeof(lineColors) / sizeof(lineColors[0]))
 
@@ -272,19 +280,15 @@ void identifyFields()
 
 			idents.hasPIDs = true;
 
-			idents.PIDAxisColors[PID_P][axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
-
-			idents.PIDAxisColors[PID_P][axisIndex].r *= 1.1;
-			idents.PIDAxisColors[PID_P][axisIndex].g *= 1.1;
-			idents.PIDAxisColors[PID_P][axisIndex].b *= 1.1;
-
-			idents.PIDAxisColors[PID_I][axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
-
-			idents.PIDAxisColors[PID_D][axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
-
-			idents.PIDAxisColors[PID_D][axisIndex].r *= 0.9;
-			idents.PIDAxisColors[PID_D][axisIndex].g *= 0.9;
-			idents.PIDAxisColors[PID_D][axisIndex].b *= 0.9;
+			if (options.plotPids) {
+				idents.PIDAxisColors[PID_P][axisIndex] = lineColors[PID_P];
+				idents.PIDAxisColors[PID_I][axisIndex] = lineColors[PID_I];
+				idents.PIDAxisColors[PID_D][axisIndex] = lineColors[PID_D];
+			} else {
+				idents.PIDAxisColors[PID_P][axisIndex] = WHITE;
+				idents.PIDAxisColors[PID_I][axisIndex] = WHITE;
+				idents.PIDAxisColors[PID_D][axisIndex] = WHITE;
+			}
 
 			idents.PIDLineStyle[axisIndex] = 0; //TODO
 		} else if (strncmp(points->fieldNames[fieldIndex], "gyroData[", strlen("gyroData[")) == 0) {
@@ -292,7 +296,14 @@ void identifyFields()
 
 			idents.hasGyros = true;
 			idents.gyroFields[axisIndex] = fieldIndex;
-			idents.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+
+			if (options.plotGyros) {
+				if (options.bottomGraphSplitAxes)
+					idents.gyroColors[axisIndex] = lineColors[(PID_D + 2) % NUM_LINE_COLORS];
+				else
+					idents.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+			} else
+				idents.gyroColors[axisIndex] = WHITE;
 		} else if (strncmp(points->fieldNames[fieldIndex], "accSmooth[", strlen("accSmooth[")) == 0) {
 			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("accSmooth["));
 
@@ -426,7 +437,7 @@ void drawPropeller(cairo_t *cr, craft_parameters_t *parameters)
 /**
  * Draw a craft with spinning blades at the origin
  */
-void drawCraft(cairo_t *cr, int32_t *frame, double timeElapsedMicros, craft_parameters_t *parameters)
+void drawCraft(cairo_t *cr, int32_t *frame, int64_t timeElapsedMicros, craft_parameters_t *parameters)
 {
 	static double propAngles[MAX_MOTORS] = {0};
 
@@ -607,10 +618,10 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
  * Plot the given field within the specified time period. valueYOffset will be added from the values before
  * plotting. When the value reaches valueYRange it'll be drawn plotHeight pixels away from the origin.
  */
-void plotLine(cairo_t *cr, color_t color, uint32_t windowStartTime, uint32_t windowEndTime, int firstFrameIndex,
+void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windowEndTime, int firstFrameIndex,
 		int fieldIndex, expoCurve_t *curve, int plotHeight)
 {
-	uint32_t windowWidthMicros = windowEndTime - windowStartTime;
+	uint32_t windowWidthMicros = (uint32_t) (windowEndTime - windowStartTime);
 	int32_t fieldValue;
 	int64_t frameTime;
 
@@ -651,15 +662,15 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 
 	cairo_font_extents(cr, &fontExtent);
 
-	const int INTERROW_SPACING = 32;
-	const int VERT_SPACING = fontExtent.height + INTERROW_SPACING;
-	const int FIRST_ROW_TOP = fontExtent.height + INTERROW_SPACING;
-	const int HORZ_SPACING = 100, FIRST_COL_LEFT = 140;
+	const double INTERROW_SPACING = 32;
+	const double VERT_SPACING = fontExtent.height + INTERROW_SPACING;
+	const double FIRST_ROW_TOP = fontExtent.height + INTERROW_SPACING;
+	const double HORZ_SPACING = 100, FIRST_COL_LEFT = 140;
 
-	const int HORZ_EXTENT = FIRST_COL_LEFT + HORZ_SPACING * 5 - 30;
-	const int VERT_EXTENT = FIRST_ROW_TOP + fontExtent.height * 3 + INTERROW_SPACING * 2;
+	const double HORZ_EXTENT = FIRST_COL_LEFT + HORZ_SPACING * 5 - 30;
+	const double VERT_EXTENT = FIRST_ROW_TOP + fontExtent.height * 3 + INTERROW_SPACING * 2;
 
-	const int PADDING = 32;
+	const double PADDING = 32;
 
 	char fieldLabel[16];
 	int pidType, axisIndex;
@@ -698,6 +709,8 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 			case PID_TOTAL:
 				pidName = "Sum";
 			break;
+			default:
+				pidName = "";
 		}
 		cairo_move_to (cr, (pidType + 1) * HORZ_SPACING + FIRST_COL_LEFT, fontExtent.height);
 		cairo_show_text (cr, pidName);
@@ -714,14 +727,9 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 			case 2:
 				pidName = "Yaw";
 			break;
+			default:
+				pidName = "";
 		}
-
-		cairo_set_source_rgb(
-			cr,
-			idents.PIDAxisColors[PID_I][axisIndex].r,
-			idents.PIDAxisColors[PID_I][axisIndex].g,
-			idents.PIDAxisColors[PID_I][axisIndex].b
-		);
 
 		cairo_move_to (cr, 0, FIRST_ROW_TOP + axisIndex * VERT_SPACING + fontExtent.height);
 		cairo_show_text (cr, pidName);
@@ -765,9 +773,9 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 				case PID_TOTAL:
 					cairo_set_source_rgb(
 						cr,
-						idents.PIDAxisColors[PID_D][axisIndex].r,
-						idents.PIDAxisColors[PID_D][axisIndex].g,
-						idents.PIDAxisColors[PID_D][axisIndex].b
+						WHITE.r,
+						WHITE.g,
+						WHITE.b
 					);
 				break;
 				default:
@@ -820,7 +828,7 @@ void drawAxisLabel(cairo_t *cr, const char *axisLabel)
 	cairo_show_text(cr, axisLabel);
 }
 
-void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
+void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, uint32_t frameTimeMsec)
 {
 	char frameNumberBuf[16];
 	cairo_text_extents_t extentFrameNumber, extentFrameTime;
@@ -835,17 +843,15 @@ void drawFrameLabel(cairo_t *cr, uint32_t frameIndex, int32_t frameTime)
 	cairo_move_to(cr, options.imageWidth - extentFrameNumber.width - 8, options.imageHeight - 8);
 	cairo_show_text(cr, frameNumberBuf);
 
-	int frameMsec, frameSec, frameMins;
+	int frameSec, frameMins;
 
-	frameMsec = frameTime / 1000;
-
-	frameSec = frameMsec / 1000;
-	frameMsec %= 1000;
+	frameSec = frameTimeMsec / 1000;
+	frameTimeMsec %= 1000;
 
 	frameMins = frameSec / 60;
 	frameSec %= 60;
 
-	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "%02d:%02d.%03d", frameMins, frameSec, frameMsec);
+	snprintf(frameNumberBuf, sizeof(frameNumberBuf), "%02d:%02d.%03d", frameMins, frameSec, frameTimeMsec);
 
 	cairo_text_extents(cr, "00:00.000", &extentFrameTime);
 
@@ -858,8 +864,8 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 	int16_t accSmooth[3];
 	attitude_t attitude;
 	t_fp_vector acceleration;
-	float magnitude;
-	static float lastAccel = 0;
+	double magnitude;
+	static double lastAccel = 0;
 
 	char labelBuf[32];
 
@@ -971,7 +977,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	struct craftDrawingParameters_t craftParameters;
 
 	if (endFrame == (uint32_t) -1) {
-		endFrame = (logDurationMicro * options.fps + (1000000 - 1)) / 1000000;
+		endFrame = (uint32_t) ((logDurationMicro * options.fps + (1000000 - 1)) / 1000000);
 	}
 	outputFrames = endFrame - startFrame;
 
@@ -1035,7 +1041,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 				for (i = 0; i < idents.numMotors; i++) {
 					plotLine(cr, idents.motorColors[i], windowStartTime,
 							windowEndTime, firstFrameIndex, idents.motorFields[i],
-							motorCurve, options.imageHeight * (options.plotPids ? 0.15 : 0.20));
+							motorCurve, (int) (options.imageHeight * (options.plotPids ? 0.15 : 0.20)));
 				}
 
 				drawAxisLabel(cr, "Motors");
@@ -1059,43 +1065,43 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 					for (int pidType = PID_D; pidType >= PID_P; pidType--) {
 						switch (pidType) {
 							case PID_P:
-								cairo_set_line_width(cr, 2.8);
+								cairo_set_line_width(cr, 2);
 							break;
 							case PID_I:
 								cairo_set_dash(cr, DASHED_LINE, DASHED_LINE_NUM_POINTS, 0);
 								cairo_set_line_width(cr, 2);
 							break;
 							case PID_D:
+								cairo_set_dash(cr, DOTTED_LINE, DOTTED_LINE_NUM_POINTS, 0);
 								cairo_set_line_width(cr, 2);
 						}
 
 						plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime,
-								windowEndTime, firstFrameIndex, idents.axisPIDFields[pidType][axis], pidCurve, options.imageHeight * 0.15);
+								windowEndTime, firstFrameIndex, idents.axisPIDFields[pidType][axis], pidCurve,
+								(int) (options.imageHeight * 0.15));
 
 						cairo_set_dash(cr, 0, 0, 0);
 					}
 
 					if (options.plotGyros) {
-						cairo_set_dash(cr, DOTTED_LINE, DOTTED_LINE_NUM_POINTS, 0);
-						cairo_set_line_width(cr, 2);
+						cairo_set_line_width(cr, 3);
 
 						plotLine(cr, idents.gyroColors[axis], windowStartTime,
-								windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve, options.imageHeight * 0.15);
-
-						cairo_set_dash(cr, 0, 0, 0);
+								windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve,
+								(int) (options.imageHeight * 0.15));
 					}
 
 					const char *axisLabel;
 					if (options.plotGyros) {
 						switch (axis) {
 							case 0:
-								axisLabel = "Gyro + PIDs roll";
+								axisLabel = "Gyro + PID roll";
 							break;
 							case 1:
-								axisLabel = "Gyro + PIDs pitch";
+								axisLabel = "Gyro + PID pitch";
 							break;
 							case 2:
-								axisLabel = "Gyro + PIDs yaw";
+								axisLabel = "Gyro + PID yaw";
 							break;
 						}
 					} else {
@@ -1124,10 +1130,11 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 				for (int axis = 0; axis < 3; axis++) {
 					plotLine(cr, idents.gyroColors[axis], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve, options.imageHeight * 0.25);
+							windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve,
+							(int) (options.imageHeight * 0.25));
 
 					/*plotLine(cr, idents.gyroColors[axis], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.accFields[axis], accCurve, options.imageHeight * 0.25);*/
+							windowEndTime, firstFrameIndex, idents.accFields[axis], accCurve, (int) (options.imageHeight * 0.25));*/
 				}
 
 				drawAxisLabel(cr, "Gyro");
@@ -1187,7 +1194,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 			drawAccelerometerData(cr, frameValues);
 		}
 
-		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]);
+		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, (uint32_t) (windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]));
 
 	    cairo_destroy(cr);
 
@@ -1429,7 +1436,7 @@ static void applySmoothing() {
 	}
 }
 
-void computeExtraFields() {
+void computeExtraFields(void) {
 	int16_t accSmooth[3], gyroData[3];
 	int64_t frameTime;
 	int32_t frameIndex;
@@ -1446,7 +1453,7 @@ void computeExtraFields() {
 					gyroData[axis] = frame[idents.gyroFields[axis]];
 				}
 
-				getEstimatedAttitude(gyroData, accSmooth, frameTime, flightLog->acc_1G, flightLog->gyroScale, &attitude);
+				getEstimatedAttitude(gyroData, accSmooth, (uint32_t) frameTime, flightLog->acc_1G, flightLog->gyroScale, &attitude);
 
 				//Pack those floats into signed ints to store into the datapoints array:
 				datapointsSetFieldAtIndex(points, frameIndex, idents.roll, floatToInt(attitude.roll));
@@ -1512,7 +1519,9 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-    fd = open(options.filename, O_RDONLY);
+	options.bottomGraphSplitAxes = options.plotPids;
+
+	fd = open(options.filename, O_RDONLY);
     if (fd < 0) {
     	fprintf(stderr, "Failed to open log file '%s': %s\n", options.filename, strerror(errno));
     	return -1;
@@ -1548,7 +1557,7 @@ int main(int argc, char **argv)
 	fieldNames[flightLog->mainFieldCount + 2] = strdup("axisPID[1]");
 	fieldNames[flightLog->mainFieldCount + 3] = strdup("axisPID[2]");
 
-	points = datapointsCreate(flightLog->mainFieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
+	points = datapointsCreate(flightLog->mainFieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, (int) (flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1));
 
 	//Now decode the flight log into the points array
 	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, false);

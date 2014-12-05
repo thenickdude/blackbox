@@ -75,7 +75,7 @@ CFLAGS += `pkg-config --cflags cairo` `pkg-config --cflags freetype2`
 
 ifeq ($(BUILD_STATIC), MACOSX)
 	# For cairo built with ./configure --enable-quartz=no  --without-x --enable-pdf=no --enable-ps=no --enable-script=no --enable-xcb=no --enable-ft=yes --enable-fc=no --enable-xlib=no
-	LDFLAGS += -Llib/static/macos -lcairo -lpixman-1 -lpng16 -lz -lfreetype -lbz2
+	LDFLAGS += -Llib/macosx -lcairo -lpixman-1 -lpng16 -lz -lfreetype -lbz2
 else
 	# Dynamic linking
 	LDFLAGS += `pkg-config --libs cairo` `pkg-config --libs freetype2`
