@@ -162,8 +162,8 @@ sudo port install cairo
 Afterwards you can run `make` in the `tools/blackbox/` directory to build blackbox_render.
 
 #### Windows
-I have no idea, you're on your own! You might want to use one of the prebuilt versions instead of building it
-yourself :). Check out the `dist/win32/` directory where you should find `blackbox_render.exe` and `blackbox_decode.exe`.
+The tools can be built with Visual Studio Express 2013, just open up the solution in the `tools/blackbox/Visual Studio/`
+folder.
 
 ## License
 
@@ -179,3 +179,5 @@ The binary version of `blackbox_render` contains these libraries:
 This font is included with both binary and source distributions:
 
  - Source Sans Pro - Regular https://github.com/adobe-fonts/source-sans-pro (SIL Open Font license)
+ 
+Both binary and source builds are derived from Baseflight https://github.com/multiwii/baseflight (GPLv3) 
