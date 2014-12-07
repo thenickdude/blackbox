@@ -4,16 +4,10 @@ VERSION_FILE = VERSION.txt
 
 COMMON_FILES = $(VERSION_FILE) obj/baseflight_NAZE.hex README.md tools/blackbox/src/SourceSansPro-Regular-License.txt 
 
-BASEFLIGHT_SOURCE = src/ lib/ support/ baseflight.uvproj JLinkSettings.ini Makefile stm32_flash.ld
-TOOLS_SOURCE = tools/blackbox/src tools/blackbox/Makefile tools/blackbox/visual-studio/ \
-			tools/blackbox/lib/cairo-1.14.0 tools/blackbox/lib/freetype-2.5.3 tools/blackbox/lib/getopt_mb_uni \
-			tools/blackbox/lib/macosx tools/blackbox/lib/win32 
-
 WINDOWS_ZIP = downloads/naze32-blackbox-$(VERSION)-windows.zip
 MACOSX_ZIP = downloads/naze32-blackbox-$(VERSION)-macosx.tar.gz 
-SOURCE_ZIP = downloads/naze32-blackbox-$(VERSION)-source.tar.gz
 
-all : win32 source macosx
+all : win32 macosx
 
 clean :
 	rm -f $(VERSION_FILE) $(WINDOWS_ZIP) $(MACOSX_ZIP) $(SOURCE_ZIP)
@@ -21,10 +15,6 @@ clean :
 
 win32 : $(WINDOWS_ZIP)
 macosx : $(MACOSX_ZIP)
-source : $(SOURCE_ZIP)
-
-$(SOURCE_ZIP) : $(COMMON_FILES) $(BASEFLIGHT_SOURCE) $(TOOLS_SOURCE)
-	git archive --format tar HEAD > $@
 	
 # For binary releases, flatten out the directory structure to make it easier to find the files:
 
