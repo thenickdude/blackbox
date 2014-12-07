@@ -5,7 +5,7 @@ VERSION_FILE = VERSION.txt
 COMMON_FILES = $(VERSION_FILE) obj/baseflight_NAZE.hex README.md tools/blackbox/src/SourceSansPro-Regular-License.txt 
 
 BASEFLIGHT_SOURCE = src/ lib/ support/ baseflight.uvproj JLinkSettings.ini Makefile stm32_flash.ld
-TOOLS_SOURCE = tools/blackbox/src tools/blackbox/Makefile tools/blackbox/Visual\ Studio \
+TOOLS_SOURCE = tools/blackbox/src tools/blackbox/Makefile tools/blackbox/visual-studio/ \
 			tools/blackbox/lib/cairo-1.14.0 tools/blackbox/lib/freetype-2.5.3 tools/blackbox/lib/getopt_mb_uni \
 			tools/blackbox/lib/macosx tools/blackbox/lib/win32 
 
@@ -17,21 +17,22 @@ all : win32 source macosx
 
 clean :
 	rm -f $(VERSION_FILE) $(WINDOWS_ZIP) $(MACOSX_ZIP) $(SOURCE_ZIP)
+	rm -rf .build_tmp/
 
 win32 : $(WINDOWS_ZIP)
 macosx : $(MACOSX_ZIP)
 source : $(SOURCE_ZIP)
 
 $(SOURCE_ZIP) : $(COMMON_FILES) $(BASEFLIGHT_SOURCE) $(TOOLS_SOURCE)
-	tar -cf $@ $^
+	git archive --format tar HEAD > $@
 	
 # For binary releases, flatten out the directory structure to make it easier to find the files:
 
-$(WINDOWS_ZIP) : $(COMMON_FILES) dist/win32/blackbox_decode.exe dist/win32/blackbox_render.exe dist/win32/blackbox_decode.pdb dist/win32/blackbox_render.pdb
-	cp lib/win32/*.dll dist/win32/
-	zip --junk-paths $@ $^ dist/win32/*.dll
+$(WINDOWS_ZIP) : $(COMMON_FILES) tools/blackbox/dist/win32/blackbox_decode.exe tools/blackbox/dist/win32/blackbox_render.exe
+	cp tools/blackbox/lib/win32/*.dll tools/blackbox/dist/win32/
+	zip --junk-paths $@ $^ tools/blackbox/dist/win32/*.dll
 	
-$(MACOSX_ZIP) : $(COMMON_FILES) dist/macosx/blackbox_decode dist/macosx/blackbox_render
+$(MACOSX_ZIP) : $(COMMON_FILES) tools/blackbox/dist/macosx/blackbox_decode tools/blackbox/dist/macosx/blackbox_render
 	rm -rf .build_tmp
 	mkdir .build_tmp
 	cp $^ .build_tmp/
