@@ -1198,7 +1198,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 			drawAccelerometerData(cr, frameValues);
 		}
 
-		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, (uint32_t) (windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]));
+		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, (uint32_t) ((windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000));
 
 	    cairo_destroy(cr);
 
