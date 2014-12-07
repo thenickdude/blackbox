@@ -18,10 +18,10 @@ curves), gyroscope data, accelerometer data (after your configured low-pass filt
 each motor speed controller. This is all stored without any approximation or loss of precision, so even quite subtle
 problems should be detectable from the fight data log.
 
-Currently, the blacbox attempts to log GPS data whenever new GPS data is available, but as I haven't been able to get
+Currently, the blackbox attempts to log GPS data whenever new GPS data is available, but as I haven't been able to get
 my GPS receiver working on my craft, I haven't been able to test it yet. The CSV decoder and video renderer do not yet
 show any of the GPS data (though this will be added). If you have a working GPS, please send me your logs so I can get
-the decoding implemented :).
+the decoding implemented.
 
 The data rate for my quadcopter configuration is about 10.25kB/s, with an update rate of 416Hz. This allows me to fit
 about 18 days of flight logs on a 16GB MicroSD card, which ought to be enough for anybody :).
@@ -57,9 +57,8 @@ little prep to get the OpenLog ready for use, so here are the details:
 ### Firmware
 The OpenLog should be flashed with the [OpenLog Lite firmware][] using Arduino IDE in order to minimise dropped frames
 (target the "Arduino Uno"). Note that the .hex file currently in the OpenLog repository is out of date with respect to the .ino
-source file, use the version I've built in the `tools/blackbox/openlog/`  
-directory instead. Or you can build your own .hex file if you add the [required libraries][] to your Arduino
-libraries directory.
+source file, use the version I've built in the `tools/blackbox/openlog/` directory instead. Or you can build your own 
+.hex file if you add the [required libraries][] to your Arduino libraries directory.
 
 To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout][] along with some way of
 switching the Tx and Rx pins over (since the OpenLog has them switched) like the [FTDI crossover][].
@@ -174,10 +173,12 @@ blackbox_render program and it'll start generating the PNGs immediately.
 
 ## Building firmware
 If you want to rebuild the modified firmware for the Naze32, the procedure is the same as for Baseflight. Once your
-toolchain is set up, you merely need to run `make TARGET=NAZE` in the root directory.
+[toolchain][] is set up, you merely need to run `make TARGET=NAZE` in the root directory.
 
 If you don't want to rebuild the firmware, that's fine, prebuilt firmware hex files for the Naze32 can be found in the `obj/`
 directory.
+
+[toolchain]: https://launchpad.net/gcc-arm-embedded
 
 ## Building tools
 The `blackbox_decode` tool for turning binary flight logs into CSV doesn't depend on any libraries, so can be built by
