@@ -1,5 +1,7 @@
 # Blackbox flight data recorder
 
+![Rendered flight log frame](http://i.imgur.com/FBphB8c.jpg)
+
 WARNING - This firmware is experimental, and may cause your craft to suddenly fall out of the sky (though I had no
 problems during 60 test flights). No warranty is offered: if your craft breaks, you get to keep both pieces.
 
@@ -10,6 +12,12 @@ device to be recorded.
 
 After your flight, you can process the resulting logs on your computer to either turn them into CSV (comma-separated
 values) or render your flight log as a video.
+
+Grab a zip file from the `downloads/` folder for your operating system to get the firmware and tools. If you're
+using Linux, you'll need to clone [the repository][] and build them from source instead, instructions are further
+down this readme.
+
+[the repository]: https://github.com/thenickdude/blackbox
 
 ## Logged data
 The blackbox records flight data on every iteration of the flight controller's control loop. It records the current
@@ -38,7 +46,8 @@ log to drop frames and contain errors.
 
 The Blackbox was developed and tested on a quadcopter. It should work on hexacopters or octocopters, but they transmit
 more information to the flight log (due to having more motors) so the number of dropped frames may increase. I don't
-know if it works on tricopters.
+know if it works on tricopters. The `blackbox_render` tool only supports quadcopters (please send me flight logs from
+other craft, and I can add support for them!)
 
 Baseflight's "looptime" setting will decide how many times per second an update is saved to the flight log. The
 software was developed on a craft with a looptime of 2400. Any looptime smaller than this will put more strain on the
@@ -104,6 +113,8 @@ should use those settings from now on.
 ### Protection
 I wrapped my OpenLog in black electrical tape in order to insulate it from my conductive carbon fiber frame, but this
 makes its status LEDs impossible to see. I would recommend wrapping it with some clear heatshrink tubing instead.
+
+![OpenLog installed](http://i.imgur.com/jYyZ0oC.jpg "OpenLog installed in my frame with double-sided tape, SDCard slot pointing outward")
 
 ## Installation of firmware
 Before installing the new firmware onto your Naze32, back up your configuration: Connect to your flight controller
