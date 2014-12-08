@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+//For msvcrt to define M_PI:
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include <sys/stat.h>
 
 // Support for memory-mapped files:
@@ -198,6 +202,11 @@ static void parseHeader(flightLog_t *log)
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIEncoding, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "Field I signed") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->mainFieldSigned, FLIGHT_LOG_MAX_FIELDS);
+	} else if (strcmp(fieldName, "Firmware type") == 0) {
+		if (strcmp(fieldValue, "Cleanflight") == 0)
+			log->firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
+		else
+			log->firmwareType = FIRMWARE_TYPE_BASEFLIGHT;
 	} else if (strcmp(fieldName, "minthrottle") == 0) {
 		log->minthrottle = atoi(fieldValue);
 	} else if (strcmp(fieldName, "maxthrottle") == 0) {
@@ -208,6 +217,14 @@ static void parseHeader(flightLog_t *log)
 		floatConvert.u = strtoul(fieldValue, 0, 16);
 
 		log->gyroScale = floatConvert.f;
+
+		/* Baseflight uses a gyroScale that'll give radians per microsecond as output, whereas Cleanflight produces degrees
+		 * per second and leaves the conversion to radians per us to the IMU. Let's just convert Cleanflight's scale to
+		 * match Baseflight so we can use Baseflight's IMU for both: */
+
+		if (log->firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
+			log->gyroScale *= (M_PI / 180.0f) * 0.000001f;
+		}
 	} else if (strcmp(fieldName, "acc_1G") == 0) {
 		log->acc_1G = atoi(fieldValue);
 	}

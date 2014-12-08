@@ -14,6 +14,11 @@
 #define FLIGHT_LOG_FIELD_INDEX_ITERATION 0
 #define FLIGHT_LOG_FIELD_INDEX_TIME 1
 
+typedef enum FirmwareType {
+	FIRMWARE_TYPE_BASEFLIGHT = 0,
+	FIRMWARE_TYPE_CLEANFLIGHT
+} FirmwareType;
+
 typedef struct FlightLogStatistics {
 	uint32_t iFrameBytes, pFrameBytes, gFrameBytes, hFrameBytes, totalBytes;
 	uint32_t numIFrames, numPFrames, numGFrames, numHFrames;
@@ -44,6 +49,8 @@ typedef struct FlightLog {
 	// Calibration constants from the hardware sensors:
 	uint16_t acc_1G;
 	float gyroScale;
+
+	FirmwareType firmwareType;
 
 	//Information about log sections:
 	const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];
