@@ -763,23 +763,32 @@ void handleBlackbox(void)
 					blackboxPrintf("H Firmware type:Baseflight\n");
 				break;
 				case 1:
-					blackboxPrintf("H Firmware date:%s %s\n", __DATE__, __TIME__);
+					// Pause to allow more time for previous to transmit (it exceeds our chunk size)
 				break;
 				case 2:
-					blackboxPrintf("H rcRate:%d\n", cfg.rcRate8);
+					blackboxPrintf("H Firmware date:%s %s\n", __DATE__, __TIME__);
 				break;
 				case 3:
-					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
+					// Pause to allow more time for previous to transmit
 				break;
 				case 4:
-					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+					blackboxPrintf("H rcRate:%d\n", cfg.rcRate8);
 				break;
 				case 5:
+					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
+				break;
+				case 6:
+					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+				break;
+				case 7:
 					floatConvert.f = gyro.scale;
 					blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
 				break;
-				case 6:
+				case 8:
 					blackboxPrintf("H acc_1G:%u\n", acc_1G);
+				break;
+				case 9:
+					// One more pause for good luck
 				break;
 				default:
 					blackboxState = BLACKBOX_STATE_RUNNING;
