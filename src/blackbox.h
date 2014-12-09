@@ -7,6 +7,8 @@
 #ifndef BLACKBOX_H_
 #define BLACKBOX_H_
 
+#include <stdint.h>
+
 typedef struct blackbox_values_t {
 	uint32_t time;
 
@@ -17,8 +19,6 @@ typedef struct blackbox_values_t {
 	int16_t accSmooth[3];
 	int16_t motor[8];
 } blackbox_values_t;
-
-extern blackbox_values_t *blackboxCurrent;
 
 void initBlackbox(void);
 void handleBlackbox(void);

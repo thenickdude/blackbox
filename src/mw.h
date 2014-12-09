@@ -354,6 +354,7 @@ extern int16_t gyroZero[3];
 extern int16_t gyroData[3];
 extern int16_t angle[2];
 extern int16_t axisPID[3];
+extern int32_t axisP[3], axisI[3], axisD[3];
 extern int16_t rcCommand[4];
 extern uint8_t rcOptions[CHECKBOXITEMS];
 extern int16_t failsafeCnt;

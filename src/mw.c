@@ -40,6 +40,8 @@ uint8_t rcOptions[CHECKBOXITEMS];
 
 int16_t axisPID[3];
 
+int32_t axisP[3], axisI[3], axisD[3];
+
 // **********************
 // GPS
 // **********************
@@ -366,12 +368,10 @@ static void pidMultiWii(void)
         DTerm = (deltaSum * dynD8[axis]) / 32;
         axisPID[axis] = PTerm + ITerm - DTerm;
 
-        // Values for Blackbox
-        if (blackboxCurrent) {
-			blackboxCurrent->axisP[axis] = PTerm;
-			blackboxCurrent->axisI[axis] = ITerm;
-			blackboxCurrent->axisD[axis] = DTerm;
-		}
+        // Values for blackbox
+        axisP[axis] = PTerm;
+		axisI[axis] = ITerm;
+		axisD[axis] = DTerm;
     }
 }
 
@@ -441,6 +441,11 @@ static void pidRewrite(void)
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
+
+        // Values for blackbox
+        axisP[axis] = PTerm;
+		axisI[axis] = ITerm;
+		axisD[axis] = DTerm;
     }
 }
 

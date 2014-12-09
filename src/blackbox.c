@@ -4,6 +4,9 @@
 #include "blackbox_fielddefs.h"
 #include "blackbox.h"
 
+#define BLACKBOX_BAUDRATE 115200
+#define BLACKBOX_INITIAL_PORT_MODE MODE_TX
+
 static const char blackboxHeader[] =
 	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 	"H Blackbox version:1\n"
@@ -191,9 +194,6 @@ static blackbox_values_t blackboxHistoryRing[3];
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
 static blackbox_values_t* blackboxHistory[3];
 
-// This points into the generation 0 buffer of blackboxHistoryRing, used to give a nice easy interface for MW to poke data in
-blackbox_values_t *blackboxCurrent = &blackboxHistoryRing[0];
-
 
 static void blackboxWrite(uint8_t value)
 {
@@ -314,6 +314,7 @@ static void writeTag8_4S16(int32_t *values) {
 
 static void writeIntraframe(void)
 {
+	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
 	int x;
 
 	blackboxWrite('I');
@@ -356,7 +357,6 @@ static void writeIntraframe(void)
 	blackboxHistory[2] = blackboxHistory[0];
 	//And advance the current state over to a blank space ready to be filled
 	blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
-	blackboxCurrent = blackboxHistory[0];
 }
 
 static void writeInterframe(void)
@@ -364,6 +364,7 @@ static void writeInterframe(void)
 	int x;
 	int32_t rcDeltas[4];
 
+	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
 	blackbox_values_t *blackboxLast = blackboxHistory[1];
 
 	blackboxWrite('P');
@@ -408,14 +409,30 @@ static void writeInterframe(void)
 	blackboxHistory[2] = blackboxHistory[1];
 	blackboxHistory[1] = blackboxHistory[0];
 	blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
-	blackboxCurrent = blackboxHistory[0];
+}
+
+static void configureBlackboxPort(void)
+{
+	serialInit(115200);
+
+	blackboxPort = core.mainport;
+}
+
+static void releaseBlackboxPort(void)
+{
+    // Give the serial port back to the CLI
+	serialInit(mcfg.serial_baudrate);
 }
 
 void startBlackbox(void)
 {
 	if (blackboxState == BLACKBOX_STATE_STOPPED) {
-		if (mcfg.telemetry_port == TELEMETRY_PORT_UART)
-			serialInit(115200);
+		configureBlackboxPort();
+
+		if (!blackboxPort) {
+			blackboxState = BLACKBOX_STATE_DISABLED;
+			return;
+		}
 
 		startTime = millis();
 		headerXmitIndex = 0;
@@ -429,7 +446,6 @@ void startBlackbox(void)
 		blackboxHistory[0] = &blackboxHistoryRing[0];
 		blackboxHistory[1] = &blackboxHistoryRing[1];
 		blackboxHistory[2] = &blackboxHistoryRing[2];
-		blackboxCurrent = blackboxHistory[0];
 	}
 }
 
@@ -437,10 +453,8 @@ void finishBlackbox(void)
 {
 	if (blackboxState != BLACKBOX_STATE_DISABLED && blackboxState != BLACKBOX_STATE_STOPPED) {
 		blackboxState = BLACKBOX_STATE_STOPPED;
-
-	    if (mcfg.telemetry_port == TELEMETRY_PORT_UART)
-	    	//Give the serial port back to the CLI
-	        serialInit(mcfg.serial_baudrate);
+		
+		releaseBlackboxPort();
 	}
 }
 
@@ -474,6 +488,7 @@ static void writeGPSFrame()
 void handleBlackbox(void)
 {
 	int i;
+	blackbox_values_t *blackboxCurrent;
 	const int SERIAL_CHUNK_SIZE = 16;
 	static int charXmitIndex = 0;
 	int motorsToRemove, endIndex;
@@ -541,19 +556,25 @@ void handleBlackbox(void)
 
 			switch (headerXmitIndex) {
 				case 0:
-					blackboxPrintf("H rcRate:%d\n", cfg.rcRate8);
+					blackboxPrintf("H Firmware type:Baseflight\n");
 				break;
 				case 1:
-					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
+					blackboxPrintf("H Firmware date:%s %s\n", __DATE__, __TIME__);
 				break;
 				case 2:
-					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+					blackboxPrintf("H rcRate:%d\n", cfg.rcRate8);
 				break;
 				case 3:
+					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
+				break;
+				case 4:
+					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+				break;
+				case 5:
 					floatConvert.f = gyro.scale;
 					blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
 				break;
-				case 4:
+				case 6:
 					blackboxPrintf("H acc_1G:%u\n", acc_1G);
 				break;
 				default:
@@ -564,10 +585,19 @@ void handleBlackbox(void)
 		break;
 		case BLACKBOX_STATE_RUNNING:
         	// Copy current system values into the blackbox to be written out
+			blackboxCurrent = blackboxHistory[0];
+
         	blackboxCurrent->time = currentTime;
 
         	for (i = 0; i < numberMotor; i++)
         		blackboxCurrent->motor[i] = motor[i];
+
+        	for (i = 0; i < 3; i++)
+        		blackboxCurrent->axisP[i] = axisP[i];
+        	for (i = 0; i < 3; i++)
+        		blackboxCurrent->axisI[i] = axisI[i];
+        	for (i = 0; i < 3; i++)
+        		blackboxCurrent->axisD[i] = axisD[i];
 
         	for (i = 0; i < 4; i++)
         		blackboxCurrent->rcCommand[i] = rcCommand[i];
@@ -629,15 +659,4 @@ void initBlackbox(void)
 		blackboxState = BLACKBOX_STATE_STOPPED;
 	else
 		blackboxState = BLACKBOX_STATE_DISABLED;
-
-	switch (mcfg.blackbox_port) {
-		case 0:
-			blackboxPort = core.mainport;
-		break;
-		default:
-			blackboxState = BLACKBOX_STATE_DISABLED;
-	}
-
-	//mw.c needs somewhere to poke its PIDs
-	blackboxCurrent = &blackboxHistoryRing[0];
 }
