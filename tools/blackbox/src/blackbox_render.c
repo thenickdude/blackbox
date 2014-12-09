@@ -32,6 +32,7 @@
 #include "imu.h"
 
 #define MAX_MOTORS 8
+#define MAX_SERVOS 8
 
 //Controls how fast the props spin on the video
 #define MOTOR_MAX_RPS 25
@@ -134,6 +135,10 @@ typedef struct fieldIdentifications_t {
 	int accFields[3];
 	color_t accColors[3];
 
+	int numServos;
+	int servoFields[MAX_SERVOS];
+	color_t servoColors[MAX_SERVOS];
+
 	int numMisc;
 	int miscFields[FLIGHT_LOG_MAX_FIELDS];
 	color_t miscColors[FLIGHT_LOG_MAX_FIELDS];
@@ -181,7 +186,7 @@ static const renderOptions_t defaultOptions = {
 extern cairo_font_face_t* cairo_ft_font_face_create_for_ft_face(FT_Face face, int load_flags);
 
 static renderOptions_t options;
-static expoCurve_t *pitchStickCurve, *pidCurve, *gyroCurve, *accCurve, *motorCurve;
+static expoCurve_t *pitchStickCurve, *pidCurve, *gyroCurve, *accCurve, *motorCurve, *servoCurve;
 
 static semaphore_t pngRenderingSem;
 static bool pngRenderingSemCreated = false;
@@ -217,6 +222,7 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 void identifyFields()
 {
 	unsigned int i;
+	int motorGraphColorIndex = 0;
 	int fieldIndex;
 
 	//Start off all the fields as -1 so we can use it as a not-present identifier
@@ -225,6 +231,9 @@ void identifyFields()
 
 	for (i = 0; i < sizeof(idents.motorFields) / sizeof(idents.motorFields[0]); i++)
 		idents.motorFields[i] = -1;
+
+	for (i = 0; i < sizeof(idents.servoFields) / sizeof(idents.servoFields[0]); i++)
+		idents.servoFields[i] = -1;
 
 	for (int pidType = PID_P; pidType <= PID_D; pidType++)
 		for (int axis = 0; axis < 3; axis++)
@@ -235,13 +244,17 @@ void identifyFields()
 		idents.accFields[axis] = -1;
 	}
 
+	for (i = 0; i < sizeof(idents.miscFields) / sizeof(idents.miscFields[0]); i++)
+		idents.miscFields[i] = -1;
+
+	idents.numMisc = 0;
+	idents.numMotors = 0;
+	idents.numServos = 0;
+
 	idents.roll = idents.pitch = idents.heading = -1;
 	idents.hasGyros = false;
 	idents.hasPIDs = false;
 	idents.hasAccs = false;
-
-	for (i = 0; i < sizeof(idents.miscFields) / sizeof(idents.miscFields[0]); i++)
-		idents.miscFields[i] = -1;
 
 	//Now look through the field names and assign fields we recognize to each of those categories
 	for (fieldIndex = 0; fieldIndex < points->fieldCount; fieldIndex++) {
@@ -250,7 +263,7 @@ void identifyFields()
 
 			if (motorIndex >= 0 && motorIndex < MAX_MOTORS) {
 				idents.motorFields[motorIndex] = fieldIndex;
-				idents.motorColors[motorIndex] = lineColors[motorIndex % NUM_LINE_COLORS];
+				idents.motorColors[motorIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
 				idents.numMotors++;
 			}
 		} else if (strncmp(points->fieldNames[fieldIndex], "rcCommand[", strlen("rcCommand[")) == 0){
@@ -310,6 +323,12 @@ void identifyFields()
 			idents.hasAccs = true;
 			idents.accFields[axisIndex] = fieldIndex;
 			idents.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
+		} else if (strncmp(points->fieldNames[fieldIndex], "servo[", strlen("servo[")) == 0) {
+			int servoIndex = atoi(points->fieldNames[fieldIndex] + strlen("servo["));
+
+			idents.numServos++;
+			idents.servoFields[servoIndex] = fieldIndex;
+			idents.servoColors[servoIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
 		} else if (strcmp(points->fieldNames[fieldIndex], "roll") == 0) {
 			idents.roll = fieldIndex;
 		} else if (strcmp(points->fieldNames[fieldIndex], "pitch") == 0) {
@@ -1016,6 +1035,9 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	motorCurve = expoCurveCreate(-(flightLog->maxthrottle + flightLog->minthrottle) / 2, 1.0,
 			(flightLog->maxthrottle - flightLog->minthrottle) / 2, 1.0, 2);
 
+	// Default Servo range is [1020...2000] but we'll just use [1000...2000] for simplicity
+	servoCurve = expoCurveCreate(-1500, 1.0, 1000, 1.0, 2);
+
 	int durationSecs = (outputFrames + (options.fps - 1)) / (options.fps);
 	int durationMins = durationSecs / 60;
 	durationSecs %= 60;
@@ -1042,6 +1064,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 	    //Plot the upper motor graph
 	    if (options.plotMotors) {
+	    	int motorGraphHeight = (int) (options.imageHeight * (options.plotPids ? 0.15 : 0.20));
+
 			cairo_save(cr);
 			{
 				if (options.plotPids) {
@@ -1057,8 +1081,16 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 				for (i = 0; i < idents.numMotors; i++) {
 					plotLine(cr, idents.motorColors[i], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.motorFields[i],
-							motorCurve, (int) (options.imageHeight * (options.plotPids ? 0.15 : 0.20)));
+							windowEndTime, firstFrameIndex, idents.motorFields[i], motorCurve, motorGraphHeight);
+				}
+
+				if (idents.numServos) {
+					for (i = 0; i < MAX_SERVOS; i++) {
+						if (idents.servoFields[i] > -1) {
+							plotLine(cr, idents.servoColors[i], windowStartTime,
+									windowEndTime, firstFrameIndex, idents.servoFields[i], motorCurve, motorGraphHeight);
+						}
+					}
 				}
 
 				drawAxisLabel(cr, "Motors");
