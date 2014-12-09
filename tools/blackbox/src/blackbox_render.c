@@ -588,26 +588,43 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
 {
 	(void) imageHeight;
 
-	parameters->numMotors = 4;
+	parameters->numMotors = idents.numMotors == 3 || idents.numMotors == 4 ? idents.numMotors : 4;
 	parameters->numBlades = 2;
 	parameters->bladeLength = imageWidth / 25;
 	parameters->tipBezierWidth = 0.2 * parameters->bladeLength;
 	parameters->tipBezierHeight = 0.1 * parameters->bladeLength;
 	parameters->motorSpacing = parameters->bladeLength * 1.15;
 
-	parameters->motorX[0] = 1;
-	parameters->motorY[0] = 1;
-	parameters->motorX[1] = 1;
-	parameters->motorY[1] = -1;
-	parameters->motorX[2] = -1;
-	parameters->motorY[2] = 1;
-	parameters->motorX[3] = -1;
-	parameters->motorY[3] = -1;
+	switch (parameters->numMotors) {
+		case 3:
+			parameters->motorX[0] = 0;
+			parameters->motorY[0] = 1.41;
+			parameters->motorX[1] = 1;
+			parameters->motorY[1] = -1;
+			parameters->motorX[2] = -1;
+			parameters->motorY[2] = -1;
 
-	parameters->motorDirection[0] = 1;
-	parameters->motorDirection[1] = -1;
-	parameters->motorDirection[2] = -1;
-	parameters->motorDirection[3] = 1;
+			parameters->motorDirection[0] = -1;
+			parameters->motorDirection[1] = -1;
+			parameters->motorDirection[2] = -1;
+		break;
+		case 4:
+		default:
+			parameters->motorX[0] = 1;
+			parameters->motorY[0] = 1;
+			parameters->motorX[1] = 1;
+			parameters->motorY[1] = -1;
+			parameters->motorX[2] = -1;
+			parameters->motorY[2] = 1;
+			parameters->motorX[3] = -1;
+			parameters->motorY[3] = -1;
+
+			parameters->motorDirection[0] = 1;
+			parameters->motorDirection[1] = -1;
+			parameters->motorDirection[2] = -1;
+			parameters->motorDirection[3] = 1;
+		break;
+	}
 
 	//TODO we can let the user choose their prop colours to match their model if they like
 	for (int i = 0; i < parameters->numMotors; i++)
