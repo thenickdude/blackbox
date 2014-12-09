@@ -139,7 +139,7 @@ static const char * const blackboxHeaderFields[] = {
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
 		/* PIDs: */
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(TAG2_3S32) "," ENCODING(TAG2_3S32) ","  ENCODING(TAG2_3S32) ","
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
 		/* rcCommand[0..3] */
 		ENCODING(TAG8_4S16) "," ENCODING(TAG8_4S16) ","  ENCODING(TAG8_4S16) ","
@@ -153,6 +153,29 @@ static const char * const blackboxHeaderFields[] = {
 		/* Motor[1..7]: */
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
 		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB)
+};
+
+/**
+ * Additional fields to tack on to those above for tricopters (to record tail servo position)
+ */
+static const char * const blackboxAdditionalFieldsTricopter[] = {
+	//Field I name
+		"servo[5]",
+
+	//Field I signed
+		"0",
+
+	//Field I predictor
+		PREDICT(1500),
+
+    //Field I encoding:
+		ENCODING(SIGNED_VB),
+
+	//Field P predictor:
+		PREDICT(PREVIOUS),
+
+    //Field P encoding:
 		ENCODING(SIGNED_VB)
 };
 
@@ -176,7 +199,7 @@ typedef struct mcfg_standin_t {
 mcfg_standin_t mcfg = {
 	.minthrottle = 1150, .maxthrottle = 1850
 };
-const int numberMotor = 4;
+int numberMotor = 0;
 
 // Program options
 int optionDebug;
@@ -190,10 +213,12 @@ static blackbox_values_t blackboxHistoryRing[3];
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
 static blackbox_values_t* blackboxHistory[3];
 
-// This points into the generation 0 buffer of blackboxHistoryRing
-blackbox_values_t *blackboxCurrent;
-
 flightLogStatistics_t encodedStats;
+
+static int isTricopter()
+{
+	return numberMotor == 3;
+}
 
 void blackboxWrite(uint8_t ch)
 {
@@ -221,22 +246,140 @@ static void writeSignedVB(int32_t value)
 	writeUnsignedVB((uint32_t)((value << 1) ^ (value >> 31)));
 }
 
-#define FIELD_ZERO  0
-#define FIELD_4BIT  1
-#define FIELD_8BIT  2
-#define FIELD_16BIT 3
+/**
+ * Write a 2 bit tag followed by 3 signed fields of 2, 4, 6 or 32 bits
+ */
+static void writeTag2_3S32(int32_t *values) {
+	static const int NUM_FIELDS = 3;
+
+	//Need to be enums rather than const ints if we want to switch on them (due to being C)
+	enum { BITS_2  = 0};
+	enum { BITS_4  = 1};
+	enum { BITS_6  = 2};
+	enum { BITS_32 = 3};
+
+	enum { BYTES_1  = 0};
+	enum { BYTES_2  = 1};
+	enum { BYTES_3  = 2};
+	enum { BYTES_4  = 3};
+
+	int x;
+	int selector = BITS_2, selector2;
+
+	/*
+	 * Find out how many bits the largest value requires to encode, and use it to choose one of the packing schemes
+	 * below:
+	 *
+	 * Selector possibilities
+	 *
+	 * 2 bits per field  ss11 2233,
+	 * 4 bits per field  ss00 1111 2222 3333
+	 * 6 bits per field  ss11 1111 0022 2222 0033 3333
+	 * 32 bits per field sstt tttt followed by fields of various byte counts
+	 */
+	for (x = 0; x < NUM_FIELDS; x++) {
+		//Require more than 6 bits?
+		if (values[x] >= 32 || values[x] < -32) {
+			selector = BITS_32;
+			break;
+		}
+
+		//Require more than 4 bits?
+		if (values[x] >= 8 || values[x] < -8) {
+			 if (selector < BITS_6)
+				 selector = BITS_6;
+		} else if (values[x] >= 2 || values[x] < -2) { //Require more than 2 bits?
+			if (selector < BITS_4)
+				selector = BITS_4;
+		}
+	}
+
+	switch (selector) {
+		case BITS_2:
+			blackboxWrite((selector << 6) | ((values[0] & 0x03) << 4) | ((values[1] & 0x03) << 2) | (values[2] & 0x03));
+		break;
+		case BITS_4:
+			blackboxWrite((selector << 6) | (values[0] & 0x0F));
+			blackboxWrite((values[1] << 4) | (values[2] & 0x0F));
+		break;
+		case BITS_6:
+			blackboxWrite((selector << 6) | (values[0] & 0x3F));
+			blackboxWrite((uint8_t)values[1]);
+			blackboxWrite((uint8_t)values[2]);
+		break;
+		case BITS_32:
+			/*
+			 * Do another round to compute a selector for each field, assuming that they are at least 8 bits each
+			 *
+			 * Selector2 field possibilities
+			 * 0 - 8 bits
+			 * 1 - 16 bits
+			 * 2 - 24 bits
+			 * 3 - 32 bits
+			 */
+			selector2 = 0;
+
+			//Encode in reverse order so the first field is in the low bits:
+			for (x = NUM_FIELDS - 1; x >= 0; x--) {
+				selector2 <<= 2;
+
+				if (values[x] < 128 && values[x] >= -128)
+					selector2 |= BYTES_1;
+				else if (values[x] < 32768 && values[x] >= -32768)
+					selector2 |= BYTES_2;
+				else if (values[x] < 8388608 && values[x] >= -8388608)
+					selector2 |= BYTES_3;
+				else
+					selector2 |= BYTES_4;
+			}
+
+			//Write the selectors
+			blackboxWrite((selector << 6) | selector2);
+
+			//And now the values according to the selectors we picked for them
+			for (x = 0; x < NUM_FIELDS; x++, selector2 >>= 2) {
+				switch (selector2 & 0x03) {
+					case BYTES_1:
+						blackboxWrite(values[x]);
+					break;
+					case BYTES_2:
+						blackboxWrite(values[x]);
+						blackboxWrite(values[x] >> 8);
+					break;
+					case BYTES_3:
+						blackboxWrite(values[x]);
+						blackboxWrite(values[x] >> 8);
+						blackboxWrite(values[x] >> 16);
+					break;
+					case BYTES_4:
+						blackboxWrite(values[x]);
+						blackboxWrite(values[x] >> 8);
+						blackboxWrite(values[x] >> 16);
+						blackboxWrite(values[x] >> 24);
+					break;
+				}
+			}
+		break;
+	}
+}
 
 /**
  * Write an 8-bit selector followed by four signed fields of size 0, 4, 8 or 16 bits.
  */
 static void writeTag8_4S16(int32_t *values) {
+
+	//Need to be enums rather than const ints if we want to switch on them (due to being C)
+	enum { FIELD_ZERO  = 0};
+	enum { FIELD_4BIT  = 1};
+	enum { FIELD_8BIT  = 2};
+	enum { FIELD_16BIT = 3};
+
 	uint8_t selector;
 	int x;
 
 	/*
 	 * 4-bit fields can only be combined with their paired neighbor (there are two pairs), so choose a
-	 * larger encoding if that's not possible. This is the most compact representation of this logic
-	 * I could come up with:
+	 * larger encoding if that's not possible.
 	 */
 	const uint8_t rcSelectorCleanup[16] = {
 	//          Output selectors     <- Input selectors
@@ -299,6 +442,7 @@ static void writeTag8_4S16(int32_t *values) {
 
 static void writeIntraframe(void)
 {
+	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
 	int x;
 
 	blackboxWrite('I');
@@ -333,6 +477,9 @@ static void writeIntraframe(void)
 	for (x = 1; x < numberMotor; x++)
 		writeSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
 
+	if (isTricopter())
+		writeSignedVB(blackboxHistory[0]->servo[5] - 1500);
+
 	//Rotate our history buffers:
 
 	//The current state becomes the new "before" state
@@ -341,14 +488,14 @@ static void writeIntraframe(void)
 	blackboxHistory[2] = blackboxHistory[0];
 	//And advance the current state over to a blank space ready to be filled
 	blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
-	blackboxCurrent = blackboxHistory[0];
 }
 
 static void writeInterframe(void)
 {
 	int x;
-	int32_t rcDeltas[4];
+	int32_t deltas[4];
 
+	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
 	blackbox_values_t *blackboxLast = blackboxHistory[1];
 
 	blackboxWrite('P');
@@ -365,19 +512,25 @@ static void writeInterframe(void)
 		writeSignedVB(blackboxCurrent->axisP[x] - blackboxLast->axisP[x]);
 
 	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisI[x] - blackboxLast->axisI[x]);
+		deltas[x] = blackboxCurrent->axisI[x] - blackboxLast->axisI[x];
 
+	/* 
+	 * The PID I field changes very slowly, most of the time +-2, so use an encoding
+	 * that can pack all three fields into one byte in that situation.
+	 */
+	writeTag2_3S32(deltas);
+	
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxCurrent->axisD[x] - blackboxLast->axisD[x]);
 
 	for (x = 0; x < 4; x++)
-		rcDeltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+		deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
 
 	/*
-	 * RC tends to stay the same or very small for many frames at a time, so use an encoding that
+	 * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
 	 * can pack multiple values per byte:
 	 */
-	writeTag8_4S16(rcDeltas);
+	writeTag8_4S16(deltas);
 
 	//Since gyros, accs and motors are noisy, base the prediction on the average of the history:
 	for (x = 0; x < 3; x++)
@@ -389,11 +542,13 @@ static void writeInterframe(void)
 	for (x = 0; x < numberMotor; x++)
 		writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
 
+	if (isTricopter())
+		writeSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
+
 	//Rotate our history buffers
 	blackboxHistory[2] = blackboxHistory[1];
 	blackboxHistory[1] = blackboxHistory[0];
 	blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
-	blackboxCurrent = blackboxHistory[0];
 }
 
 /*
@@ -405,6 +560,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 	int x, src;
 	uint32_t start = writtenBytes;
 	unsigned int encodedFrameSize;
+	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
 
 	(void) log;
 	(void) frameOffset;
@@ -443,9 +599,12 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 			blackboxCurrent->accSmooth[x] = frame[src++];
 		}
 
-		for (x = 0; x < 4; x++) {
+		for (x = 0; x < numberMotor; x++) {
 			blackboxCurrent->motor[x] = frame[src++];
 		}
+		
+		if (isTricopter())
+			blackboxCurrent->servo[5] = frame[src++];
 
 		if (frameType == 'I') {
 			writeIntraframe();
@@ -532,13 +691,13 @@ void printStats(flightLogStatistics_t *stats)
 	uint32_t totalFrames = stats->numIFrames + stats->numPFrames;
 
 	if (stats->numIFrames)
-		fprintf(stderr, "I frames %7d %6d bytes avg %8d bytes total\n", stats->numIFrames, stats->iFrameBytes / stats->numIFrames, stats->iFrameBytes);
+		fprintf(stderr, "I frames %7d %6.1f bytes avg %8d bytes total\n", stats->numIFrames, (double) stats->iFrameBytes / stats->numIFrames, stats->iFrameBytes);
 
 	if (stats->numPFrames)
-		fprintf(stderr, "P frames %7d %6d bytes avg %8d bytes total\n", stats->numPFrames, stats->pFrameBytes / stats->numPFrames, stats->pFrameBytes);
+		fprintf(stderr, "P frames %7d %6.1f bytes avg %8d bytes total\n", stats->numPFrames, (double) stats->pFrameBytes / stats->numPFrames, stats->pFrameBytes);
 
 	if (totalFrames)
-		fprintf(stderr, "Frames %9d %6d bytes avg %8d bytes total\n", totalFrames, totalBytes / totalFrames, totalBytes);
+		fprintf(stderr, "Frames %9d %6.1f bytes avg %8d bytes total\n", totalFrames, (double) totalBytes / totalFrames, totalBytes);
 	else
 		fprintf(stderr, "Frames %8d\n", 0);
 
@@ -558,6 +717,7 @@ void printStats(flightLogStatistics_t *stats)
 void writeHeader()
 {
 	int motorsToRemove = 8 - numberMotor;
+	const char *additionalHeader;
 
 	printf("%s", blackboxHeader);
 	writtenBytes = strlen(blackboxHeader);
@@ -568,8 +728,34 @@ void writeHeader()
 		for (int j = 0; j < endIndex; j++)
 			blackboxWrite(blackboxHeaderFields[i][j]);
 
+		if (isTricopter()) {
+			//Add fields to the end for the tail servo
+			blackboxWrite(',');
+
+			for (additionalHeader = blackboxAdditionalFieldsTricopter[i]; *additionalHeader; additionalHeader++)
+				blackboxWrite(*additionalHeader);
+		}
+
 		blackboxWrite('\n');
 	}
+}
+
+void onMetadataReady(flightLog_t *log)
+{
+	int i;
+
+	numberMotor = 0;
+
+	for (i = 0; i < log->mainFieldCount; i++) {
+		if (strncmp(log->mainFieldNames[i], "motor[", strlen("motor[")) == 0) {
+			int motorIndex = atoi(log->mainFieldNames[i] + strlen("motor["));
+
+			if (motorIndex + 1 > numberMotor)
+				numberMotor = motorIndex + 1;
+		}
+	}
+
+	writeHeader();
 }
 
 int main(int argc, char **argv)
@@ -591,16 +777,13 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	writeHeader();
-
 	blackboxHistory[0] = &blackboxHistoryRing[0];
 	blackboxHistory[1] = &blackboxHistoryRing[1];
 	blackboxHistory[2] = &blackboxHistoryRing[2];
-	blackboxCurrent = blackboxHistory[0];
 
 	log = flightLogCreate(fileno(input));
 
-	flightLogParse(log, 0, 0, onFrameReady, 0);
+	flightLogParse(log, 0, onMetadataReady, onFrameReady, 0);
 
 	encodedStats.totalBytes = writtenBytes;
 	encodedStats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] = log->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME];

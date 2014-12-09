@@ -265,10 +265,104 @@ static int32_t readSignedVB(flightLog_t *log)
 	return (i >> 1) ^ -(int32_t) (i & 1);
 }
 
+static int32_t signExtend24Bit(uint32_t u)
+{
+	//If sign bit is set, fill the top bits with 1s to sign-extend
+	return (u & 0x800000) ? (int32_t) (u | 0xFF000000) : u;
+}
+
+static int32_t signExtend6Bit(uint8_t byte)
+{
+	//If sign bit is set, fill the top bits with 1s to sign-extend
+	return (byte & 0x20) ? (int32_t) (int8_t) (byte | 0xC0) : byte;
+}
 
 static int32_t signExtend4Bit(uint8_t nibble)
 {
+	//If sign bit is set, fill the top bits with 1s to sign-extend
 	return (nibble & 0x08) ? (int32_t) (int8_t) (nibble | 0xF0) : nibble;
+}
+
+static int32_t signExtend2Bit(uint8_t byte)
+{
+	//If sign bit is set, fill the top bits with 1s to sign-extend
+	return (byte & 0x02) ? (int32_t) (int8_t) (byte | 0xFC) : byte;
+}
+
+static void readTag2_3S32(flightLog_t *log, int32_t *values) {
+	uint8_t leadByte;
+	uint8_t byte1, byte2, byte3, byte4;
+	int i;
+
+	leadByte = readChar(log);
+
+	// Check the selector in the top two bits to determine the field layout
+	switch (leadByte >> 6) {
+		case 0:
+			// 2-bit fields
+			values[0] = signExtend2Bit((leadByte >> 4) & 0x03);
+			values[1] = signExtend2Bit((leadByte >> 2) & 0x03);
+			values[2] = signExtend2Bit(leadByte & 0x03);
+		break;
+		case 1:
+			// 4-bit fields
+			values[0] = signExtend4Bit(leadByte & 0x0F);
+
+			leadByte = readChar(log);
+
+			values[1] = signExtend4Bit(leadByte >> 4);
+			values[2] = signExtend4Bit(leadByte & 0x0F);
+		break;
+		case 2:
+			// 6-bit fields
+			values[0] = signExtend6Bit(leadByte & 0x3F);
+
+			leadByte = readChar(log);
+			values[1] = signExtend6Bit(leadByte & 0x3F);
+
+			leadByte = readChar(log);
+			values[2] = signExtend6Bit(leadByte & 0x3F);
+		break;
+		case 3:
+			// Fields are 8, 16 or 24 bits, read selector to figure out which field is which size
+
+			for (i = 0; i < 3; i++) {
+				switch (leadByte & 0x03) {
+					case 0: // 8-bit
+						byte1 = readChar(log);
+
+						// Sign extend to 32 bits
+						values[i] = (int32_t) (int8_t) (byte1);
+					break;
+					case 1: // 16-bit
+						byte1 = readChar(log);
+						byte2 = readChar(log);
+
+						// Sign extend to 32 bits
+						values[i] = (int32_t) (int16_t) (byte1 | (byte2 << 8));
+					break;
+					case 2: // 24-bit
+						byte1 = readChar(log);
+						byte2 = readChar(log);
+						byte3 = readChar(log);
+
+						// Cause sign-extension by using arithmetic right-shift
+						values[i] = signExtend24Bit(byte1 | (byte2 << 8) | (byte3 << 16));
+					break;
+					case 3: // 32-bit
+						byte1 = readChar(log);
+						byte2 = readChar(log);
+						byte3 = readChar(log);
+						byte4 = readChar(log);
+
+						values[i] = (int32_t) (byte1 | (byte2 << 8) | (byte3 << 16) | (byte4 << 24));
+					break;
+				}
+
+				leadByte >>= 2;
+			}
+		break;
+	}
 }
 
 static void readTag8_4S16(flightLog_t *log, int32_t *values) {
@@ -341,6 +435,9 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 				break;
 				case FLIGHT_LOG_FIELD_PREDICTOR_MINTHROTTLE:
 					value += log->minthrottle;
+				break;
+				case FLIGHT_LOG_FIELD_PREDICTOR_1500:
+					value += 1500;
 				break;
 				case FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0:
 					if (log->private->motor0Index < 0) {
@@ -420,6 +517,17 @@ static void parseInterframe(flightLog_t *log, bool raw)
 						i++;
 					}
 					value = values[3];
+				break;
+				case FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32:
+					readTag2_3S32(log, (int32_t*)values);
+
+					//Apply the predictors for the fields:
+					for (int j = 0; j < 2; j++) {
+						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
+						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
+						i++;
+					}
+					value = values[2];
 				break;
 				case FLIGHT_LOG_FIELD_ENCODING_NULL:
 					continue;
