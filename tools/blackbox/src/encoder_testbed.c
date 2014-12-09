@@ -19,37 +19,141 @@
 
 #include "parser.h"
 
+#define MAX_MOTORS 8
+#define MAX_SERVOS 8
+
 static const char blackboxHeader[] =
 	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 	"H Blackbox version:1\n"
 	"H Data version:1\n";
 
+// Some macros to make writing FLIGHT_LOG_FIELD_PREDICTOR_* constants shorter:
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
+#define CONCAT_HELPER(x,y) x ## y
+#define CONCAT(x,y) CONCAT_HELPER(x, y)
+
+#define PREDICT(x) STR(CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x))
+#define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x))
+
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
 static const char * const blackboxHeaderFields[] = {
-	"H Field name:loopIteration,time,axisP[0],axisP[1],axisP[2],axisI[0],axisI[1],axisI[2],axisD[0],axisD[1],axisD[2]"
-		",rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],gyroData[0],gyroData[1],gyroData[2],accSmooth[0],accSmooth[1],accSmooth[2]"
-		",motor[0],motor[1],motor[2],motor[3],motor[4],motor[5],motor[6],motor[7]",
+	"H Field I name:"
+		"loopIteration,time,"
+		"axisP[0],axisP[1],axisP[2],"
+		"axisI[0],axisI[1],axisI[2],"
+		"axisD[0],axisD[1],axisD[2],"
+		"rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],"
+		"gyroData[0],gyroData[1],gyroData[2],"
+		"accSmooth[0],accSmooth[1],accSmooth[2],"
+		"motor[0],motor[1],motor[2],motor[3],"
+		"motor[4],motor[5],motor[6],motor[7]",
 
-	/* loopIteration, time, throttle and motors values aren't signed */
-         "H Field signed:0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0",
+	"H Field I signed:"
+		/* loopIteration, time: */
+		"0,0,"
+		/* PIDs: */
+		"1,1,1,1,1,1,1,1,1,"
+		/* rcCommand[0..2] */
+		"1,1,1,"
+		/* rcCommand[3] (Throttle): */
+		"0,"
+		/* gyroData[0..2]: */
+		"1,1,1,"
+		/* accSmooth[0..2]: */
+		"1,1,1,"
+		/* Motor[0..7]: */
+		"0,0,0,0,0,0,0,0",
 
-	/*
-	 * loopIteration merely increments, time advances in a straight line, motors and gyros predict an average of the
-	 * last two measurements (to reduce the impact of noise), all others predict the previous frame:
-	 */
-	"H Field P-predictor:6,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3,3,3,3",
+	"H Field I predictor:"
+		/* loopIteration, time: */
+		PREDICT(0) "," PREDICT(0) ","
+		/* PIDs: */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* rcCommand[0..2] */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* rcCommand[3] (Throttle): */
+		PREDICT(MINTHROTTLE) ","
+		/* gyroData[0..2]: */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* accSmooth[0..2]: */
+		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
+		/* Motor[0]: */
+		PREDICT(MINTHROTTLE) ","
+		/* Motor[1..7]: */
+		PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) ","
+		PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) ","
+		PREDICT(MOTOR_0),
 
-	// RC fields are encoded together as a group, other fields use signed-VB
-     "H Field P-encoding:0,0,0,0,0,0,0,0,0,0,0,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+     "H Field I encoding:"
+		/* loopIteration, time: */
+		ENCODING(UNSIGNED_VB) "," ENCODING(UNSIGNED_VB) ","
+		/* PIDs: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* rcCommand[0..2] */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* rcCommand[3] (Throttle): */
+		ENCODING(UNSIGNED_VB) ","
+		/* gyroData[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* accSmooth[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* Motor[0]: */
+		ENCODING(UNSIGNED_VB) ","
+		/* Motor[1..7]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB),
 
-	/*
-	 * Throttle and motor[0] are predicted to be minthrottle, the other motors predict to be the same as motor[0].
-	 * Other fields have no predictions:
-	 */
-	"H Field I-predictor:0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,0,0,0,0,0,4,5,5,5,5,5,5,5",
+	//Motors and gyros predict an average of the last two measurements (to reduce the impact of noise):
+	"H Field P predictor:"
+		/* loopIteration, time: */
+		PREDICT(INC) "," PREDICT(STRAIGHT_LINE) ","
+		/* PIDs: */
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		/* rcCommand[0..2] */
+		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
+		/* rcCommand[3] (Throttle): */
+		PREDICT(PREVIOUS) ","
+		/* gyroData[0..2]: */
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		/* accSmooth[0..2]: */
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		/* Motor[0]: */
+		PREDICT(AVERAGE_2) ","
+		/* Motor[1..7]: */
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
+		PREDICT(AVERAGE_2),
 
-	// loopIteration, time, throttle and motor[0] are stored with unsigned-VB, the rest with signed-VB:
-     "H Field I-encoding:1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0"
+	/* RC fields are encoded together as a group, everything else is signed since they're diffs: */
+    "H Field P encoding:"
+		/* loopIteration, time: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
+		/* PIDs: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* rcCommand[0..3] */
+		ENCODING(TAG8_4S16) "," ENCODING(TAG8_4S16) ","  ENCODING(TAG8_4S16) ","
+		ENCODING(TAG8_4S16) ","
+		/* gyroData[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* accSmooth[0..2]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		/* Motor[0]: */
+		ENCODING(SIGNED_VB) ","
+		/* Motor[1..7]: */
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
+		ENCODING(SIGNED_VB)
 };
 
 typedef struct blackbox_values_t {
@@ -60,7 +164,8 @@ typedef struct blackbox_values_t {
 	int16_t rcCommand[4];
 	int16_t gyroData[3];
 	int16_t accSmooth[3];
-	int16_t motor[4];
+	int16_t motor[MAX_MOTORS];
+	int16_t servo[MAX_SERVOS];
 } blackbox_values_t;
 
 typedef struct mcfg_standin_t {
@@ -440,7 +545,7 @@ void printStats(flightLogStatistics_t *stats)
 	if (stats->numBrokenFrames)
 		fprintf(stderr, "%d frames failed to decode (%.2f%%)\n", stats->numBrokenFrames, (double) stats->numBrokenFrames / (stats->numBrokenFrames + stats->numIFrames + stats->numPFrames) * 100);
 
-	fprintf(stderr, "IntervalMS %u totalbytes %u\n", intervalMS, stats->totalBytes);
+	fprintf(stderr, "IntervalMS %u Total bytes %u\n", intervalMS, stats->totalBytes);
 
 	if (intervalMS > 0) {
 		fprintf(stderr, "Data rate %4uHz %6u bytes/s %10u baud\n",
