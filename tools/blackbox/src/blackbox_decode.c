@@ -59,16 +59,17 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 		} else
 			printf("\n");
 	} else if (options.debug) {
+		// Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
 		if (frame) {
 			/*
 			 * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
 			 * the frame index will be smaller than it should be)
 			 */
-			fprintf(stderr, "Frame unusuable due to prior corruption %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
+			printf("Frame unusuable due to prior corruption %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
 		} else {
 			//We have no frame index for this frame, so just assume it was the one after the previously decoded frame
 			lastFrameIndex++;
-			fprintf(stderr, "Failed to decode frame %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
+			printf("Failed to decode frame %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
 		}
 	}
 }
