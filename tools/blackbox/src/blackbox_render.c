@@ -1153,15 +1153,17 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 		}
 		cairo_restore(cr);
 
-		//Draw a bar highlighting the current time
-		double centerX = options.imageWidth / 2.0;
+		//Draw a bar highlighting the current time if we are drawing any graphs
+		if (options.plotGyros || options.plotMotors || options.plotPids || options.plotPidSum) {
+			double centerX = options.imageWidth / 2.0;
 
-		cairo_set_source_rgba(cr, 1, 0.25, 0.25, 0.2);
-		cairo_set_line_width(cr, 20);
+			cairo_set_source_rgba(cr, 1, 0.25, 0.25, 0.2);
+			cairo_set_line_width(cr, 20);
 
-		cairo_move_to(cr, centerX, 0);
-		cairo_line_to(cr, centerX, options.imageHeight);
-		cairo_stroke(cr);
+			cairo_move_to(cr, centerX, 0);
+			cairo_line_to(cr, centerX, options.imageHeight);
+			cairo_stroke(cr);
+		}
 
 		int centerFrameIndex = datapointsFindFrameAtTime(points, windowCenterTime);
 
