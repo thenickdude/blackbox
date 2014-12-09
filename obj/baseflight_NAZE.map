@@ -27,23 +27,23 @@ Archive member included because of file (symbol)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libnosys.a(sbrk.o)
                               /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-sbrkr.o) (_sbrk)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubdf3.o)
-                              /tmp/cc2cfoNB.ltrans4.ltrans.o (__aeabi_dadd)
+                              /tmp/ccCoq7eK.ltrans4.ltrans.o (__aeabi_dadd)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivdf3.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_dmul)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_dmul)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_truncdfsf2.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_d2f)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_d2f)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubsf3.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_fsub)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_fsub)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivsf3.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_fmul)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_fmul)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_cmpsf2.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_fcmpeq)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_fcmpeq)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_fixsfsi.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_f2iz)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_f2iz)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_fixunssfsi.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (__aeabi_f2uiz)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (__aeabi_f2uiz)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_aeabi_ldivmod.o)
-                              /tmp/cc2cfoNB.ltrans2.ltrans.o (__aeabi_ldivmod)
+                              /tmp/ccCoq7eK.ltrans2.ltrans.o (__aeabi_ldivmod)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(bpabi.o)
                               /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_aeabi_ldivmod.o) (__gnu_ldivmod_helper)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_dvmd_tls.o)
@@ -53,35 +53,35 @@ Archive member included because of file (symbol)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_udivdi3.o)
                               /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(bpabi.o) (__udivdi3)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-memcpy-stub.o)
-                              /tmp/cc2cfoNB.ltrans5.ltrans.o (memcpy)
+                              /tmp/ccCoq7eK.ltrans8.ltrans.o (memcpy)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-memset.o)
-                              /tmp/cc2cfoNB.ltrans2.ltrans.o (memset)
+                              /tmp/ccCoq7eK.ltrans2.ltrans.o (memset)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strcat.o)
-                              /tmp/cc2cfoNB.ltrans5.ltrans.o (strcat)
+                              /tmp/ccCoq7eK.ltrans8.ltrans.o (strcat)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strchr.o)
-                              /tmp/cc2cfoNB.ltrans3.ltrans.o (strchr)
+                              /tmp/ccCoq7eK.ltrans3.ltrans.o (strchr)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strlen.o)
-                              /tmp/cc2cfoNB.ltrans2.ltrans.o (strlen)
+                              /tmp/ccCoq7eK.ltrans2.ltrans.o (strlen)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strncasecmp.o)
-                              /tmp/cc2cfoNB.ltrans3.ltrans.o (strncasecmp)
+                              /tmp/ccCoq7eK.ltrans3.ltrans.o (strncasecmp)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strncpy.o)
-                              /tmp/cc2cfoNB.ltrans5.ltrans.o (strncpy)
+                              /tmp/ccCoq7eK.ltrans8.ltrans.o (strncpy)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strstr.o)
-                              /tmp/cc2cfoNB.ltrans12.ltrans.o (strstr)
+                              /tmp/ccCoq7eK.ltrans12.ltrans.o (strstr)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_cos.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (cosf)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (cosf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_lrint.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (lrintf)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (lrintf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_sin.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (sinf)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (sinf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_acos.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (acosf)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (acosf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_atan2.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (atan2f)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (atan2f)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_pow.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (powf)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (powf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_sqrt.o)
-                              /tmp/cc2cfoNB.ltrans0.ltrans.o (sqrtf)
+                              /tmp/ccCoq7eK.ltrans0.ltrans.o (sqrtf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_acos.o)
                               /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_acos.o) (__ieee754_acosf)
 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_atan2.o)
@@ -143,7 +143,6 @@ xLeadFilter         0x2               obj/NAZE/gps.o (symbol from plugin)
 debug               0x8               obj/NAZE/mw.o (symbol from plugin)
 accSum              0xc               obj/NAZE/imu.o (symbol from plugin)
 accADC              0x6               obj/NAZE/imu.o (symbol from plugin)
-timerConfigs        0x100             obj/NAZE/drv_timer.o (symbol from plugin)
 yLeadFilter         0x2               obj/NAZE/gps.o (symbol from plugin)
 spekFrame           0x10              obj/NAZE/spektrum.o (symbol from plugin)
 dynI8               0x3               obj/NAZE/mw.o (symbol from plugin)
@@ -154,16 +153,15 @@ EstG                0xc               obj/NAZE/imu.o (symbol from plugin)
 Discarded input sections
 
  .text          0x0000000000000000        0x0 obj/NAZE/drv_adc.o (symbol from plugin)
- .text          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans5.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans10.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .bss           0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans13.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans14.ltrans.o
- .data          0x0000000000000000        0x0 /tmp/cc2cfoNB.ltrans15.ltrans.o
+ .text          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .bss           0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .data          0x0000000000000000        0x0 /tmp/ccCoq7eK.ltrans15.ltrans.o
  .data          0x0000000000000000        0x0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubdf3.o)
  .bss           0x0000000000000000        0x0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubdf3.o)
  .data          0x0000000000000000        0x0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivdf3.o)
@@ -438,22 +436,22 @@ MEMORY_B1        0x0000000060000000 0x0000000000000000 xr
 Linker script and memory map
 
 LOAD obj/NAZE/drv_adc.o
-LOAD /tmp/cc2cfoNB.ltrans0.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans1.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans2.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans3.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans4.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans5.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans6.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans7.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans8.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans9.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans10.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans11.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans12.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans13.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans14.ltrans.o
-LOAD /tmp/cc2cfoNB.ltrans15.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans0.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans1.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans2.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans3.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans4.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans5.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans6.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans7.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans8.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans9.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans10.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans11.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans12.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans13.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans14.ltrans.o
+LOAD /tmp/ccCoq7eK.ltrans15.ltrans.o
 LOAD /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a
 LOAD /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a
 LOAD /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a
@@ -551,587 +549,588 @@ END GROUP
                 0x0000000008000000                g_pfnVectors
                 0x000000000800010c                . = ALIGN (0x4)
 
-.text           0x0000000008000110    0x130f0
+.text           0x0000000008000110    0x13330
                 0x0000000008000110                . = ALIGN (0x4)
  *(.text)
- .text          0x0000000008000110     0x2588 /tmp/cc2cfoNB.ltrans0.ltrans.o
+ .text          0x0000000008000110     0x2588 /tmp/ccCoq7eK.ltrans0.ltrans.o
                 0x0000000008000110                loop
- .text          0x0000000008002698     0x1a68 /tmp/cc2cfoNB.ltrans2.ltrans.o
+ .text          0x0000000008002698     0x1a68 /tmp/ccCoq7eK.ltrans2.ltrans.o
                 0x0000000008002698                annexCode
- .text          0x0000000008004100      0x9cc /tmp/cc2cfoNB.ltrans3.ltrans.o
+ .text          0x0000000008004100      0x9cc /tmp/ccCoq7eK.ltrans3.ltrans.o
                 0x00000000080042f4                uartWrite
                 0x000000000800432a                tfp_printf
-                0x0000000008004368                cliPrintVar.7665
-                0x0000000008004408                cliCMix.7678
+                0x0000000008004368                cliPrintVar.7714
+                0x0000000008004408                cliCMix.7727
                 0x0000000008004698                GPS_set_next_wp
                 0x0000000008004724                pwmOutConfig.4991
                 0x00000000080049b4                hottV4Respond.7020
                 0x0000000008004a10                spiTransfer
                 0x0000000008004a50                mpu6500GyroRead.4815
  *fill*         0x0000000008004acc        0x4 
- .text          0x0000000008004ad0      0xe98 /tmp/cc2cfoNB.ltrans4.ltrans.o
+ .text          0x0000000008004ad0      0xe98 /tmp/ccCoq7eK.ltrans4.ltrans.o
                 0x0000000008004ad0                gpsNewData.5555
                 0x00000000080056c4                cliProcess
                 0x00000000080058c8                mpu6500Detect.constprop.44
- .text          0x0000000008005968      0xa6c /tmp/cc2cfoNB.ltrans5.ltrans.o
-                0x0000000008005968                mpu6500WriteRegister.4803
-                0x0000000008005988                configureTimerCaptureCompareInterrupt
-                0x0000000008005a3c                EXTI_Init.part.0.12938.constprop.62
-                0x0000000008005a90                configTimeBase
-                0x0000000008005b38                TIM_ICInit.constprop.34
-                0x0000000008005d5c                pwmICConfig
-                0x0000000008005d8c                pwmCallback.4912
-                0x0000000008005df4                grab_fields.5444.constprop.26
-                0x0000000008005e34                GPS_coord_to_degrees.constprop.18
-                0x0000000008005ee0                tfp_format
-                0x000000000800606a                blackboxPrintf.7156
-                0x000000000800608c                writeEEPROM
-                0x00000000080061c4                ftoa.7661
-                0x0000000008006298                USART_Init
-                0x0000000008006340                uartSetBaudRate
-                0x000000000800638a                timCCxHandler.5282
- .text          0x00000000080063d4      0xe6c /tmp/cc2cfoNB.ltrans6.ltrans.o
-                0x00000000080063d4                mpu3050ReadTemp.4668
-                0x000000000800642e                ms5611_get_ut.4370
-                0x0000000008006440                ms5611_get_up.4368
-                0x0000000008006450                bmp085_get_up.4244
-                0x00000000080064a0                bmp085_get_ut.4246
-                0x0000000008006594                l3g4200dRead.4864
-                0x00000000080065fc                mpu3050Read.4673
-                0x0000000008006664                mma8452Read.4626
-                0x00000000080066d4                hmc5883lRead
-                0x000000000800675c                bma280Read.4179
-                0x00000000080067b8                adxl345Read.4108
-                0x0000000008006898                ak8975Read
-                0x0000000008006908                hmc5883lInit
-                0x0000000008006ab4                mixerResetMotors
-                0x0000000008006ae4                cliExit.7629
-                0x0000000008006b1c                handleBlackbox
-                0x0000000008007134                mpu6050Detect.constprop.48
- .text          0x0000000008007240      0xa98 /tmp/cc2cfoNB.ltrans7.ltrans.o
-                0x0000000008007240                TIM_GetCapture4
-                0x0000000008007248                TIM_GetCapture3
-                0x000000000800724e                TIM_GetCapture2
-                0x0000000008007254                TIM_GetCapture1
-                0x0000000008007284                spektrumReadRawRC.11600
-                0x0000000008007324                sumdReadRawRC.11384
-                0x0000000008007340                sbusReadRawRC.11131
-                0x0000000008007364                uartRead
-                0x0000000008007396                isUartTransmitBufferEmpty
-                0x00000000080073ac                uartTotalBytesWaiting
-                0x00000000080073c2                uartSetMode
-                0x00000000080073c4                spektrumDataReceive.11594
-                0x000000000800741c                sumdDataReceive.11381
-                0x0000000008007490                sbusDataReceive.11128
-                0x00000000080074ec                RCC_GetClocksFreq
-                0x0000000008007580                RCC_APB1PeriphResetCmd.part.6.13702
-                0x0000000008007590                FLASH_WaitForLastOperation
-                0x00000000080075b2                FLASH_ErasePage
-                0x00000000080075f0                DMA_Init
-                0x000000000800762c                DMA_DeInit
-                0x000000000800771c                NVIC_Init.part.0.11995
-                0x0000000008007768                alignSensors
-                0x00000000080078a0                putchw.10841
-                0x00000000080078e8                ui2a.10822
-                0x0000000008007938                uli2a.10812
-                0x0000000008007988                serialSetMode
-                0x0000000008007992                serialSetBaudRate
-                0x000000000800799c                serialRead
-                0x00000000080079a6                serialTotalBytesWaiting
-                0x00000000080079b0                serialWrite
-                0x00000000080079ba                serialize8
-                0x00000000080079d8                headSerialResponse
-                0x0000000008007a14                headSerialReply
-                0x0000000008007a1a                serialize16
-                0x0000000008007a2e                serialize32
-                0x0000000008007a50                _putc.8447
-                0x0000000008007a5c                cliPrint.7600
-                0x0000000008007a78                cliGpsPassthrough.7623
-                0x0000000008007aec                cliVersion.7603
-                0x0000000008007af4                blackboxWrite.7136
-                0x0000000008007b00                writeUnsignedVB.7139
-                0x0000000008007b1e                writeSignedVB.7142
-                0x0000000008007b26                writeGPSFrame.7154
-                0x0000000008007b80                _putc.7132
-                0x0000000008007b8c                sendDataHead.6669
-                0x0000000008007ba8                sendTelemetryTail.6672
-                0x0000000008007be4                serialize16.6679
-                0x0000000008007bfa                failureMode
-                0x0000000008007c40                readEEPROM
-                0x0000000008007c8c                blinkLED
- .text          0x0000000008007cd8      0xd30 /tmp/cc2cfoNB.ltrans8.ltrans.o
-                0x0000000008007cd8                beepRev5.10438
-                0x0000000008007cec                beepRev4.10435
-                0x0000000008007d00                mspReadRawRC.10202
-                0x0000000008007d0c                pwmReadRawRC
-                0x0000000008007d24                softSerialWriteByte
-                0x0000000008007d42                softSerialTotalBytesWaiting
-                0x0000000008007d66                softSerialReadByte
-                0x0000000008007d94                isSoftSerialTransmitBufferEmpty
-                0x0000000008007da0                softSerialSetMode
-                0x0000000008007da4                softSerialSetBaudRate
-                0x0000000008007da6                pwmWriteStandard.4924
-                0x0000000008007db8                pwmWriteBrushed.4920
-                0x0000000008007ddc                mpu6500AccInit.4800
-                0x0000000008007df4                mpu6050AccInit.4731
-                0x0000000008007e1c                ms5611_calculate.4362
-                0x0000000008007f74                bmp085_calculate.4240
-                0x0000000008008050                cliCompare.7571
-                0x000000000800806a                systemBeep
-                0x0000000008008078                micros
-                0x00000000080080ac                delayMicroseconds
-                0x00000000080080c2                delay
-                0x00000000080080d6                gpioInit
-                0x0000000008008148                read8
-                0x000000000800815c                read16
-                0x0000000008008170                read32
-                0x0000000008008182                writeMotors
-                0x00000000080081bc                servoMiddle
-                0x00000000080081e4                rotateV
-                0x0000000008008354                calculateHeading.8164
-                0x0000000008008448                applyDeadband
-                0x0000000008008466                parseRcChannels
-                0x0000000008008498                validEEPROM.8080
-                0x00000000080084dc                _atof.7580
-                0x0000000008008608                i2a.7575
-                0x0000000008008630                applyChangedBits
-                0x000000000800865a                setTxSignal
-                0x000000000800867a                GPS_distance_cm_bearing.isra.3.5484
-                0x0000000008008700                GPS_calc_longitude_scaling.5456
-                0x000000000800873c                GPS_reset_home_position
-                0x0000000008008784                wrap_18000
-                0x00000000080087a8                gpsSetPIDs
-                0x000000000800884c                activateConfig
-                0x0000000008008930                spiTransferByte
-                0x0000000008008958                pwmWriteServo
-                0x0000000008008974                failsafeCheck.5008
-                0x00000000080089bc                ppmCallback.4916
- .text          0x0000000008008a08      0x944 /tmp/cc2cfoNB.ltrans9.ltrans.o
-                0x0000000008008a08                pidMultiWii.9034
-                0x0000000008008c74                pidRewrite.9036
-                0x0000000008008dfc                cliSave.7617
-                0x0000000008008e30                mpu6500GyroInit.4807
-                0x0000000008008ebc                i2c_ev_handler.10278
-                0x0000000008009198                beep.7445
-                0x00000000080091f4                beep_code.7448
-                0x00000000080092a0                gpsSetState.5453
-                0x00000000080092bc                ECHO_EXTI_IRQHandler
-                0x0000000008009318                uartStartTxDMA.10698
- .text          0x000000000800934c      0x6d8 /tmp/cc2cfoNB.ltrans10.ltrans.o
-                0x000000000800934c                i2cInit
-                0x000000000800953c                i2cRead
-                0x00000000080095b8                i2cWriteBuffer
-                0x0000000008009634                i2cWrite
-                0x0000000008009648                l3g4200dInit.4869
-                0x000000000800968c                mpu6050GyroInit.4742
-                0x0000000008009720                mpu3050Init.4676
-                0x000000000800977c                mma8452Init.4631
-                0x000000000800980c                ms5611_start_up.4375
-                0x0000000008009814                ms5611_start_ut.4377
-                0x000000000800981c                bmp085_start_up.4250
-                0x0000000008009840                bmp085_start_ut.4252
-                0x0000000008009854                bma280Init.4184
-                0x0000000008009884                ak8975Init
-                0x0000000008009898                adxl345Init.4113
-                0x00000000080098fc                i2c_er_handler.10289
-                0x000000000800998c                timerConfigure
-                0x00000000080099c0                pwmInConfig.5023
- .text          0x0000000008009a24      0x66c /tmp/cc2cfoNB.ltrans11.ltrans.o
-                0x0000000008009a24                mpu6500AccRead.4820
-                0x0000000008009a8c                cliFeature.7626
-                0x0000000008009b84                uartOpen
-                0x0000000008009ed4                serialInit
-                0x000000000800a004                checkTelemetryState.part.2.6357
- .text          0x000000000800a090      0x9b8 /tmp/cc2cfoNB.ltrans12.ltrans.o
-                0x000000000800a090                cliHelp.7611
-                0x000000000800a0bc                cliStatus.7614
-                0x000000000800a1b4                cliMap.7620
-                0x000000000800a258                cliMixer.7637
-                0x000000000800a2fc                cliProfile.7642
-                0x000000000800a348                cliAux.7653
-                0x000000000800a3ac                cliMotor.7648
-                0x000000000800a454                cliDump.7675
-                0x000000000800a610                cliSet.7672
-                0x000000000800a770                checkFirstTime
-                0x000000000800aa14                cliDefaults.7632
- .text          0x000000000800aa48      0x1fc /tmp/cc2cfoNB.ltrans13.ltrans.o
-                0x000000000800aa48                SystemInit
-                0x000000000800aa94                USART3_IRQHandler
-                0x000000000800aacc                USART2_IRQHandler
-                0x000000000800ab40                USART1_IRQHandler
-                0x000000000800ab84                DMA1_Channel2_IRQHandler
-                0x000000000800abb4                DMA1_Channel4_IRQHandler
-                0x000000000800abf0                SysTick_Handler
-                0x000000000800ac04                I2C2_ER_IRQHandler
-                0x000000000800ac08                I2C1_ER_IRQHandler
-                0x000000000800ac0c                I2C2_EV_IRQHandler
-                0x000000000800ac10                I2C1_EV_IRQHandler
-                0x000000000800ac14                HardFault_Handler
- .text          0x000000000800ac44       0xfc /tmp/cc2cfoNB.ltrans14.ltrans.o
-                0x000000000800ac44                mwArm.9051
-                0x000000000800ad04                mwDisarm.9040
- .text          0x000000000800ad40       0x5c /tmp/cc2cfoNB.ltrans15.ltrans.o
-                0x000000000800ad40                TIM4_IRQHandler
-                0x000000000800ad4c                TIM3_IRQHandler
-                0x000000000800ad58                TIM2_IRQHandler
-                0x000000000800ad62                TIM1_CC_IRQHandler
-                0x000000000800ad70                EXTI9_5_IRQHandler
-                0x000000000800ad74                EXTI1_IRQHandler
-                0x000000000800ad78                EXTI15_10_IRQHandler
- .text          0x000000000800ad9c      0x370 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubdf3.o)
-                0x000000000800ad9c                __aeabi_drsub
-                0x000000000800ada4                __aeabi_dsub
-                0x000000000800ada4                __subdf3
-                0x000000000800ada8                __adddf3
-                0x000000000800ada8                __aeabi_dadd
-                0x000000000800b020                __aeabi_ui2d
-                0x000000000800b020                __floatunsidf
-                0x000000000800b040                __floatsidf
-                0x000000000800b040                __aeabi_i2d
-                0x000000000800b064                __extendsfdf2
-                0x000000000800b064                __aeabi_f2d
-                0x000000000800b0a0                __aeabi_ul2d
-                0x000000000800b0a0                __floatundidf
-                0x000000000800b0b0                __floatdidf
-                0x000000000800b0b0                __aeabi_l2d
- .text          0x000000000800b10c      0x424 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivdf3.o)
-                0x000000000800b10c                __aeabi_dmul
-                0x000000000800b10c                __muldf3
-                0x000000000800b360                __aeabi_ddiv
-                0x000000000800b360                __divdf3
- .text          0x000000000800b530       0xa0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_truncdfsf2.o)
-                0x000000000800b530                __aeabi_d2f
-                0x000000000800b530                __truncdfsf2
- .text          0x000000000800b5d0      0x21c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubsf3.o)
-                0x000000000800b5d0                __aeabi_frsub
-                0x000000000800b5d8                __subsf3
-                0x000000000800b5d8                __aeabi_fsub
-                0x000000000800b5dc                __aeabi_fadd
-                0x000000000800b5dc                __addsf3
-                0x000000000800b73c                __aeabi_ui2f
-                0x000000000800b73c                __floatunsisf
-                0x000000000800b744                __aeabi_i2f
-                0x000000000800b744                __floatsisf
-                0x000000000800b760                __floatundisf
-                0x000000000800b760                __aeabi_ul2f
-                0x000000000800b770                __floatdisf
-                0x000000000800b770                __aeabi_l2f
- .text          0x000000000800b7ec      0x2a0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivsf3.o)
-                0x000000000800b7ec                __mulsf3
-                0x000000000800b7ec                __aeabi_fmul
-                0x000000000800b954                __divsf3
-                0x000000000800b954                __aeabi_fdiv
- .text          0x000000000800ba8c       0xec /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_cmpsf2.o)
-                0x000000000800ba8c                __gtsf2
-                0x000000000800ba8c                __gesf2
-                0x000000000800ba94                __lesf2
-                0x000000000800ba94                __ltsf2
-                0x000000000800ba9c                __nesf2
-                0x000000000800ba9c                __eqsf2
-                0x000000000800ba9c                __cmpsf2
-                0x000000000800bafc                __aeabi_cfrcmple
-                0x000000000800bb04                __aeabi_cfcmple
-                0x000000000800bb04                __aeabi_cfcmpeq
-                0x000000000800bb14                __aeabi_fcmpeq
-                0x000000000800bb28                __aeabi_fcmplt
-                0x000000000800bb3c                __aeabi_fcmple
-                0x000000000800bb50                __aeabi_fcmpge
-                0x000000000800bb64                __aeabi_fcmpgt
- .text          0x000000000800bb78       0x4c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_fixsfsi.o)
-                0x000000000800bb78                __fixsfsi
-                0x000000000800bb78                __aeabi_f2iz
- .text          0x000000000800bbc4       0x40 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_fixunssfsi.o)
-                0x000000000800bbc4                __aeabi_f2uiz
-                0x000000000800bbc4                __fixunssfsi
- .text          0x000000000800bc04       0x38 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_aeabi_ldivmod.o)
-                0x000000000800bc04                __aeabi_ldivmod
- .text          0x000000000800bc3c       0x60 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(bpabi.o)
-                0x000000000800bc3c                __gnu_ldivmod_helper
-                0x000000000800bc6c                __gnu_uldivmod_helper
- .text          0x000000000800bc9c        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_dvmd_tls.o)
-                0x000000000800bc9c                __aeabi_ldiv0
-                0x000000000800bc9c                __aeabi_idiv0
- .text          0x000000000800bca0      0x2a0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_divdi3.o)
-                0x000000000800bca0                __divdi3
- .text          0x000000000800bf40      0x290 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_udivdi3.o)
-                0x000000000800bf40                __udivdi3
- .text          0x000000000800c1d0      0x110 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_cmpdf2.o)
-                0x000000000800c1d0                __gtdf2
-                0x000000000800c1d0                __gedf2
-                0x000000000800c1d8                __ltdf2
-                0x000000000800c1d8                __ledf2
-                0x000000000800c1e0                __cmpdf2
-                0x000000000800c1e0                __eqdf2
-                0x000000000800c1e0                __nedf2
-                0x000000000800c25c                __aeabi_cdrcmple
-                0x000000000800c26c                __aeabi_cdcmple
-                0x000000000800c26c                __aeabi_cdcmpeq
-                0x000000000800c27c                __aeabi_dcmpeq
-                0x000000000800c290                __aeabi_dcmplt
-                0x000000000800c2a4                __aeabi_dcmple
-                0x000000000800c2b8                __aeabi_dcmpge
-                0x000000000800c2cc                __aeabi_dcmpgt
+ .text          0x0000000008005968      0xb1c /tmp/ccCoq7eK.ltrans5.ltrans.o
+                0x0000000008005968                pidMultiWii.9083
+                0x0000000008005bf0                pidRewrite.9085
+                0x0000000008005d94                cliSave.7666
+                0x0000000008005de8                mpu6500GyroInit.4807
+                0x0000000008005e74                i2c_ev_handler.10319
+                0x0000000008006150                beep.7494
+                0x00000000080061ac                beep_code.7497
+                0x0000000008006258                gpsSetState.5453
+                0x0000000008006274                ECHO_EXTI_IRQHandler
+                0x00000000080062d0                configureTimerCaptureCompareInterrupt
+                0x0000000008006388                EXTI_Init.part.0.12979.constprop.62
+                0x00000000080063dc                configTimeBase
+ .text          0x0000000008006484      0x9e4 /tmp/ccCoq7eK.ltrans6.ltrans.o
+                0x0000000008006484                i2cInit
+                0x0000000008006674                i2cRead
+                0x00000000080066f0                hmc5883lRead
+                0x00000000080067a4                ms5611_get_ut.4370
+                0x00000000080067b4                ms5611_get_up.4368
+                0x00000000080067c4                bmp085_get_up.4244
+                0x0000000008006814                bmp085_get_ut.4246
+                0x000000000800684c                bma280Read.4179
+                0x00000000080068a8                adxl345Read.4108
+                0x000000000800698c                i2cWriteBuffer
+                0x0000000008006a08                i2cWrite
+                0x0000000008006a1c                ak8975Read
+                0x0000000008006a8c                l3g4200dInit.4869
+                0x0000000008006ad0                mpu6050GyroInit.4742
+                0x0000000008006b64                mpu3050Init.4676
+                0x0000000008006bc0                mma8452Init.4631
+                0x0000000008006c50                ms5611_start_up.4375
+                0x0000000008006c58                ms5611_start_ut.4377
+                0x0000000008006c60                bmp085_start_up.4250
+                0x0000000008006c84                bmp085_start_ut.4252
+                0x0000000008006c98                bma280Init.4184
+                0x0000000008006cc8                ak8975Init
+                0x0000000008006cdc                adxl345Init.4113
+                0x0000000008006d40                i2c_er_handler.10330
+                0x0000000008006dd0                timerConfigure
+                0x0000000008006e04                pwmInConfig.5023
+ .text          0x0000000008006e68      0xd38 /tmp/ccCoq7eK.ltrans7.ltrans.o
+                0x0000000008006e68                mpu3050ReadTemp.4668
+                0x0000000008006f58                l3g4200dRead.4864
+                0x0000000008006fc0                mpu3050Read.4673
+                0x0000000008007028                mma8452Read.4626
+                0x0000000008007098                hmc5883lInit
+                0x0000000008007244                mixerResetMotors
+                0x0000000008007274                cliExit.7678
+                0x00000000080072ac                handleBlackbox
+                0x0000000008007a90                mpu6050Detect.constprop.48
+ .text          0x0000000008007ba0      0x95c /tmp/ccCoq7eK.ltrans8.ltrans.o
+                0x0000000008007ba0                TIM_GetCapture4
+                0x0000000008007ba8                TIM_GetCapture3
+                0x0000000008007bae                TIM_GetCapture2
+                0x0000000008007bb4                TIM_GetCapture1
+                0x0000000008007bba                TIM_ICInit.constprop.34
+                0x0000000008007de0                pwmICConfig
+                0x0000000008007e10                pwmCallback.4912
+                0x0000000008007e74                grab_fields.5444.constprop.26
+                0x0000000008007eb4                GPS_coord_to_degrees.constprop.18
+                0x0000000008007f60                tfp_format
+                0x00000000080080ea                blackboxPrintf.7165
+                0x000000000800810c                writeEEPROM
+                0x0000000008008244                ftoa.7710
+                0x0000000008008318                timCCxHandler.5282
+                0x0000000008008364                RCC_GetClocksFreq
+                0x00000000080083f8                USART_Init
+                0x00000000080084a0                uartSetBaudRate
+                0x00000000080084ea                RCC_APB1PeriphResetCmd.part.6.13743
+ *fill*         0x00000000080084fc        0x4 
+ .text          0x0000000008008500      0xd30 /tmp/ccCoq7eK.ltrans9.ltrans.o
+                0x0000000008008500                beepRev5.10479
+                0x0000000008008514                beepRev4.10476
+                0x0000000008008528                mspReadRawRC.10243
+                0x0000000008008534                pwmReadRawRC
+                0x000000000800854c                softSerialWriteByte
+                0x000000000800856a                softSerialTotalBytesWaiting
+                0x000000000800858e                softSerialReadByte
+                0x00000000080085bc                isSoftSerialTransmitBufferEmpty
+                0x00000000080085c8                softSerialSetMode
+                0x00000000080085cc                softSerialSetBaudRate
+                0x00000000080085ce                pwmWriteStandard.4924
+                0x00000000080085e0                pwmWriteBrushed.4920
+                0x0000000008008604                mpu6500AccInit.4800
+                0x000000000800861c                mpu6050AccInit.4731
+                0x0000000008008644                ms5611_calculate.4362
+                0x000000000800879c                bmp085_calculate.4240
+                0x0000000008008878                cliCompare.7620
+                0x0000000008008892                systemBeep
+                0x00000000080088a0                micros
+                0x00000000080088d4                delayMicroseconds
+                0x00000000080088ea                delay
+                0x00000000080088fe                gpioInit
+                0x0000000008008970                read8
+                0x0000000008008984                read16
+                0x0000000008008998                read32
+                0x00000000080089aa                writeMotors
+                0x00000000080089e4                servoMiddle
+                0x0000000008008a0c                rotateV
+                0x0000000008008b7c                calculateHeading.8213
+                0x0000000008008c70                applyDeadband
+                0x0000000008008c8e                parseRcChannels
+                0x0000000008008cc0                validEEPROM.8129
+                0x0000000008008d04                _atof.7629
+                0x0000000008008e30                i2a.7624
+                0x0000000008008e58                applyChangedBits
+                0x0000000008008e82                setTxSignal
+                0x0000000008008ea2                GPS_distance_cm_bearing.isra.3.5484
+                0x0000000008008f28                GPS_calc_longitude_scaling.5456
+                0x0000000008008f64                GPS_reset_home_position
+                0x0000000008008fac                wrap_18000
+                0x0000000008008fd0                gpsSetPIDs
+                0x0000000008009074                activateConfig
+                0x0000000008009158                spiTransferByte
+                0x0000000008009180                pwmWriteServo
+                0x000000000800919c                failsafeCheck.5008
+                0x00000000080091e4                ppmCallback.4916
+ .text          0x0000000008009230      0xa08 /tmp/ccCoq7eK.ltrans10.ltrans.o
+                0x0000000008009258                spektrumReadRawRC.11641
+                0x00000000080092f8                sumdReadRawRC.11425
+                0x0000000008009314                sbusReadRawRC.11172
+                0x0000000008009338                uartRead
+                0x000000000800936a                isUartTransmitBufferEmpty
+                0x0000000008009380                uartTotalBytesWaiting
+                0x0000000008009396                uartSetMode
+                0x0000000008009398                spektrumDataReceive.11635
+                0x00000000080093f0                sumdDataReceive.11422
+                0x0000000008009464                sbusDataReceive.11169
+                0x00000000080094c0                FLASH_WaitForLastOperation
+                0x00000000080094e2                FLASH_ErasePage
+                0x0000000008009520                uartStartTxDMA.10739
+                0x0000000008009552                DMA_Init
+                0x000000000800958e                DMA_DeInit
+                0x000000000800967c                NVIC_Init.part.0.12036
+                0x00000000080096c8                alignSensors
+                0x0000000008009800                putchw.10882
+                0x0000000008009848                ui2a.10863
+                0x0000000008009898                uli2a.10853
+                0x00000000080098e8                serialSetMode
+                0x00000000080098f2                serialSetBaudRate
+                0x00000000080098fc                serialRead
+                0x0000000008009906                serialTotalBytesWaiting
+                0x0000000008009910                serialWrite
+                0x000000000800991a                serialize8
+                0x0000000008009938                headSerialResponse
+                0x0000000008009974                headSerialReply
+                0x000000000800997a                serialize16
+                0x000000000800998e                serialize32
+                0x00000000080099b0                _putc.8496
+                0x00000000080099bc                cliPrint.7649
+                0x00000000080099d8                cliGpsPassthrough.7672
+                0x0000000008009a4c                cliVersion.7652
+                0x0000000008009a54                blackboxWrite.7142
+                0x0000000008009a60                writeUnsignedVB.7145
+                0x0000000008009a7e                writeSignedVB.7148
+                0x0000000008009a86                writeGPSFrame.7163
+                0x0000000008009ae0                _putc.7132
+                0x0000000008009aec                sendDataHead.6669
+                0x0000000008009b08                sendTelemetryTail.6672
+                0x0000000008009b44                serialize16.6679
+                0x0000000008009b5a                failureMode
+                0x0000000008009ba0                readEEPROM
+                0x0000000008009bec                blinkLED
+ .text          0x0000000008009c38      0x66c /tmp/ccCoq7eK.ltrans11.ltrans.o
+                0x0000000008009c38                mpu6500AccRead.4820
+                0x0000000008009ca0                cliFeature.7675
+                0x0000000008009d98                uartOpen
+                0x000000000800a0e8                serialInit
+                0x000000000800a218                checkTelemetryState.part.2.6357
+ .text          0x000000000800a2a4      0x9b8 /tmp/ccCoq7eK.ltrans12.ltrans.o
+                0x000000000800a2a4                cliHelp.7660
+                0x000000000800a2d0                cliStatus.7663
+                0x000000000800a3c8                cliMap.7669
+                0x000000000800a46c                cliMixer.7686
+                0x000000000800a510                cliProfile.7691
+                0x000000000800a55c                cliAux.7702
+                0x000000000800a5c0                cliMotor.7697
+                0x000000000800a668                cliDump.7724
+                0x000000000800a824                cliSet.7721
+                0x000000000800a984                checkFirstTime
+                0x000000000800ac28                cliDefaults.7681
+ .text          0x000000000800ac5c      0x1fc /tmp/ccCoq7eK.ltrans13.ltrans.o
+                0x000000000800ac5c                SystemInit
+                0x000000000800aca8                USART3_IRQHandler
+                0x000000000800ace0                USART2_IRQHandler
+                0x000000000800ad54                USART1_IRQHandler
+                0x000000000800ad98                DMA1_Channel2_IRQHandler
+                0x000000000800adc8                DMA1_Channel4_IRQHandler
+                0x000000000800ae04                SysTick_Handler
+                0x000000000800ae18                I2C2_ER_IRQHandler
+                0x000000000800ae1c                I2C1_ER_IRQHandler
+                0x000000000800ae20                I2C2_EV_IRQHandler
+                0x000000000800ae24                I2C1_EV_IRQHandler
+                0x000000000800ae28                HardFault_Handler
+ .text          0x000000000800ae58       0xf0 /tmp/ccCoq7eK.ltrans14.ltrans.o
+                0x000000000800ae58                mwArm.9100
+                0x000000000800af14                mwDisarm.9089
+ .text          0x000000000800af48       0x5c /tmp/ccCoq7eK.ltrans15.ltrans.o
+                0x000000000800af48                TIM4_IRQHandler
+                0x000000000800af54                TIM3_IRQHandler
+                0x000000000800af60                TIM2_IRQHandler
+                0x000000000800af6a                TIM1_CC_IRQHandler
+                0x000000000800af78                EXTI9_5_IRQHandler
+                0x000000000800af7c                EXTI1_IRQHandler
+                0x000000000800af80                EXTI15_10_IRQHandler
+ .text          0x000000000800afa4      0x370 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubdf3.o)
+                0x000000000800afa4                __aeabi_drsub
+                0x000000000800afac                __aeabi_dsub
+                0x000000000800afac                __subdf3
+                0x000000000800afb0                __adddf3
+                0x000000000800afb0                __aeabi_dadd
+                0x000000000800b228                __aeabi_ui2d
+                0x000000000800b228                __floatunsidf
+                0x000000000800b248                __floatsidf
+                0x000000000800b248                __aeabi_i2d
+                0x000000000800b26c                __extendsfdf2
+                0x000000000800b26c                __aeabi_f2d
+                0x000000000800b2a8                __aeabi_ul2d
+                0x000000000800b2a8                __floatundidf
+                0x000000000800b2b8                __floatdidf
+                0x000000000800b2b8                __aeabi_l2d
+ .text          0x000000000800b314      0x424 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivdf3.o)
+                0x000000000800b314                __aeabi_dmul
+                0x000000000800b314                __muldf3
+                0x000000000800b568                __aeabi_ddiv
+                0x000000000800b568                __divdf3
+ .text          0x000000000800b738       0xa0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_truncdfsf2.o)
+                0x000000000800b738                __aeabi_d2f
+                0x000000000800b738                __truncdfsf2
+ .text          0x000000000800b7d8      0x21c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubsf3.o)
+                0x000000000800b7d8                __aeabi_frsub
+                0x000000000800b7e0                __subsf3
+                0x000000000800b7e0                __aeabi_fsub
+                0x000000000800b7e4                __aeabi_fadd
+                0x000000000800b7e4                __addsf3
+                0x000000000800b944                __aeabi_ui2f
+                0x000000000800b944                __floatunsisf
+                0x000000000800b94c                __aeabi_i2f
+                0x000000000800b94c                __floatsisf
+                0x000000000800b968                __floatundisf
+                0x000000000800b968                __aeabi_ul2f
+                0x000000000800b978                __floatdisf
+                0x000000000800b978                __aeabi_l2f
+ .text          0x000000000800b9f4      0x2a0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_muldivsf3.o)
+                0x000000000800b9f4                __mulsf3
+                0x000000000800b9f4                __aeabi_fmul
+                0x000000000800bb5c                __divsf3
+                0x000000000800bb5c                __aeabi_fdiv
+ .text          0x000000000800bc94       0xec /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_cmpsf2.o)
+                0x000000000800bc94                __gtsf2
+                0x000000000800bc94                __gesf2
+                0x000000000800bc9c                __lesf2
+                0x000000000800bc9c                __ltsf2
+                0x000000000800bca4                __nesf2
+                0x000000000800bca4                __eqsf2
+                0x000000000800bca4                __cmpsf2
+                0x000000000800bd04                __aeabi_cfrcmple
+                0x000000000800bd0c                __aeabi_cfcmple
+                0x000000000800bd0c                __aeabi_cfcmpeq
+                0x000000000800bd1c                __aeabi_fcmpeq
+                0x000000000800bd30                __aeabi_fcmplt
+                0x000000000800bd44                __aeabi_fcmple
+                0x000000000800bd58                __aeabi_fcmpge
+                0x000000000800bd6c                __aeabi_fcmpgt
+ .text          0x000000000800bd80       0x4c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_fixsfsi.o)
+                0x000000000800bd80                __fixsfsi
+                0x000000000800bd80                __aeabi_f2iz
+ .text          0x000000000800bdcc       0x40 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_fixunssfsi.o)
+                0x000000000800bdcc                __aeabi_f2uiz
+                0x000000000800bdcc                __fixunssfsi
+ .text          0x000000000800be0c       0x38 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_aeabi_ldivmod.o)
+                0x000000000800be0c                __aeabi_ldivmod
+ .text          0x000000000800be44       0x60 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(bpabi.o)
+                0x000000000800be44                __gnu_ldivmod_helper
+                0x000000000800be74                __gnu_uldivmod_helper
+ .text          0x000000000800bea4        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_dvmd_tls.o)
+                0x000000000800bea4                __aeabi_ldiv0
+                0x000000000800bea4                __aeabi_idiv0
+ .text          0x000000000800bea8      0x2a0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_divdi3.o)
+                0x000000000800bea8                __divdi3
+ .text          0x000000000800c148      0x290 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_udivdi3.o)
+                0x000000000800c148                __udivdi3
+ .text          0x000000000800c3d8      0x110 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_cmpdf2.o)
+                0x000000000800c3d8                __gtdf2
+                0x000000000800c3d8                __gedf2
+                0x000000000800c3e0                __ltdf2
+                0x000000000800c3e0                __ledf2
+                0x000000000800c3e8                __cmpdf2
+                0x000000000800c3e8                __eqdf2
+                0x000000000800c3e8                __nedf2
+                0x000000000800c464                __aeabi_cdrcmple
+                0x000000000800c474                __aeabi_cdcmple
+                0x000000000800c474                __aeabi_cdcmpeq
+                0x000000000800c484                __aeabi_dcmpeq
+                0x000000000800c498                __aeabi_dcmplt
+                0x000000000800c4ac                __aeabi_dcmple
+                0x000000000800c4c0                __aeabi_dcmpge
+                0x000000000800c4d4                __aeabi_dcmpgt
  *(.text*)
- .text.startup  0x000000000800c2e0     0x1760 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x000000000800c2e0                main
+ .text.startup  0x000000000800c4e8     0x1738 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x000000000800c4e8                main
  .text.unlikely
-                0x000000000800da40      0x100 /tmp/cc2cfoNB.ltrans3.ltrans.o
-                0x000000000800da40                initialiseSoftSerial
- .text.memcpy   0x000000000800db40       0x12 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-memcpy-stub.o)
-                0x000000000800db40                memcpy
- .text.memset   0x000000000800db52       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-memset.o)
-                0x000000000800db52                memset
- .text.strcat   0x000000000800db62       0x1a /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strcat.o)
-                0x000000000800db62                strcat
- .text.strchr   0x000000000800db7c       0x1a /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strchr.o)
-                0x000000000800db7c                strchr
- .text.strlen   0x000000000800db96       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strlen.o)
-                0x000000000800db96                strlen
- *fill*         0x000000000800dba6        0x2 
+                0x000000000800dc20      0x100 /tmp/ccCoq7eK.ltrans3.ltrans.o
+                0x000000000800dc20                initialiseSoftSerial
+ .text.memcpy   0x000000000800dd20       0x12 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-memcpy-stub.o)
+                0x000000000800dd20                memcpy
+ .text.memset   0x000000000800dd32       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-memset.o)
+                0x000000000800dd32                memset
+ .text.strcat   0x000000000800dd42       0x1a /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strcat.o)
+                0x000000000800dd42                strcat
+ .text.strchr   0x000000000800dd5c       0x1a /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strchr.o)
+                0x000000000800dd5c                strchr
+ .text.strlen   0x000000000800dd76       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strlen.o)
+                0x000000000800dd76                strlen
+ *fill*         0x000000000800dd86        0x2 
  .text.strncasecmp
-                0x000000000800dba8       0x44 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strncasecmp.o)
-                0x000000000800dba8                strncasecmp
- .text.strncpy  0x000000000800dbec       0x24 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strncpy.o)
-                0x000000000800dbec                strncpy
- .text.strstr   0x000000000800dc10       0x32 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strstr.o)
-                0x000000000800dc10                strstr
- *fill*         0x000000000800dc42        0x2 
+                0x000000000800dd88       0x44 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strncasecmp.o)
+                0x000000000800dd88                strncasecmp
+ .text.strncpy  0x000000000800ddcc       0x24 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strncpy.o)
+                0x000000000800ddcc                strncpy
+ .text.strstr   0x000000000800ddf0       0x32 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libg_s.a(lib_a-strstr.o)
+                0x000000000800ddf0                strstr
+ *fill*         0x000000000800de22        0x2 
  .text.Reset_Handler
-                0x000000000800dc44       0xac obj/NAZE/startup_stm32f10x_md_gcc.o
-                0x000000000800dc44                Reset_Handler
+                0x000000000800de24       0xac obj/NAZE/startup_stm32f10x_md_gcc.o
+                0x000000000800de24                Reset_Handler
  .text.Default_Handler
-                0x000000000800dcf0        0x4 obj/NAZE/startup_stm32f10x_md_gcc.o
-                0x000000000800dcf0                EXTI2_IRQHandler
-                0x000000000800dcf0                DebugMon_Handler
-                0x000000000800dcf0                PVD_IRQHandler
-                0x000000000800dcf0                PendSV_Handler
-                0x000000000800dcf0                NMI_Handler
-                0x000000000800dcf0                EXTI3_IRQHandler
-                0x000000000800dcf0                EXTI0_IRQHandler
-                0x000000000800dcf0                UsageFault_Handler
-                0x000000000800dcf0                ADC1_2_IRQHandler
-                0x000000000800dcf0                SPI1_IRQHandler
-                0x000000000800dcf0                TAMPER_IRQHandler
-                0x000000000800dcf0                RTC_IRQHandler
-                0x000000000800dcf0                DMA1_Channel7_IRQHandler
-                0x000000000800dcf0                CAN1_RX1_IRQHandler
-                0x000000000800dcf0                DMA1_Channel6_IRQHandler
-                0x000000000800dcf0                RCC_IRQHandler
-                0x000000000800dcf0                TIM1_TRG_COM_IRQHandler
-                0x000000000800dcf0                DMA1_Channel1_IRQHandler
-                0x000000000800dcf0                Default_Handler
-                0x000000000800dcf0                SPI2_IRQHandler
-                0x000000000800dcf0                MemManage_Handler
-                0x000000000800dcf0                SVC_Handler
-                0x000000000800dcf0                DMA1_Channel5_IRQHandler
-                0x000000000800dcf0                EXTI4_IRQHandler
-                0x000000000800dcf0                USB_LP_CAN1_RX0_IRQHandler
-                0x000000000800dcf0                USB_HP_CAN1_TX_IRQHandler
-                0x000000000800dcf0                DMA1_Channel3_IRQHandler
-                0x000000000800dcf0                TIM1_UP_IRQHandler
-                0x000000000800dcf0                WWDG_IRQHandler
-                0x000000000800dcf0                TIM1_BRK_IRQHandler
-                0x000000000800dcf0                RTCAlarm_IRQHandler
-                0x000000000800dcf0                CAN1_SCE_IRQHandler
-                0x000000000800dcf0                FLASH_IRQHandler
-                0x000000000800dcf0                BusFault_Handler
-                0x000000000800dcf0                USBWakeUp_IRQHandler
- .text.atoi     0x000000000800dcf4        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-atoi.o)
-                0x000000000800dcf4                atoi
- .text.bsearch  0x000000000800dcfc       0x42 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-bsearch.o)
-                0x000000000800dcfc                bsearch
- *fill*         0x000000000800dd3e        0x2 
- .text.strtok   0x000000000800dd40       0x64 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtok.o)
-                0x000000000800dd40                strtok
+                0x000000000800ded0        0x4 obj/NAZE/startup_stm32f10x_md_gcc.o
+                0x000000000800ded0                EXTI2_IRQHandler
+                0x000000000800ded0                DebugMon_Handler
+                0x000000000800ded0                PVD_IRQHandler
+                0x000000000800ded0                PendSV_Handler
+                0x000000000800ded0                NMI_Handler
+                0x000000000800ded0                EXTI3_IRQHandler
+                0x000000000800ded0                EXTI0_IRQHandler
+                0x000000000800ded0                UsageFault_Handler
+                0x000000000800ded0                ADC1_2_IRQHandler
+                0x000000000800ded0                SPI1_IRQHandler
+                0x000000000800ded0                TAMPER_IRQHandler
+                0x000000000800ded0                RTC_IRQHandler
+                0x000000000800ded0                DMA1_Channel7_IRQHandler
+                0x000000000800ded0                CAN1_RX1_IRQHandler
+                0x000000000800ded0                DMA1_Channel6_IRQHandler
+                0x000000000800ded0                RCC_IRQHandler
+                0x000000000800ded0                TIM1_TRG_COM_IRQHandler
+                0x000000000800ded0                DMA1_Channel1_IRQHandler
+                0x000000000800ded0                Default_Handler
+                0x000000000800ded0                SPI2_IRQHandler
+                0x000000000800ded0                MemManage_Handler
+                0x000000000800ded0                SVC_Handler
+                0x000000000800ded0                DMA1_Channel5_IRQHandler
+                0x000000000800ded0                EXTI4_IRQHandler
+                0x000000000800ded0                USB_LP_CAN1_RX0_IRQHandler
+                0x000000000800ded0                USB_HP_CAN1_TX_IRQHandler
+                0x000000000800ded0                DMA1_Channel3_IRQHandler
+                0x000000000800ded0                TIM1_UP_IRQHandler
+                0x000000000800ded0                WWDG_IRQHandler
+                0x000000000800ded0                TIM1_BRK_IRQHandler
+                0x000000000800ded0                RTCAlarm_IRQHandler
+                0x000000000800ded0                CAN1_SCE_IRQHandler
+                0x000000000800ded0                FLASH_IRQHandler
+                0x000000000800ded0                BusFault_Handler
+                0x000000000800ded0                USBWakeUp_IRQHandler
+ .text.atoi     0x000000000800ded4        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-atoi.o)
+                0x000000000800ded4                atoi
+ .text.bsearch  0x000000000800dedc       0x42 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-bsearch.o)
+                0x000000000800dedc                bsearch
+ *fill*         0x000000000800df1e        0x2 
+ .text.strtok   0x000000000800df20       0x64 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtok.o)
+                0x000000000800df20                strtok
  .text.__strtok_r
-                0x000000000800dda4       0x56 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtok_r.o)
-                0x000000000800dda4                __strtok_r
- *fill*         0x000000000800ddfa        0x2 
+                0x000000000800df84       0x56 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtok_r.o)
+                0x000000000800df84                __strtok_r
+ *fill*         0x000000000800dfda        0x2 
  .text._strtol_r
-                0x000000000800ddfc      0x104 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtol.o)
-                0x000000000800ddfc                _strtol_r
- .text.strtol   0x000000000800df00       0x1c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtol.o)
-                0x000000000800df00                strtol
- .text.malloc   0x000000000800df1c       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-malloc.o)
-                0x000000000800df1c                malloc
+                0x000000000800dfdc      0x104 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtol.o)
+                0x000000000800dfdc                _strtol_r
+ .text.strtol   0x000000000800e0e0       0x1c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-strtol.o)
+                0x000000000800e0e0                strtol
+ .text.malloc   0x000000000800e0fc       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-malloc.o)
+                0x000000000800e0fc                malloc
  .text._malloc_r
-                0x000000000800df2c       0xa8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-nano-mallocr.o)
-                0x000000000800df2c                _malloc_r
- .text._sbrk_r  0x000000000800dfd4       0x20 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-sbrkr.o)
-                0x000000000800dfd4                _sbrk_r
- .text._sbrk    0x000000000800dff4       0x34 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libnosys.a(sbrk.o)
-                0x000000000800dff4                _sbrk
- .text.cosf     0x000000000800e028       0x6c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_cos.o)
-                0x000000000800e028                cosf
- .text.lrintf   0x000000000800e094       0x7c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_lrint.o)
-                0x000000000800e094                lrintf
- .text.sinf     0x000000000800e110       0x7c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_sin.o)
-                0x000000000800e110                sinf
- .text.acosf    0x000000000800e18c       0xa0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_acos.o)
-                0x000000000800e18c                acosf
- .text.atan2f   0x000000000800e22c        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_atan2.o)
-                0x000000000800e22c                atan2f
- .text.powf     0x000000000800e230      0x310 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_pow.o)
-                0x000000000800e230                powf
- .text.sqrtf    0x000000000800e540       0x9c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_sqrt.o)
-                0x000000000800e540                sqrtf
+                0x000000000800e10c       0xa8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-nano-mallocr.o)
+                0x000000000800e10c                _malloc_r
+ .text._sbrk_r  0x000000000800e1b4       0x20 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-sbrkr.o)
+                0x000000000800e1b4                _sbrk_r
+ .text._sbrk    0x000000000800e1d4       0x34 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libnosys.a(sbrk.o)
+                0x000000000800e1d4                _sbrk
+ .text.cosf     0x000000000800e208       0x6c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_cos.o)
+                0x000000000800e208                cosf
+ .text.lrintf   0x000000000800e274       0x7c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_lrint.o)
+                0x000000000800e274                lrintf
+ .text.sinf     0x000000000800e2f0       0x7c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_sin.o)
+                0x000000000800e2f0                sinf
+ .text.acosf    0x000000000800e36c       0xa0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_acos.o)
+                0x000000000800e36c                acosf
+ .text.atan2f   0x000000000800e40c        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_atan2.o)
+                0x000000000800e40c                atan2f
+ .text.powf     0x000000000800e410      0x310 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_pow.o)
+                0x000000000800e410                powf
+ .text.sqrtf    0x000000000800e720       0x9c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_sqrt.o)
+                0x000000000800e720                sqrtf
  .text.__ieee754_acosf
-                0x000000000800e5dc      0x2d0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_acos.o)
-                0x000000000800e5dc                __ieee754_acosf
+                0x000000000800e7bc      0x2d0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_acos.o)
+                0x000000000800e7bc                __ieee754_acosf
  .text.__ieee754_atan2f
-                0x000000000800e8ac      0x120 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_atan2.o)
-                0x000000000800e8ac                __ieee754_atan2f
+                0x000000000800ea8c      0x120 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_atan2.o)
+                0x000000000800ea8c                __ieee754_atan2f
  .text.__ieee754_powf
-                0x000000000800e9cc      0x6f8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
-                0x000000000800e9cc                __ieee754_powf
+                0x000000000800ebac      0x6f8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
+                0x000000000800ebac                __ieee754_powf
  .text.__ieee754_rem_pio2f
-                0x000000000800f0c4      0x2e8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_rem_pio2.o)
-                0x000000000800f0c4                __ieee754_rem_pio2f
+                0x000000000800f2a4      0x2e8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_rem_pio2.o)
+                0x000000000800f2a4                __ieee754_rem_pio2f
  .text.__ieee754_sqrtf
-                0x000000000800f3ac       0xa8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_sqrt.o)
-                0x000000000800f3ac                __ieee754_sqrtf
+                0x000000000800f58c       0xa8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_sqrt.o)
+                0x000000000800f58c                __ieee754_sqrtf
  .text.__kernel_cosf
-                0x000000000800f454      0x188 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_cos.o)
-                0x000000000800f454                __kernel_cosf
+                0x000000000800f634      0x188 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_cos.o)
+                0x000000000800f634                __kernel_cosf
  .text.__kernel_rem_pio2f
-                0x000000000800f5dc      0x670 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_rem_pio2.o)
-                0x000000000800f5dc                __kernel_rem_pio2f
+                0x000000000800f7bc      0x670 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_rem_pio2.o)
+                0x000000000800f7bc                __kernel_rem_pio2f
  .text.__kernel_sinf
-                0x000000000800fc4c       0xec /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_sin.o)
-                0x000000000800fc4c                __kernel_sinf
- .text.matherr  0x000000000800fd38        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_matherr.o)
-                0x000000000800fd38                matherr
- .text.nan      0x000000000800fd3c        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_nan.o)
-                0x000000000800fd3c                nan
- .text.rint     0x000000000800fd48      0x118 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_rint.o)
-                0x000000000800fd48                rint
- .text.atanf    0x000000000800fe60      0x22c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_atan.o)
-                0x000000000800fe60                atanf
- .text.fabsf    0x000000000801008c        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_fabs.o)
-                0x000000000801008c                fabsf
- .text.finitef  0x0000000008010094       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_finite.o)
-                0x0000000008010094                finitef
- .text.floorf   0x00000000080100a4       0x8c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_floor.o)
-                0x00000000080100a4                floorf
+                0x000000000800fe2c       0xec /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_sin.o)
+                0x000000000800fe2c                __kernel_sinf
+ .text.matherr  0x000000000800ff18        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_matherr.o)
+                0x000000000800ff18                matherr
+ .text.nan      0x000000000800ff1c        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_nan.o)
+                0x000000000800ff1c                nan
+ .text.rint     0x000000000800ff28      0x118 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_rint.o)
+                0x000000000800ff28                rint
+ .text.atanf    0x0000000008010040      0x22c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_atan.o)
+                0x0000000008010040                atanf
+ .text.fabsf    0x000000000801026c        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_fabs.o)
+                0x000000000801026c                fabsf
+ .text.finitef  0x0000000008010274       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_finite.o)
+                0x0000000008010274                finitef
+ .text.floorf   0x0000000008010284       0x8c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_floor.o)
+                0x0000000008010284                floorf
  .text.__fpclassifyf
-                0x0000000008010130       0x34 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_fpclassify.o)
-                0x0000000008010130                __fpclassifyf
- .text.nanf     0x0000000008010164        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_nan.o)
-                0x0000000008010164                nanf
- .text.scalbnf  0x000000000801016c       0xb4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_scalbn.o)
-                0x000000000801016c                scalbnf
+                0x0000000008010310       0x34 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_fpclassify.o)
+                0x0000000008010310                __fpclassifyf
+ .text.nanf     0x0000000008010344        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_nan.o)
+                0x0000000008010344                nanf
+ .text.scalbnf  0x000000000801034c       0xb4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_scalbn.o)
+                0x000000000801034c                scalbnf
  .text.copysignf
-                0x0000000008010220        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_copysign.o)
-                0x0000000008010220                copysignf
- .text.__errno  0x000000000801022c        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-errno.o)
-                0x000000000801022c                __errno
+                0x0000000008010400        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_copysign.o)
+                0x0000000008010400                copysignf
+ .text.__errno  0x000000000801040c        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-errno.o)
+                0x000000000801040c                __errno
  *(.rodata)
- .rodata        0x0000000008010238      0x694 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x0000000008010258                mixers
-                0x0000000008010320                gpsInitData.5814
-                0x000000000801038e                ubloxInit.5825
-                0x000000000801040c                ubloxConfigList.5821
-                0x0000000008010424                mixerDualcopter.8968
-                0x0000000008010444                mixerHex6H.8967
-                0x00000000080104a4                mixerVtail4.8966
-                0x00000000080104e4                mixerOctoFlatX.8965
-                0x0000000008010564                mixerOctoFlatP.8964
-                0x00000000080105e4                mixerOctoX8.8963
-                0x0000000008010664                mixerHex6X.8962
-                0x00000000080106c4                mixerY4.8961
-                0x0000000008010704                mixerHex6P.8960
-                0x0000000008010764                mixerY6.8959
-                0x00000000080107c4                mixerBi.8958
-                0x00000000080107e4                mixerQuadX.8957
-                0x0000000008010824                mixerQuadP.8956
-                0x0000000008010864                mixerTri.8955
- .rodata        0x00000000080108cc      0x138 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .rodata        0x0000000008010a04       0x18 /tmp/cc2cfoNB.ltrans3.ltrans.o
- .rodata        0x0000000008010a1c       0x20 /tmp/cc2cfoNB.ltrans5.ltrans.o
- .rodata        0x0000000008010a3c      0x19c /tmp/cc2cfoNB.ltrans6.ltrans.o
- .rodata        0x0000000008010bd8       0x16 /tmp/cc2cfoNB.ltrans9.ltrans.o
- *fill*         0x0000000008010bee        0x2 
- .rodata        0x0000000008010bf0       0x28 /tmp/cc2cfoNB.ltrans10.ltrans.o
- .rodata        0x0000000008010c18      0x11c /tmp/cc2cfoNB.ltrans11.ltrans.o
-                0x0000000008010c18                featureNames.7906
-                0x0000000008010c74                cmdTable
- .rodata        0x0000000008010d34       0xb4 /tmp/cc2cfoNB.ltrans12.ltrans.o
-                0x0000000008010d84                mixerNames.7909
- .rodata        0x0000000008010de8      0x9ec /tmp/cc2cfoNB.ltrans13.ltrans.o
-                0x0000000008010de8                valueTable
+ .rodata        0x0000000008010418      0x694 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x0000000008010438                mixers
+                0x0000000008010500                gpsInitData.5814
+                0x000000000801056e                ubloxInit.5825
+                0x00000000080105ec                ubloxConfigList.5821
+                0x0000000008010604                mixerDualcopter.9017
+                0x0000000008010624                mixerHex6H.9016
+                0x0000000008010684                mixerVtail4.9015
+                0x00000000080106c4                mixerOctoFlatX.9014
+                0x0000000008010744                mixerOctoFlatP.9013
+                0x00000000080107c4                mixerOctoX8.9012
+                0x0000000008010844                mixerHex6X.9011
+                0x00000000080108a4                mixerY4.9010
+                0x00000000080108e4                mixerHex6P.9009
+                0x0000000008010944                mixerY6.9008
+                0x00000000080109a4                mixerBi.9007
+                0x00000000080109c4                mixerQuadX.9006
+                0x0000000008010a04                mixerQuadP.9005
+                0x0000000008010a44                mixerTri.9004
+ .rodata        0x0000000008010aac      0x138 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .rodata        0x0000000008010be4       0x18 /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .rodata        0x0000000008010bfc       0x38 /tmp/ccCoq7eK.ltrans5.ltrans.o
+                0x0000000008010c14                channels.5372
+ .rodata        0x0000000008010c34       0x28 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .rodata        0x0000000008010c5c      0x1b4 /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .rodata        0x0000000008010e10      0x11c /tmp/ccCoq7eK.ltrans11.ltrans.o
+                0x0000000008010e10                featureNames.7955
+                0x0000000008010e6c                cmdTable
+ .rodata        0x0000000008010f2c       0xb4 /tmp/ccCoq7eK.ltrans12.ltrans.o
+                0x0000000008010f7c                mixerNames.7958
+ .rodata        0x0000000008010fe0      0x9ec /tmp/ccCoq7eK.ltrans13.ltrans.o
+                0x0000000008010fe0                valueTable
  *(.rodata*)
  .rodata.timerHardware
-                0x00000000080117d4       0xe0 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x00000000080117d4                timerHardware
+                0x00000000080119cc       0xe0 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x00000000080119cc                timerHardware
  .rodata.str1.1
-                0x00000000080118b4       0xda /tmp/cc2cfoNB.ltrans1.ltrans.o
+                0x0000000008011aac       0xda /tmp/ccCoq7eK.ltrans1.ltrans.o
                                          0xdb (size before relaxing)
  .rodata.str1.1
-                0x000000000801198e       0xbb /tmp/cc2cfoNB.ltrans2.ltrans.o
+                0x0000000008011b86       0xbb /tmp/ccCoq7eK.ltrans2.ltrans.o
  .rodata.str1.1
-                0x0000000008011a49       0xeb /tmp/cc2cfoNB.ltrans3.ltrans.o
+                0x0000000008011c41       0xeb /tmp/ccCoq7eK.ltrans3.ltrans.o
                                          0xfe (size before relaxing)
  .rodata.str1.1
-                0x0000000008011b34       0x72 /tmp/cc2cfoNB.ltrans4.ltrans.o
+                0x0000000008011d2c       0x72 /tmp/ccCoq7eK.ltrans4.ltrans.o
                                          0x75 (size before relaxing)
  .rodata.str1.1
-                0x0000000000000000       0x72 /tmp/cc2cfoNB.ltrans5.ltrans.o
+                0x0000000008011d9e       0x19 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .rodata.str1.1
+                0x0000000008011db7      0x36b /tmp/ccCoq7eK.ltrans7.ltrans.o
+                                        0x37b (size before relaxing)
+ .rodata.str1.1
+                0x0000000000000000      0x36b /tmp/ccCoq7eK.ltrans8.ltrans.o
                                           0x2 (size before relaxing)
  .rodata.str1.1
-                0x0000000008011ba6      0x324 /tmp/cc2cfoNB.ltrans6.ltrans.o
+                0x0000000008012122       0x25 /tmp/ccCoq7eK.ltrans9.ltrans.o
  .rodata.str1.1
-                0x0000000008011eca       0x54 /tmp/cc2cfoNB.ltrans7.ltrans.o
+                0x0000000008012147       0x54 /tmp/ccCoq7eK.ltrans10.ltrans.o
  .rodata.str1.1
-                0x0000000008011f1e       0x25 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .rodata.str1.1
-                0x0000000008011f43       0x19 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .rodata.str1.1
-                0x0000000008011f5c      0x28a /tmp/cc2cfoNB.ltrans11.ltrans.o
+                0x000000000801219b      0x28a /tmp/ccCoq7eK.ltrans11.ltrans.o
                                         0x2a9 (size before relaxing)
  .rodata.str1.1
-                0x00000000080121e6      0x446 /tmp/cc2cfoNB.ltrans12.ltrans.o
+                0x0000000008012425      0x446 /tmp/ccCoq7eK.ltrans12.ltrans.o
                                         0x4c4 (size before relaxing)
  .rodata.rcChannelLetters
-                0x000000000801262c        0x9 /tmp/cc2cfoNB.ltrans12.ltrans.o
-                0x000000000801262c                rcChannelLetters
+                0x000000000801286b        0x9 /tmp/ccCoq7eK.ltrans12.ltrans.o
+                0x000000000801286b                rcChannelLetters
  .rodata.str1.1
-                0x0000000008012635      0x68e /tmp/cc2cfoNB.ltrans13.ltrans.o
+                0x0000000008012874      0x68e /tmp/ccCoq7eK.ltrans13.ltrans.o
                                         0x6bc (size before relaxing)
  .rodata._ctype_
-                0x0000000008012cc3      0x101 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-ctype_.o)
-                0x0000000008012cc3                _ctype_
+                0x0000000008012f02      0x101 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-ctype_.o)
+                0x0000000008012f02                _ctype_
  .rodata.str1.1
                 0x0000000000000000        0x0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-impure.o)
                                           0x2 (size before relaxing)
- .rodata.TWO23  0x0000000008012dc4        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_lrint.o)
+ *fill*         0x0000000008013003        0x1 
+ .rodata.TWO23  0x0000000008013004        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_lrint.o)
  .rodata.str1.4
-                0x0000000008012dcc        0x6 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_acos.o)
+                0x000000000801300c        0x6 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_acos.o)
                                           0xc (size before relaxing)
- *fill*         0x0000000008012dd2        0x2 
+ *fill*         0x0000000008013012        0x2 
  .rodata.str1.4
-                0x0000000008012dd4        0x5 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_pow.o)
+                0x0000000008013014        0x5 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_pow.o)
                                           0x8 (size before relaxing)
- *fill*         0x0000000008012dd9        0x3 
+ *fill*         0x0000000008013019        0x3 
  .rodata.str1.4
-                0x0000000008012ddc        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_sqrt.o)
- .rodata.dp_h   0x0000000008012de4        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
- .rodata.dp_l   0x0000000008012dec        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
- .rodata.bp     0x0000000008012df4        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
+                0x000000000801301c        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-wf_sqrt.o)
+ .rodata.dp_h   0x0000000008013024        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
+ .rodata.dp_l   0x000000000801302c        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
+ .rodata.bp     0x0000000008013034        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
  .rodata.str1.4
                 0x0000000000000000        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_pow.o)
  .rodata.npio2_hw
-                0x0000000008012dfc       0x80 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_rem_pio2.o)
+                0x000000000801303c       0x80 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_rem_pio2.o)
  .rodata.two_over_pi
-                0x0000000008012e7c      0x318 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_rem_pio2.o)
+                0x00000000080130bc      0x318 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-ef_rem_pio2.o)
  .rodata.init_jk
-                0x0000000008013194        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_rem_pio2.o)
- .rodata.PIo2   0x00000000080131a0       0x2c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_rem_pio2.o)
- *fill*         0x00000000080131cc        0x4 
- .rodata.TWO52  0x00000000080131d0       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_rint.o)
+                0x00000000080133d4        0xc /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_rem_pio2.o)
+ .rodata.PIo2   0x00000000080133e0       0x2c /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-kf_rem_pio2.o)
+ *fill*         0x000000000801340c        0x4 
+ .rodata.TWO52  0x0000000008013410       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_rint.o)
  .rodata.atanlo
-                0x00000000080131e0       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_atan.o)
+                0x0000000008013420       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_atan.o)
  .rodata.atanhi
-                0x00000000080131f0       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_atan.o)
+                0x0000000008013430       0x10 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-sf_atan.o)
  *(.glue_7)
  .glue_7        0x0000000000000000        0x0 linker stubs
  *(.glue_7t)
@@ -1139,338 +1138,340 @@ END GROUP
  *(.eh_frame)
  *(.init)
  *(.fini)
-                0x0000000008013200                . = ALIGN (0x4)
-                0x0000000008013200                _etext = .
+                0x0000000008013440                . = ALIGN (0x4)
+                0x0000000008013440                _etext = .
 
-.vfp11_veneer   0x0000000008013200        0x0
+.vfp11_veneer   0x0000000008013440        0x0
  .vfp11_veneer  0x0000000000000000        0x0 linker stubs
 
-.v4_bx          0x0000000008013200        0x0
+.v4_bx          0x0000000008013440        0x0
  .v4_bx         0x0000000000000000        0x0 linker stubs
 
-.iplt           0x0000000008013200        0x0
+.iplt           0x0000000008013440        0x0
  .iplt          0x0000000000000000        0x0 obj/NAZE/startup_stm32f10x_md_gcc.o
 
 .ARM.extab
  *(.ARM.extab* .gnu.linkonce.armextab.*)
 
-.ARM            0x0000000008013200        0x8
-                0x0000000008013200                __exidx_start = .
+.ARM            0x0000000008013440        0x8
+                0x0000000008013440                __exidx_start = .
  *(.ARM.exidx*)
- .ARM.exidx     0x0000000008013200        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_divdi3.o)
- .ARM.exidx     0x0000000008013208        0x0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_udivdi3.o)
+ .ARM.exidx     0x0000000008013440        0x8 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_divdi3.o)
+ .ARM.exidx     0x0000000008013448        0x0 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_udivdi3.o)
                                           0x8 (size before relaxing)
-                0x0000000008013208                __exidx_end = .
+                0x0000000008013448                __exidx_end = .
 
-.rel.dyn        0x0000000008013208        0x0
+.rel.dyn        0x0000000008013448        0x0
  .rel.iplt      0x0000000000000000        0x0 obj/NAZE/startup_stm32f10x_md_gcc.o
 
-.preinit_array  0x0000000008013208        0x0
-                0x0000000008013208                PROVIDE (__preinit_array_start, .)
+.preinit_array  0x0000000008013448        0x0
+                0x0000000008013448                PROVIDE (__preinit_array_start, .)
  *(.preinit_array*)
-                0x0000000008013208                PROVIDE (__preinit_array_end, .)
+                0x0000000008013448                PROVIDE (__preinit_array_end, .)
 
-.init_array     0x0000000008013208        0x0
-                0x0000000008013208                PROVIDE (__init_array_start, .)
+.init_array     0x0000000008013448        0x0
+                0x0000000008013448                PROVIDE (__init_array_start, .)
  *(SORT(.init_array.*))
  *(.init_array*)
-                0x0000000008013208                PROVIDE (__init_array_end, .)
+                0x0000000008013448                PROVIDE (__init_array_end, .)
 
-.fini_array     0x0000000008013208        0x0
-                0x0000000008013208                PROVIDE (__fini_array_start, .)
+.fini_array     0x0000000008013448        0x0
+                0x0000000008013448                PROVIDE (__fini_array_start, .)
  *(.fini_array*)
  *(SORT(.fini_array.*))
-                0x0000000008013208                PROVIDE (__fini_array_end, .)
-                0x0000000008013208                _sidata = .
+                0x0000000008013448                PROVIDE (__fini_array_end, .)
+                0x0000000008013448                _sidata = .
 
-.data           0x0000000020000000      0x10c load address 0x0000000008013208
+.data           0x0000000020000000      0x108 load address 0x0000000008013448
                 0x0000000020000000                . = ALIGN (0x4)
                 0x0000000020000000                _sdata = .
  *(.data)
- .data          0x0000000020000000       0x24 /tmp/cc2cfoNB.ltrans0.ltrans.o
+ .data          0x0000000020000000       0x24 /tmp/ccCoq7eK.ltrans0.ltrans.o
                 0x0000000020000010                pid_controller
                 0x0000000020000014                servo
- .data          0x0000000020000024       0x30 /tmp/cc2cfoNB.ltrans1.ltrans.o
+ .data          0x0000000020000024       0x30 /tmp/ccCoq7eK.ltrans1.ltrans.o
                 0x0000000020000024                hse_value
                 0x0000000020000038                batteryCellCount
-                0x0000000020000039                standardBoardAlignment.11091
+                0x0000000020000039                standardBoardAlignment.11132
                 0x000000002000003a                mpuLowPassFilter.4702
                 0x000000002000003c                acc_1G
                 0x000000002000003e                failsafeThreshold.5114
                 0x0000000020000040                ubloxSbasInit.5608
                 0x0000000020000050                sonarAlt
- .data          0x0000000020000054        0x4 /tmp/cc2cfoNB.ltrans2.ltrans.o
-                0x0000000020000054                currentPortState.10052
- .data          0x0000000020000058        0x1 /tmp/cc2cfoNB.ltrans3.ltrans.o
+ .data          0x0000000020000054        0x4 /tmp/ccCoq7eK.ltrans2.ltrans.o
+                0x0000000020000054                currentPortState.10093
+ .data          0x0000000020000058        0x1 /tmp/ccCoq7eK.ltrans3.ltrans.o
                 0x0000000020000058                gyroAlign.4854
  *fill*         0x0000000020000059        0x3 
- .data          0x000000002000005c        0x8 /tmp/cc2cfoNB.ltrans4.ltrans.o
+ .data          0x000000002000005c        0x8 /tmp/ccCoq7eK.ltrans4.ltrans.o
                 0x000000002000005c                GPS_scaleLonDown.5617
                 0x0000000020000060                mpuLowPassFilter.4853
- .data          0x0000000020000064       0x1c /tmp/cc2cfoNB.ltrans6.ltrans.o
-                0x0000000020000064                accAlign.4773
-                0x0000000020000065                gyroAlign.4774
-                0x0000000020000066                gyroAlign.4894
-                0x0000000020000067                gyroAlign.4701
-                0x0000000020000068                accAlign.4655
-                0x0000000020000079                accAlign.4202
-                0x000000002000007a                accAlign.4140
-                0x000000002000007b                magAlign.4173
+ .data          0x0000000020000064        0x3 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ *fill*         0x0000000020000067        0x1 
+ .data          0x0000000020000068       0x18 /tmp/ccCoq7eK.ltrans7.ltrans.o
+                0x0000000020000068                accAlign.4773
+                0x0000000020000069                gyroAlign.4774
+                0x000000002000006a                gyroAlign.4894
+                0x000000002000006b                gyroAlign.4701
+                0x000000002000006c                accAlign.4655
+                0x000000002000006d                magAlign.4560
+                0x0000000020000070                magGain.4559
                 0x000000002000007c                mpuLowPassFilter.4776
- .data          0x0000000020000080       0x14 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .data          0x0000000020000094        0x1 /tmp/cc2cfoNB.ltrans11.ltrans.o
+ .data          0x0000000020000080       0x14 /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .data          0x0000000020000094        0x1 /tmp/ccCoq7eK.ltrans11.ltrans.o
                 0x0000000020000094                accAlign.4851
  *(.data*)
  *fill*         0x0000000020000095        0x3 
- .data.blackboxCurrent
-                0x0000000020000098        0x4 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x0000000020000098                blackboxCurrent
  .data.SystemCoreClock
-                0x000000002000009c        0x4 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x000000002000009c                SystemCoreClock
+                0x0000000020000098        0x4 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x0000000020000098                SystemCoreClock
  .data.__ctype_ptr__
-                0x00000000200000a0        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-ctype_.o)
-                0x00000000200000a0                __ctype_ptr__
+                0x000000002000009c        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-ctype_.o)
+                0x000000002000009c                __ctype_ptr__
  .data.impure_data
-                0x00000000200000a4       0x60 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-impure.o)
+                0x00000000200000a0       0x60 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-impure.o)
  .data._impure_ptr
-                0x0000000020000104        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-impure.o)
-                0x0000000020000104                _impure_ptr
+                0x0000000020000100        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-impure.o)
+                0x0000000020000100                _impure_ptr
  .data.__fdlib_version
-                0x0000000020000108        0x1 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_lib_ver.o)
-                0x0000000020000108                __fdlib_version
-                0x000000002000010c                . = ALIGN (0x4)
- *fill*         0x0000000020000109        0x3 
-                0x000000002000010c                _edata = .
+                0x0000000020000104        0x1 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libm.a(lib_a-s_lib_ver.o)
+                0x0000000020000104                __fdlib_version
+                0x0000000020000108                . = ALIGN (0x4)
+ *fill*         0x0000000020000105        0x3 
+                0x0000000020000108                _edata = .
 
-.igot.plt       0x000000002000010c        0x0 load address 0x0000000008013314
+.igot.plt       0x0000000020000108        0x0 load address 0x0000000008013550
  .igot.plt      0x0000000000000000        0x0 obj/NAZE/startup_stm32f10x_md_gcc.o
-                0x000000002000010c                . = ALIGN (0x4)
+                0x0000000020000108                . = ALIGN (0x4)
 
-.bss            0x0000000020000110     0x1d78 load address 0x0000000008013314
-                0x0000000020000110                _sbss = .
-                0x0000000020000110                __bss_start__ = _sbss
+.bss            0x0000000020000108     0x1de4 load address 0x0000000008013550
+                0x0000000020000108                _sbss = .
+                0x0000000020000108                __bss_start__ = _sbss
  *(.bss)
- .bss           0x0000000020000110      0x3e0 /tmp/cc2cfoNB.ltrans0.ltrans.o
-                0x0000000020000110                rcFrameComplete.11675
-                0x0000000020000111                sbusFrameDone.11313
-                0x0000000020000112                sbus.11314
-                0x000000002000012c                failsafeCnt
-                0x000000002000012e                sumdFrameDone.11564
-                0x000000002000012f                sumd.11566
-                0x0000000020000144                sumdSize.11565
-                0x0000000020000148                sumdChannelData.11561
-                0x0000000020000168                rxMspFrameDone.10216
-                0x000000002000016c                currentTime
-                0x00000000200001b8                rcOptions
-                0x00000000200001ce                rssi
-                0x00000000200001d4                heading
-                0x00000000200001e0                errorAngleI.9273
-                0x00000000200001e8                AltHold
-                0x00000000200001ec                EstAlt
-                0x00000000200001f2                rcCommand
-                0x0000000020000204                magHold
-                0x0000000020000206                headFreeModeHold
-                0x0000000020000208                GPS_numSat
-                0x000000002000020c                GPS_home
-                0x0000000020000214                nav_mode
-                0x0000000020000218                GPS_hold
-                0x0000000020000220                GPS_coord
-                0x0000000020000228                GPS_angle
-                0x0000000020000230                nav
-                0x000000002000025c                poshold_ratePID.5913
-                0x0000000020000284                navPID.5915
-                0x00000000200002b4                magADC
-                0x00000000200003a4                angle
-                0x00000000200003bc                BaroAlt
-                0x00000000200003dc                vario
-                0x00000000200003ec                distance_ptr.4483
-                0x0000000020000484                accSmooth
-                0x0000000020000498                anglerad
-                0x00000000200004b8                gyroData
-                0x00000000200004be                cycleTime
-                0x00000000200004c2                axisPID
-                0x00000000200004ca                motor_disarmed
-                0x00000000200004e4                errorGyroI.9275
- .bss           0x00000000200004f0      0x84c /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x00000000200004f0                usTicks.10489
-                0x00000000200004f4                stdout_putf.10901
-                0x00000000200004f8                stdout_putp.10902
-                0x0000000020000508                adcConfig.4095
-                0x0000000020000510                adcValues.4101
-                0x0000000020000518                batteryWarningVoltage
-                0x000000002000051c                boardRotation.11093
-                0x0000000020000540                enabledSensors.8145
-                0x0000000020000544                gyro
-                0x0000000020000554                mpuLowPassFilter.4895
-                0x0000000020000555                useFifo.4138
-                0x0000000020000558                acc
-                0x0000000020000568                accHardware
-                0x000000002000056c                bmp085.4304
-                0x0000000020000590                baro
-                0x00000000200005a8                ms5611_c.4409
-                0x00000000200005b8                mag
-                0x00000000200005cc                magneticDeclination
-                0x00000000200005d0                smallAngle
-                0x00000000200005d4                accVelScale
-                0x00000000200005d8                throttleAngleScale
-                0x00000000200005dc                fc_acc
-                0x00000000200005e0                magInit.9722
-                0x00000000200005e4                core
-                0x00000000200005fc                currentMixer.9005
-                0x00000000200006bc                f
-                0x00000000200006cd                pwmFilter.5121
-                0x00000000200006d0                pwmWritePtr.5119
-                0x00000000200006d5                numMotors.5128
-                0x00000000200006d8                motors.5107
-                0x0000000020000708                numServos.5129
-                0x000000002000070c                servos.5130
-                0x000000002000072c                rcData
-                0x0000000020000750                rcReadRawFunc
-                0x0000000020000754                spek_chan_shift.11820
-                0x0000000020000755                spek_chan_mask.11833
-                0x0000000020000756                spekHiRes.11834
-                0x0000000020000758                sbusChannelData.11310
-                0x0000000020000778                gpsData
-                0x00000000200007a0                trigger_pin.4485
-                0x00000000200007a2                echo_pin.4481
-                0x00000000200007a4                exti_line.4484
-                0x00000000200007ac                last_measurement.4488
-                0x00000000200007b0                softSerialPorts
-                0x0000000020000c48                isTelemetryConfigurationValid.6540
-                0x0000000020000c49                blackboxState.7379
-                0x0000000020000c4c                blackboxPort.7212
-                0x0000000020000c50                blackboxHistoryRing.7227
-                0x0000000020000d34                previousTime
-                0x0000000020000d38                calibratingG
-                0x0000000020000d3a                calibratingB
- *fill*         0x0000000020000d3c        0x4 
- .bss           0x0000000020000d40      0x1e0 /tmp/cc2cfoNB.ltrans2.ltrans.o
-                0x0000000020000d40                lookupPitchRollRC
-                0x0000000020000d4e                dynP8
-                0x0000000020000d54                dynD8
-                0x0000000020000d58                lookupThrottleRC
-                0x0000000020000d7c                vbat
-                0x0000000020000d98                buzzerIsOn.7463
-                0x0000000020000da8                ports.10065
-                0x0000000020000e42                GPS_altitude
-                0x0000000020000e44                GPS_speed
-                0x0000000020000e46                GPS_update
-                0x0000000020000e47                availableBoxes.9911
-                0x0000000020000e5c                numberBoxItems.10072
-                0x0000000020000e5e                i2cErrorCount.10404
-                0x0000000020000e60                GPS_ground_course
-                0x0000000020000e62                GPS_distanceToHome
-                0x0000000020000e64                GPS_directionToHome
-                0x0000000020000e6e                GPS_numCh
-                0x0000000020000e6f                GPS_svinfo_chn
-                0x0000000020000e7f                GPS_svinfo_svid
-                0x0000000020000e8f                GPS_svinfo_quality
-                0x0000000020000e9f                GPS_svinfo_cno
-                0x0000000020000eb0                numTelemetryPorts.10132
- .bss           0x0000000020000f20       0xe0 /tmp/cc2cfoNB.ltrans3.ltrans.o
-                0x0000000020000f20                pwmPorts.5108
- .bss           0x0000000020001000      0x1f8 /tmp/cc2cfoNB.ltrans4.ltrans.o
-                0x0000000020001003                string.9791.5614
-                0x0000000020001164                GPS_WP.5609
-                0x000000002000116c                wp_distance.5611
-                0x0000000020001170                target_bearing.5612
-                0x0000000020001174                error.5910
-                0x000000002000117c                posholdPID_PARAM.5911
-                0x000000002000118c                poshold_ratePID_PARAM.5607
-                0x00000000200011a0                waypoint_speed_gov.5675
-                0x00000000200011a4                original_target_bearing.5924
-                0x00000000200011ac                nav_bearing.5923
-                0x00000000200011b0                navPID_PARAM.5613
-                0x00000000200011c0                nav_takeoff_bearing.5918
-                0x00000000200011c4                bufferIndex.7907
-                0x00000000200011c8                cliBuffer.7742
- .bss           0x00000000200011f8      0x110 /tmp/cc2cfoNB.ltrans5.ltrans.o
-                0x00000000200012f8                captures.5118
- .bss           0x0000000020001308       0x1c /tmp/cc2cfoNB.ltrans6.ltrans.o
-                0x0000000020001308                ms5611_ut.4410
-                0x000000002000130c                ms5611_up.4411
-                0x0000000020001314                bmp085_up.4331
-                0x0000000020001318                bmp085_ut.4330
-                0x0000000020001320                mpuAccelHalf.4771
- .bss           0x0000000020001324       0x50 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .bss           0x0000000020001374        0x8 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .bss           0x000000002000137c       0x54 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .bss           0x00000000200013d0       0x18 /tmp/cc2cfoNB.ltrans10.ltrans.o
-                0x00000000200013d0                I2Cx.10378
-                0x00000000200013d5                addr.10386
-                0x00000000200013d6                reg.10384
-                0x00000000200013d7                writing.10389
-                0x00000000200013d8                reading.10382
-                0x00000000200013dc                read_p.10388
-                0x00000000200013e0                write_p.10390
-                0x00000000200013e4                bytes.10385
-                0x00000000200013e5                busy.10391
- .bss           0x00000000200013e8      0x4c1 /tmp/cc2cfoNB.ltrans11.ltrans.o
- *fill*         0x00000000200018a9        0x3 
- .bss           0x00000000200018ac      0x588 /tmp/cc2cfoNB.ltrans13.ltrans.o
-                0x00000000200018ac                uartPort3.10797
-                0x00000000200018f8                uartPort2.10798
-                0x0000000020001944                uartPort1.10796
-                0x0000000020001990                sysTickUptime.10490
-                0x0000000020001994                mcfg
-                0x0000000020001d4c                motor
-                0x0000000020001d64                cfg
- .bss           0x0000000020001e34       0x2c /tmp/cc2cfoNB.ltrans14.ltrans.o
-                0x0000000020001e34                startTime.7377
-                0x0000000020001e38                headerXmitIndex.7378
-                0x0000000020001e3c                blackboxIteration.7213
-                0x0000000020001e40                gpsHistory.7211
-                0x0000000020001e54                blackboxHistory.7369
- .bss           0x0000000020001e60        0x1 /tmp/cc2cfoNB.ltrans15.ltrans.o
-                0x0000000020001e60                convDone.4332
+ .bss           0x0000000020000108      0x3e0 /tmp/ccCoq7eK.ltrans0.ltrans.o
+                0x0000000020000108                rcFrameComplete.11716
+                0x0000000020000109                sbusFrameDone.11354
+                0x000000002000010a                sbus.11355
+                0x0000000020000124                failsafeCnt
+                0x0000000020000126                sumdFrameDone.11605
+                0x0000000020000127                sumd.11607
+                0x000000002000013c                sumdSize.11606
+                0x0000000020000140                sumdChannelData.11602
+                0x0000000020000160                rxMspFrameDone.10257
+                0x0000000020000164                currentTime
+                0x00000000200001b0                rcOptions
+                0x00000000200001c6                rssi
+                0x00000000200001cc                heading
+                0x00000000200001d8                errorAngleI.9322
+                0x00000000200001e0                AltHold
+                0x00000000200001e4                EstAlt
+                0x00000000200001ea                rcCommand
+                0x00000000200001fc                magHold
+                0x00000000200001fe                headFreeModeHold
+                0x0000000020000200                GPS_numSat
+                0x0000000020000204                GPS_home
+                0x000000002000020c                nav_mode
+                0x0000000020000210                GPS_hold
+                0x0000000020000218                GPS_coord
+                0x0000000020000220                GPS_angle
+                0x0000000020000228                nav
+                0x0000000020000254                poshold_ratePID.5913
+                0x000000002000027c                navPID.5915
+                0x00000000200002ac                magADC
+                0x000000002000039c                angle
+                0x00000000200003b4                BaroAlt
+                0x00000000200003d4                vario
+                0x00000000200003e4                distance_ptr.4483
+                0x000000002000047c                accSmooth
+                0x0000000020000490                anglerad
+                0x00000000200004b0                gyroData
+                0x00000000200004b6                cycleTime
+                0x00000000200004ba                axisPID
+                0x00000000200004c2                motor_disarmed
+                0x00000000200004dc                errorGyroI.9324
+ .bss           0x00000000200004e8      0x764 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x00000000200004e8                usTicks.10530
+                0x00000000200004ec                stdout_putf.10942
+                0x00000000200004f0                stdout_putp.10943
+                0x0000000020000500                adcConfig.4095
+                0x0000000020000508                adcValues.4101
+                0x0000000020000510                batteryWarningVoltage
+                0x0000000020000514                boardRotation.11134
+                0x0000000020000538                enabledSensors.8194
+                0x000000002000053c                gyro
+                0x000000002000054c                mpuLowPassFilter.4895
+                0x000000002000054d                useFifo.4138
+                0x0000000020000550                acc
+                0x0000000020000560                accHardware
+                0x0000000020000564                bmp085.4304
+                0x0000000020000588                baro
+                0x00000000200005a0                ms5611_c.4409
+                0x00000000200005b0                mag
+                0x00000000200005c4                magneticDeclination
+                0x00000000200005c8                smallAngle
+                0x00000000200005cc                accVelScale
+                0x00000000200005d0                throttleAngleScale
+                0x00000000200005d4                fc_acc
+                0x00000000200005d8                magInit.9763
+                0x00000000200005dc                core
+                0x00000000200005f4                currentMixer.9054
+                0x00000000200006b4                f
+                0x00000000200006c5                pwmFilter.5121
+                0x00000000200006c8                pwmWritePtr.5119
+                0x00000000200006cd                numMotors.5128
+                0x00000000200006d0                motors.5107
+                0x0000000020000700                numServos.5129
+                0x0000000020000704                servos.5130
+                0x0000000020000724                rcData
+                0x0000000020000748                rcReadRawFunc
+                0x000000002000074c                spek_chan_shift.11861
+                0x000000002000074d                spek_chan_mask.11874
+                0x000000002000074e                spekHiRes.11875
+                0x0000000020000750                sbusChannelData.11351
+                0x0000000020000770                gpsData
+                0x0000000020000798                trigger_pin.4485
+                0x000000002000079a                echo_pin.4481
+                0x000000002000079c                exti_line.4484
+                0x00000000200007a4                last_measurement.4488
+                0x00000000200007a8                softSerialPorts
+                0x0000000020000c40                isTelemetryConfigurationValid.6540
+                0x0000000020000c41                blackboxState.7407
+                0x0000000020000c44                previousTime
+                0x0000000020000c48                calibratingG
+                0x0000000020000c4a                calibratingB
+ *fill*         0x0000000020000c4c        0x4 
+ .bss           0x0000000020000c50      0x1e0 /tmp/ccCoq7eK.ltrans2.ltrans.o
+                0x0000000020000c50                lookupPitchRollRC
+                0x0000000020000c5e                dynP8
+                0x0000000020000c64                dynD8
+                0x0000000020000c68                lookupThrottleRC
+                0x0000000020000c8c                vbat
+                0x0000000020000ca8                buzzerIsOn.7512
+                0x0000000020000cb8                ports.10106
+                0x0000000020000d52                GPS_altitude
+                0x0000000020000d54                GPS_speed
+                0x0000000020000d56                GPS_update
+                0x0000000020000d57                availableBoxes.9952
+                0x0000000020000d6c                numberBoxItems.10113
+                0x0000000020000d6e                i2cErrorCount.10445
+                0x0000000020000d70                GPS_ground_course
+                0x0000000020000d72                GPS_distanceToHome
+                0x0000000020000d74                GPS_directionToHome
+                0x0000000020000d7e                GPS_numCh
+                0x0000000020000d7f                GPS_svinfo_chn
+                0x0000000020000d8f                GPS_svinfo_svid
+                0x0000000020000d9f                GPS_svinfo_quality
+                0x0000000020000daf                GPS_svinfo_cno
+                0x0000000020000dc0                numTelemetryPorts.10173
+ .bss           0x0000000020000e30       0xe0 /tmp/ccCoq7eK.ltrans3.ltrans.o
+                0x0000000020000e30                pwmPorts.5108
+ .bss           0x0000000020000f10      0x1f8 /tmp/ccCoq7eK.ltrans4.ltrans.o
+                0x0000000020000f13                string.9794.5614
+                0x0000000020001074                GPS_WP.5609
+                0x000000002000107c                wp_distance.5611
+                0x0000000020001080                target_bearing.5612
+                0x0000000020001084                error.5910
+                0x000000002000108c                posholdPID_PARAM.5911
+                0x000000002000109c                poshold_ratePID_PARAM.5607
+                0x00000000200010b0                waypoint_speed_gov.5675
+                0x00000000200010b4                original_target_bearing.5924
+                0x00000000200010bc                nav_bearing.5923
+                0x00000000200010c0                navPID_PARAM.5613
+                0x00000000200010d0                nav_takeoff_bearing.5918
+                0x00000000200010d4                bufferIndex.7956
+                0x00000000200010d8                cliBuffer.7791
+ .bss           0x0000000020001108      0x154 /tmp/ccCoq7eK.ltrans5.ltrans.o
+                0x000000002000115c                timerConfigs
+ .bss           0x000000002000125c       0x2c /tmp/ccCoq7eK.ltrans6.ltrans.o
+                0x000000002000125c                I2Cx.10419
+                0x0000000020001261                addr.10427
+                0x0000000020001262                reg.10425
+                0x0000000020001263                writing.10430
+                0x0000000020001264                reading.10423
+                0x0000000020001268                read_p.10429
+                0x000000002000126c                write_p.10431
+                0x0000000020001270                bytes.10426
+                0x0000000020001271                busy.10432
+                0x0000000020001274                ms5611_ut.4410
+                0x0000000020001278                ms5611_up.4411
+                0x0000000020001280                bmp085_up.4331
+                0x0000000020001284                bmp085_ut.4330
+ .bss           0x0000000020001288       0x2c /tmp/ccCoq7eK.ltrans7.ltrans.o
+                0x000000002000128c                axisP
+                0x0000000020001298                axisI
+                0x00000000200012a4                axisD
+                0x00000000200012b0                mpuAccelHalf.4771
+ .bss           0x00000000200012b4       0x10 /tmp/ccCoq7eK.ltrans8.ltrans.o
+                0x00000000200012b4                captures.5118
+ .bss           0x00000000200012c4        0x8 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .bss           0x00000000200012cc       0x50 /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .bss           0x000000002000131c      0x4c1 /tmp/ccCoq7eK.ltrans11.ltrans.o
+ *fill*         0x00000000200017dd        0x3 
+ .bss           0x00000000200017e0      0x588 /tmp/ccCoq7eK.ltrans13.ltrans.o
+                0x00000000200017e0                uartPort3.10838
+                0x000000002000182c                uartPort2.10839
+                0x0000000020001878                uartPort1.10837
+                0x00000000200018c4                sysTickUptime.10531
+                0x00000000200018c8                mcfg
+                0x0000000020001c80                motor
+                0x0000000020001c98                cfg
+ .bss           0x0000000020001d68      0x15c /tmp/ccCoq7eK.ltrans14.ltrans.o
+                0x0000000020001d68                blackboxPort.7255
+                0x0000000020001d6c                startTime.7405
+                0x0000000020001d70                headerXmitIndex.7406
+                0x0000000020001d74                blackboxIteration.7396
+                0x0000000020001d78                gpsHistory.7218
+                0x0000000020001d8c                blackboxHistory.7219
+                0x0000000020001d98                blackboxHistoryRing.7397
+ .bss           0x0000000020001ec4        0x1 /tmp/ccCoq7eK.ltrans15.ltrans.o
+                0x0000000020001ec4                convDone.4332
  *(.bss*)
- .bss.cliMode   0x0000000020001e61        0x1 /tmp/cc2cfoNB.ltrans0.ltrans.o
-                0x0000000020001e61                cliMode
+ .bss.cliMode   0x0000000020001ec5        0x1 /tmp/ccCoq7eK.ltrans0.ltrans.o
+                0x0000000020001ec5                cliMode
  .bss.toggleBeep
-                0x0000000020001e62        0x1 /tmp/cc2cfoNB.ltrans0.ltrans.o
-                0x0000000020001e62                toggleBeep
- *fill*         0x0000000020001e63        0x1 
+                0x0000000020001ec6        0x1 /tmp/ccCoq7eK.ltrans0.ltrans.o
+                0x0000000020001ec6                toggleBeep
+ *fill*         0x0000000020001ec7        0x1 
  .bss.accTimeSum
-                0x0000000020001e64        0x4 /tmp/cc2cfoNB.ltrans0.ltrans.o
+                0x0000000020001ec8        0x4 /tmp/ccCoq7eK.ltrans0.ltrans.o
  .bss.hw_revision
-                0x0000000020001e68        0x4 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x0000000020001e68                hw_revision
+                0x0000000020001ecc        0x4 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x0000000020001ecc                hw_revision
  .bss.calibratingA
-                0x0000000020001e6c        0x2 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x0000000020001e6c                calibratingA
- *fill*         0x0000000020001e6e        0x2 
+                0x0000000020001ed0        0x2 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x0000000020001ed0                calibratingA
+ *fill*         0x0000000020001ed2        0x2 
  .bss.systemBeepPtr
-                0x0000000020001e70        0x4 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                0x0000000020001e70                systemBeepPtr
+                0x0000000020001ed4        0x4 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                0x0000000020001ed4                systemBeepPtr
  .bss.numberMotor
-                0x0000000020001e74        0x1 /tmp/cc2cfoNB.ltrans13.ltrans.o
-                0x0000000020001e74                numberMotor
- *fill*         0x0000000020001e75        0x3 
+                0x0000000020001ed8        0x1 /tmp/ccCoq7eK.ltrans13.ltrans.o
+                0x0000000020001ed8                numberMotor
+ *fill*         0x0000000020001ed9        0x3 
  .bss.__malloc_sbrk_start
-                0x0000000020001e78        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-nano-mallocr.o)
-                0x0000000020001e78                __malloc_sbrk_start
+                0x0000000020001edc        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-nano-mallocr.o)
+                0x0000000020001edc                __malloc_sbrk_start
  .bss.__malloc_free_list
-                0x0000000020001e7c        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-nano-mallocr.o)
-                0x0000000020001e7c                __malloc_free_list
+                0x0000000020001ee0        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-nano-mallocr.o)
+                0x0000000020001ee0                __malloc_free_list
  .bss.heap_end.4246
-                0x0000000020001e80        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libnosys.a(sbrk.o)
+                0x0000000020001ee4        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libnosys.a(sbrk.o)
  *(COMMON)
- COMMON         0x0000000020001e84        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-reent.o)
-                0x0000000020001e84                errno
-                0x0000000020001e88                . = ALIGN (0x4)
-                0x0000000020001e88                _ebss = .
-                0x0000000020001e88                __bss_end__ = _ebss
+ COMMON         0x0000000020001ee8        0x4 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/../../../../arm-none-eabi/lib/armv7-m/libc_s.a(lib_a-reent.o)
+                0x0000000020001ee8                errno
+                0x0000000020001eec                . = ALIGN (0x4)
+                0x0000000020001eec                _ebss = .
+                0x0000000020001eec                __bss_end__ = _ebss
 
 ._user_heap_stack
-                0x0000000020001e88      0x400 load address 0x0000000008013314
-                0x0000000020001e88                . = ALIGN (0x4)
-                0x0000000020001e88                PROVIDE (end, .)
-                0x0000000020001e88                PROVIDE (_end, .)
-                0x0000000020001e88                . = (. + _Min_Heap_Size)
-                0x0000000020002288                . = (. + _Min_Stack_Size)
- *fill*         0x0000000020001e88      0x400 
-                0x0000000020002288                . = ALIGN (0x4)
+                0x0000000020001eec      0x400 load address 0x0000000008013550
+                0x0000000020001eec                . = ALIGN (0x4)
+                0x0000000020001eec                PROVIDE (end, .)
+                0x0000000020001eec                PROVIDE (_end, .)
+                0x0000000020001eec                . = (. + _Min_Heap_Size)
+                0x00000000200022ec                . = (. + _Min_Stack_Size)
+ *fill*         0x0000000020001eec      0x400 
+                0x00000000200022ec                . = ALIGN (0x4)
 
 .memory_b1_text
  *(.mb1text)
@@ -1487,37 +1488,37 @@ END GROUP
                 0x0000000000000000       0x31
  *(.ARM.attributes)
  .ARM.attributes
-                0x0000000000000000       0x31 /tmp/cc2cfoNB.ltrans0.ltrans.o
+                0x0000000000000000       0x31 /tmp/ccCoq7eK.ltrans0.ltrans.o
  .ARM.attributes
-                0x0000000000000031       0x31 /tmp/cc2cfoNB.ltrans1.ltrans.o
+                0x0000000000000031       0x31 /tmp/ccCoq7eK.ltrans1.ltrans.o
  .ARM.attributes
-                0x0000000000000062       0x31 /tmp/cc2cfoNB.ltrans2.ltrans.o
+                0x0000000000000062       0x31 /tmp/ccCoq7eK.ltrans2.ltrans.o
  .ARM.attributes
-                0x0000000000000093       0x31 /tmp/cc2cfoNB.ltrans3.ltrans.o
+                0x0000000000000093       0x31 /tmp/ccCoq7eK.ltrans3.ltrans.o
  .ARM.attributes
-                0x00000000000000c4       0x31 /tmp/cc2cfoNB.ltrans4.ltrans.o
+                0x00000000000000c4       0x31 /tmp/ccCoq7eK.ltrans4.ltrans.o
  .ARM.attributes
-                0x00000000000000f5       0x31 /tmp/cc2cfoNB.ltrans5.ltrans.o
+                0x00000000000000f5       0x31 /tmp/ccCoq7eK.ltrans5.ltrans.o
  .ARM.attributes
-                0x0000000000000126       0x31 /tmp/cc2cfoNB.ltrans6.ltrans.o
+                0x0000000000000126       0x31 /tmp/ccCoq7eK.ltrans6.ltrans.o
  .ARM.attributes
-                0x0000000000000157       0x31 /tmp/cc2cfoNB.ltrans7.ltrans.o
+                0x0000000000000157       0x31 /tmp/ccCoq7eK.ltrans7.ltrans.o
  .ARM.attributes
-                0x0000000000000188       0x31 /tmp/cc2cfoNB.ltrans8.ltrans.o
+                0x0000000000000188       0x31 /tmp/ccCoq7eK.ltrans8.ltrans.o
  .ARM.attributes
-                0x00000000000001b9       0x31 /tmp/cc2cfoNB.ltrans9.ltrans.o
+                0x00000000000001b9       0x31 /tmp/ccCoq7eK.ltrans9.ltrans.o
  .ARM.attributes
-                0x00000000000001ea       0x31 /tmp/cc2cfoNB.ltrans10.ltrans.o
+                0x00000000000001ea       0x31 /tmp/ccCoq7eK.ltrans10.ltrans.o
  .ARM.attributes
-                0x000000000000021b       0x31 /tmp/cc2cfoNB.ltrans11.ltrans.o
+                0x000000000000021b       0x31 /tmp/ccCoq7eK.ltrans11.ltrans.o
  .ARM.attributes
-                0x000000000000024c       0x31 /tmp/cc2cfoNB.ltrans12.ltrans.o
+                0x000000000000024c       0x31 /tmp/ccCoq7eK.ltrans12.ltrans.o
  .ARM.attributes
-                0x000000000000027d       0x31 /tmp/cc2cfoNB.ltrans13.ltrans.o
+                0x000000000000027d       0x31 /tmp/ccCoq7eK.ltrans13.ltrans.o
  .ARM.attributes
-                0x00000000000002ae       0x31 /tmp/cc2cfoNB.ltrans14.ltrans.o
+                0x00000000000002ae       0x31 /tmp/ccCoq7eK.ltrans14.ltrans.o
  .ARM.attributes
-                0x00000000000002df       0x31 /tmp/cc2cfoNB.ltrans15.ltrans.o
+                0x00000000000002df       0x31 /tmp/ccCoq7eK.ltrans15.ltrans.o
  .ARM.attributes
                 0x0000000000000310       0x1d /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_addsubdf3.o)
  .ARM.attributes
@@ -1646,198 +1647,198 @@ END GROUP
                 0x0000000000000d4a       0x1d /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_arm_cmpdf2.o)
 OUTPUT(obj/baseflight_NAZE.elf elf32-littlearm)
 
-.debug_info     0x0000000000000000    0x1dd7b
- .debug_info    0x0000000000000000     0x2cbd /tmp/cc2cfoNB.ltrans0.ltrans.o
- .debug_info    0x0000000000002cbd     0x4d33 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .debug_info    0x00000000000079f0     0x2a87 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .debug_info    0x000000000000a477     0x291d /tmp/cc2cfoNB.ltrans3.ltrans.o
- .debug_info    0x000000000000cd94     0x1bf6 /tmp/cc2cfoNB.ltrans4.ltrans.o
- .debug_info    0x000000000000e98a     0x224a /tmp/cc2cfoNB.ltrans5.ltrans.o
- .debug_info    0x0000000000010bd4     0x15b2 /tmp/cc2cfoNB.ltrans6.ltrans.o
- .debug_info    0x0000000000012186     0x1cb5 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .debug_info    0x0000000000013e3b     0x25b0 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .debug_info    0x00000000000163eb     0x1418 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .debug_info    0x0000000000017803     0x1b3f /tmp/cc2cfoNB.ltrans10.ltrans.o
- .debug_info    0x0000000000019342     0x19bd /tmp/cc2cfoNB.ltrans11.ltrans.o
- .debug_info    0x000000000001acff     0x1618 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .debug_info    0x000000000001c317     0x11d5 /tmp/cc2cfoNB.ltrans13.ltrans.o
- .debug_info    0x000000000001d4ec      0x3f1 /tmp/cc2cfoNB.ltrans14.ltrans.o
- .debug_info    0x000000000001d8dd      0x49e /tmp/cc2cfoNB.ltrans15.ltrans.o
+.debug_info     0x0000000000000000    0x1df11
+ .debug_info    0x0000000000000000     0x2cbd /tmp/ccCoq7eK.ltrans0.ltrans.o
+ .debug_info    0x0000000000002cbd     0x4c2a /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .debug_info    0x00000000000078e7     0x2a87 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .debug_info    0x000000000000a36e     0x291d /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .debug_info    0x000000000000cc8b     0x1bf6 /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .debug_info    0x000000000000e881     0x196f /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .debug_info    0x00000000000101f0     0x2026 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .debug_info    0x0000000000012216     0x149d /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .debug_info    0x00000000000136b3     0x1cef /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .debug_info    0x00000000000153a2     0x25b0 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .debug_info    0x0000000000017952     0x1913 /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .debug_info    0x0000000000019265     0x19bd /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .debug_info    0x000000000001ac22     0x1618 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .debug_info    0x000000000001c23a     0x11d5 /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .debug_info    0x000000000001d40f      0x664 /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .debug_info    0x000000000001da73      0x49e /tmp/ccCoq7eK.ltrans15.ltrans.o
 
-.debug_abbrev   0x0000000000000000     0x48c4
- .debug_abbrev  0x0000000000000000      0x55d /tmp/cc2cfoNB.ltrans0.ltrans.o
- .debug_abbrev  0x000000000000055d      0x55e /tmp/cc2cfoNB.ltrans1.ltrans.o
- .debug_abbrev  0x0000000000000abb      0x48f /tmp/cc2cfoNB.ltrans2.ltrans.o
- .debug_abbrev  0x0000000000000f4a      0x5d9 /tmp/cc2cfoNB.ltrans3.ltrans.o
- .debug_abbrev  0x0000000000001523      0x4c7 /tmp/cc2cfoNB.ltrans4.ltrans.o
- .debug_abbrev  0x00000000000019ea      0x5cd /tmp/cc2cfoNB.ltrans5.ltrans.o
- .debug_abbrev  0x0000000000001fb7      0x4b6 /tmp/cc2cfoNB.ltrans6.ltrans.o
- .debug_abbrev  0x000000000000246d      0x571 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .debug_abbrev  0x00000000000029de      0x6a3 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .debug_abbrev  0x0000000000003081      0x42e /tmp/cc2cfoNB.ltrans9.ltrans.o
- .debug_abbrev  0x00000000000034af      0x44d /tmp/cc2cfoNB.ltrans10.ltrans.o
- .debug_abbrev  0x00000000000038fc      0x4a3 /tmp/cc2cfoNB.ltrans11.ltrans.o
- .debug_abbrev  0x0000000000003d9f      0x464 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .debug_abbrev  0x0000000000004203      0x348 /tmp/cc2cfoNB.ltrans13.ltrans.o
- .debug_abbrev  0x000000000000454b      0x1b2 /tmp/cc2cfoNB.ltrans14.ltrans.o
- .debug_abbrev  0x00000000000046fd      0x1c7 /tmp/cc2cfoNB.ltrans15.ltrans.o
+.debug_abbrev   0x0000000000000000     0x49ff
+ .debug_abbrev  0x0000000000000000      0x55d /tmp/ccCoq7eK.ltrans0.ltrans.o
+ .debug_abbrev  0x000000000000055d      0x55e /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .debug_abbrev  0x0000000000000abb      0x48f /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .debug_abbrev  0x0000000000000f4a      0x5d9 /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .debug_abbrev  0x0000000000001523      0x4c7 /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .debug_abbrev  0x00000000000019ea      0x4a4 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .debug_abbrev  0x0000000000001e8e      0x481 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .debug_abbrev  0x000000000000230f      0x4a5 /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .debug_abbrev  0x00000000000027b4      0x60a /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .debug_abbrev  0x0000000000002dbe      0x6a3 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .debug_abbrev  0x0000000000003461      0x59a /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .debug_abbrev  0x00000000000039fb      0x4a3 /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .debug_abbrev  0x0000000000003e9e      0x464 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .debug_abbrev  0x0000000000004302      0x348 /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .debug_abbrev  0x000000000000464a      0x1ee /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .debug_abbrev  0x0000000000004838      0x1c7 /tmp/ccCoq7eK.ltrans15.ltrans.o
 
-.debug_loc      0x0000000000000000     0xc73c
- .debug_loc     0x0000000000000000     0x18c0 /tmp/cc2cfoNB.ltrans0.ltrans.o
- .debug_loc     0x00000000000018c0     0x1316 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .debug_loc     0x0000000000002bd6     0x1053 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .debug_loc     0x0000000000003c29     0x151d /tmp/cc2cfoNB.ltrans3.ltrans.o
- .debug_loc     0x0000000000005146      0x9cd /tmp/cc2cfoNB.ltrans4.ltrans.o
- .debug_loc     0x0000000000005b13     0x1720 /tmp/cc2cfoNB.ltrans5.ltrans.o
- .debug_loc     0x0000000000007233      0x935 /tmp/cc2cfoNB.ltrans6.ltrans.o
- .debug_loc     0x0000000000007b68      0xe5b /tmp/cc2cfoNB.ltrans7.ltrans.o
- .debug_loc     0x00000000000089c3     0x1296 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .debug_loc     0x0000000000009c59      0x9d4 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .debug_loc     0x000000000000a62d      0xcab /tmp/cc2cfoNB.ltrans10.ltrans.o
- .debug_loc     0x000000000000b2d8      0x9b7 /tmp/cc2cfoNB.ltrans11.ltrans.o
- .debug_loc     0x000000000000bc8f      0x7d8 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .debug_loc     0x000000000000c467      0x24e /tmp/cc2cfoNB.ltrans13.ltrans.o
- .debug_loc     0x000000000000c6b5       0x2c /tmp/cc2cfoNB.ltrans14.ltrans.o
- .debug_loc     0x000000000000c6e1       0x5b /tmp/cc2cfoNB.ltrans15.ltrans.o
+.debug_loc      0x0000000000000000     0xc8b4
+ .debug_loc     0x0000000000000000     0x18c0 /tmp/ccCoq7eK.ltrans0.ltrans.o
+ .debug_loc     0x00000000000018c0     0x1316 /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .debug_loc     0x0000000000002bd6     0x1053 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .debug_loc     0x0000000000003c29     0x151d /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .debug_loc     0x0000000000005146      0x9cd /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .debug_loc     0x0000000000005b13      0xe2d /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .debug_loc     0x0000000000006940      0xe05 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .debug_loc     0x0000000000007745      0x97e /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .debug_loc     0x00000000000080c3     0x149d /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .debug_loc     0x0000000000009560     0x1296 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .debug_loc     0x000000000000a7f6      0xc5a /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .debug_loc     0x000000000000b450      0x9b7 /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .debug_loc     0x000000000000be07      0x7d8 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .debug_loc     0x000000000000c5df      0x24e /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .debug_loc     0x000000000000c82d       0x2c /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .debug_loc     0x000000000000c859       0x5b /tmp/ccCoq7eK.ltrans15.ltrans.o
 
 .debug_aranges  0x0000000000000000      0x208
  .debug_aranges
-                0x0000000000000000       0x20 /tmp/cc2cfoNB.ltrans0.ltrans.o
+                0x0000000000000000       0x20 /tmp/ccCoq7eK.ltrans0.ltrans.o
  .debug_aranges
-                0x0000000000000020       0x20 /tmp/cc2cfoNB.ltrans1.ltrans.o
+                0x0000000000000020       0x20 /tmp/ccCoq7eK.ltrans1.ltrans.o
  .debug_aranges
-                0x0000000000000040       0x20 /tmp/cc2cfoNB.ltrans2.ltrans.o
+                0x0000000000000040       0x20 /tmp/ccCoq7eK.ltrans2.ltrans.o
  .debug_aranges
-                0x0000000000000060       0x28 /tmp/cc2cfoNB.ltrans3.ltrans.o
+                0x0000000000000060       0x28 /tmp/ccCoq7eK.ltrans3.ltrans.o
  .debug_aranges
-                0x0000000000000088       0x20 /tmp/cc2cfoNB.ltrans4.ltrans.o
+                0x0000000000000088       0x20 /tmp/ccCoq7eK.ltrans4.ltrans.o
  .debug_aranges
-                0x00000000000000a8       0x20 /tmp/cc2cfoNB.ltrans5.ltrans.o
+                0x00000000000000a8       0x20 /tmp/ccCoq7eK.ltrans5.ltrans.o
  .debug_aranges
-                0x00000000000000c8       0x20 /tmp/cc2cfoNB.ltrans6.ltrans.o
+                0x00000000000000c8       0x20 /tmp/ccCoq7eK.ltrans6.ltrans.o
  .debug_aranges
-                0x00000000000000e8       0x20 /tmp/cc2cfoNB.ltrans7.ltrans.o
+                0x00000000000000e8       0x20 /tmp/ccCoq7eK.ltrans7.ltrans.o
  .debug_aranges
-                0x0000000000000108       0x20 /tmp/cc2cfoNB.ltrans8.ltrans.o
+                0x0000000000000108       0x20 /tmp/ccCoq7eK.ltrans8.ltrans.o
  .debug_aranges
-                0x0000000000000128       0x20 /tmp/cc2cfoNB.ltrans9.ltrans.o
+                0x0000000000000128       0x20 /tmp/ccCoq7eK.ltrans9.ltrans.o
  .debug_aranges
-                0x0000000000000148       0x20 /tmp/cc2cfoNB.ltrans10.ltrans.o
+                0x0000000000000148       0x20 /tmp/ccCoq7eK.ltrans10.ltrans.o
  .debug_aranges
-                0x0000000000000168       0x20 /tmp/cc2cfoNB.ltrans11.ltrans.o
+                0x0000000000000168       0x20 /tmp/ccCoq7eK.ltrans11.ltrans.o
  .debug_aranges
-                0x0000000000000188       0x20 /tmp/cc2cfoNB.ltrans12.ltrans.o
+                0x0000000000000188       0x20 /tmp/ccCoq7eK.ltrans12.ltrans.o
  .debug_aranges
-                0x00000000000001a8       0x20 /tmp/cc2cfoNB.ltrans13.ltrans.o
+                0x00000000000001a8       0x20 /tmp/ccCoq7eK.ltrans13.ltrans.o
  .debug_aranges
-                0x00000000000001c8       0x20 /tmp/cc2cfoNB.ltrans14.ltrans.o
+                0x00000000000001c8       0x20 /tmp/ccCoq7eK.ltrans14.ltrans.o
  .debug_aranges
-                0x00000000000001e8       0x20 /tmp/cc2cfoNB.ltrans15.ltrans.o
+                0x00000000000001e8       0x20 /tmp/ccCoq7eK.ltrans15.ltrans.o
 
-.debug_ranges   0x0000000000000000     0x1a48
- .debug_ranges  0x0000000000000000      0x380 /tmp/cc2cfoNB.ltrans0.ltrans.o
- .debug_ranges  0x0000000000000380      0x6a8 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .debug_ranges  0x0000000000000a28      0x388 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .debug_ranges  0x0000000000000db0      0x210 /tmp/cc2cfoNB.ltrans3.ltrans.o
- .debug_ranges  0x0000000000000fc0      0x270 /tmp/cc2cfoNB.ltrans4.ltrans.o
- .debug_ranges  0x0000000000001230      0x1c0 /tmp/cc2cfoNB.ltrans5.ltrans.o
- .debug_ranges  0x00000000000013f0       0xe0 /tmp/cc2cfoNB.ltrans6.ltrans.o
- .debug_ranges  0x00000000000014d0       0x70 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .debug_ranges  0x0000000000001540       0xa8 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .debug_ranges  0x00000000000015e8       0x78 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .debug_ranges  0x0000000000001660      0x190 /tmp/cc2cfoNB.ltrans10.ltrans.o
- .debug_ranges  0x00000000000017f0      0x138 /tmp/cc2cfoNB.ltrans11.ltrans.o
- .debug_ranges  0x0000000000001928      0x108 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .debug_ranges  0x0000000000001a30       0x18 /tmp/cc2cfoNB.ltrans14.ltrans.o
+.debug_ranges   0x0000000000000000     0x1a80
+ .debug_ranges  0x0000000000000000      0x380 /tmp/ccCoq7eK.ltrans0.ltrans.o
+ .debug_ranges  0x0000000000000380      0x6a8 /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .debug_ranges  0x0000000000000a28      0x388 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .debug_ranges  0x0000000000000db0      0x210 /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .debug_ranges  0x0000000000000fc0      0x270 /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .debug_ranges  0x0000000000001230      0x158 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .debug_ranges  0x0000000000001388      0x190 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .debug_ranges  0x0000000000001518       0xe0 /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .debug_ranges  0x00000000000015f8      0x100 /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .debug_ranges  0x00000000000016f8       0xa8 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .debug_ranges  0x00000000000017a0       0x70 /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .debug_ranges  0x0000000000001810      0x138 /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .debug_ranges  0x0000000000001948      0x108 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .debug_ranges  0x0000000000001a50       0x30 /tmp/ccCoq7eK.ltrans14.ltrans.o
 
-.debug_line     0x0000000000000000     0x5924
- .debug_line    0x0000000000000000      0xa2d /tmp/cc2cfoNB.ltrans0.ltrans.o
- .debug_line    0x0000000000000a2d      0xce0 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .debug_line    0x000000000000170d      0x812 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .debug_line    0x0000000000001f1f      0x6a2 /tmp/cc2cfoNB.ltrans3.ltrans.o
- .debug_line    0x00000000000025c1      0x4e1 /tmp/cc2cfoNB.ltrans4.ltrans.o
- .debug_line    0x0000000000002aa2      0x65a /tmp/cc2cfoNB.ltrans5.ltrans.o
- .debug_line    0x00000000000030fc      0x4ff /tmp/cc2cfoNB.ltrans6.ltrans.o
- .debug_line    0x00000000000035fb      0x566 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .debug_line    0x0000000000003b61      0x57c /tmp/cc2cfoNB.ltrans8.ltrans.o
- .debug_line    0x00000000000040dd      0x51b /tmp/cc2cfoNB.ltrans9.ltrans.o
- .debug_line    0x00000000000045f8      0x519 /tmp/cc2cfoNB.ltrans10.ltrans.o
- .debug_line    0x0000000000004b11      0x53c /tmp/cc2cfoNB.ltrans11.ltrans.o
- .debug_line    0x000000000000504d      0x3e1 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .debug_line    0x000000000000542e      0x254 /tmp/cc2cfoNB.ltrans13.ltrans.o
- .debug_line    0x0000000000005682      0x13f /tmp/cc2cfoNB.ltrans14.ltrans.o
- .debug_line    0x00000000000057c1      0x163 /tmp/cc2cfoNB.ltrans15.ltrans.o
+.debug_line     0x0000000000000000     0x5941
+ .debug_line    0x0000000000000000      0xa2d /tmp/ccCoq7eK.ltrans0.ltrans.o
+ .debug_line    0x0000000000000a2d      0xccc /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .debug_line    0x00000000000016f9      0x812 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .debug_line    0x0000000000001f0b      0x6a2 /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .debug_line    0x00000000000025ad      0x4e1 /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .debug_line    0x0000000000002a8e      0x626 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .debug_line    0x00000000000030b4      0x5b9 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .debug_line    0x000000000000366d      0x46e /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .debug_line    0x0000000000003adb      0x5c3 /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .debug_line    0x000000000000409e      0x57c /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .debug_line    0x000000000000461a      0x4ef /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .debug_line    0x0000000000004b09      0x53c /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .debug_line    0x0000000000005045      0x3e1 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .debug_line    0x0000000000005426      0x254 /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .debug_line    0x000000000000567a      0x164 /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .debug_line    0x00000000000057de      0x163 /tmp/ccCoq7eK.ltrans15.ltrans.o
 
-.debug_str      0x0000000000000000     0x74e0
- .debug_str     0x0000000000000000      0xe4e /tmp/cc2cfoNB.ltrans0.ltrans.o
+.debug_str      0x0000000000000000     0x753e
+ .debug_str     0x0000000000000000      0xe4e /tmp/ccCoq7eK.ltrans0.ltrans.o
                                         0xf2f (size before relaxing)
- .debug_str     0x0000000000000e4e     0x22b1 /tmp/cc2cfoNB.ltrans1.ltrans.o
-                                       0x2797 (size before relaxing)
- .debug_str     0x00000000000030ff      0xbb3 /tmp/cc2cfoNB.ltrans2.ltrans.o
+ .debug_str     0x0000000000000e4e     0x2223 /tmp/ccCoq7eK.ltrans1.ltrans.o
+                                       0x26f5 (size before relaxing)
+ .debug_str     0x0000000000003071      0xbb3 /tmp/ccCoq7eK.ltrans2.ltrans.o
                                         0xffe (size before relaxing)
- .debug_str     0x0000000000003cb2      0x82d /tmp/cc2cfoNB.ltrans3.ltrans.o
+ .debug_str     0x0000000000003c24      0x82d /tmp/ccCoq7eK.ltrans3.ltrans.o
                                        0x10d1 (size before relaxing)
- .debug_str     0x00000000000044df      0x745 /tmp/cc2cfoNB.ltrans4.ltrans.o
+ .debug_str     0x0000000000004451      0x745 /tmp/ccCoq7eK.ltrans4.ltrans.o
                                         0xd82 (size before relaxing)
- .debug_str     0x0000000000004c24      0x692 /tmp/cc2cfoNB.ltrans5.ltrans.o
-                                        0xf22 (size before relaxing)
- .debug_str     0x00000000000052b6      0x506 /tmp/cc2cfoNB.ltrans6.ltrans.o
-                                        0x984 (size before relaxing)
- .debug_str     0x00000000000057bc      0x3d7 /tmp/cc2cfoNB.ltrans7.ltrans.o
-                                        0xdda (size before relaxing)
- .debug_str     0x0000000000005b93      0xa99 /tmp/cc2cfoNB.ltrans8.ltrans.o
+ .debug_str     0x0000000000004b96      0x4c0 /tmp/ccCoq7eK.ltrans5.ltrans.o
+                                        0xb86 (size before relaxing)
+ .debug_str     0x0000000000005056      0x550 /tmp/ccCoq7eK.ltrans6.ltrans.o
+                                        0xd59 (size before relaxing)
+ .debug_str     0x00000000000055a6      0x416 /tmp/ccCoq7eK.ltrans7.ltrans.o
+                                        0x88b (size before relaxing)
+ .debug_str     0x00000000000059bc      0x497 /tmp/ccCoq7eK.ltrans8.ltrans.o
+                                        0xca9 (size before relaxing)
+ .debug_str     0x0000000000005e53      0xa8d /tmp/ccCoq7eK.ltrans9.ltrans.o
                                        0x14e8 (size before relaxing)
- .debug_str     0x000000000000662c      0x26f /tmp/cc2cfoNB.ltrans9.ltrans.o
-                                        0x949 (size before relaxing)
- .debug_str     0x000000000000689b      0x3af /tmp/cc2cfoNB.ltrans10.ltrans.o
-                                        0xb8d (size before relaxing)
- .debug_str     0x0000000000006c4a      0x284 /tmp/cc2cfoNB.ltrans11.ltrans.o
+ .debug_str     0x00000000000068e0      0x368 /tmp/ccCoq7eK.ltrans10.ltrans.o
+                                        0xbe9 (size before relaxing)
+ .debug_str     0x0000000000006c48      0x284 /tmp/ccCoq7eK.ltrans11.ltrans.o
                                         0xc85 (size before relaxing)
- .debug_str     0x0000000000006ece      0x23c /tmp/cc2cfoNB.ltrans12.ltrans.o
+ .debug_str     0x0000000000006ecc      0x23c /tmp/ccCoq7eK.ltrans12.ltrans.o
                                         0x554 (size before relaxing)
- .debug_str     0x000000000000710a      0x1c0 /tmp/cc2cfoNB.ltrans13.ltrans.o
+ .debug_str     0x0000000000007108      0x1c0 /tmp/ccCoq7eK.ltrans13.ltrans.o
                                         0xdc8 (size before relaxing)
- .debug_str     0x00000000000072ca      0x130 /tmp/cc2cfoNB.ltrans14.ltrans.o
-                                        0x375 (size before relaxing)
- .debug_str     0x00000000000073fa       0xe6 /tmp/cc2cfoNB.ltrans15.ltrans.o
+ .debug_str     0x00000000000072c8      0x190 /tmp/ccCoq7eK.ltrans14.ltrans.o
+                                        0x543 (size before relaxing)
+ .debug_str     0x0000000000007458       0xe6 /tmp/ccCoq7eK.ltrans15.ltrans.o
                                         0x393 (size before relaxing)
 
 .comment        0x0000000000000000       0x70
- .comment       0x0000000000000000       0x70 /tmp/cc2cfoNB.ltrans0.ltrans.o
+ .comment       0x0000000000000000       0x70 /tmp/ccCoq7eK.ltrans0.ltrans.o
                                          0x71 (size before relaxing)
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans3.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans4.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans5.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans6.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans10.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans11.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans13.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans14.ltrans.o
- .comment       0x0000000000000000       0x71 /tmp/cc2cfoNB.ltrans15.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .comment       0x0000000000000000       0x71 /tmp/ccCoq7eK.ltrans15.ltrans.o
 
 .debug_frame    0x0000000000000000     0x1f98
- .debug_frame   0x0000000000000000       0x38 /tmp/cc2cfoNB.ltrans0.ltrans.o
- .debug_frame   0x0000000000000038       0x30 /tmp/cc2cfoNB.ltrans1.ltrans.o
- .debug_frame   0x0000000000000068       0x38 /tmp/cc2cfoNB.ltrans2.ltrans.o
- .debug_frame   0x00000000000000a0      0x1b8 /tmp/cc2cfoNB.ltrans3.ltrans.o
- .debug_frame   0x0000000000000258       0x80 /tmp/cc2cfoNB.ltrans4.ltrans.o
- .debug_frame   0x00000000000002d8      0x1f8 /tmp/cc2cfoNB.ltrans5.ltrans.o
- .debug_frame   0x00000000000004d0      0x278 /tmp/cc2cfoNB.ltrans6.ltrans.o
- .debug_frame   0x0000000000000748      0x4b4 /tmp/cc2cfoNB.ltrans7.ltrans.o
- .debug_frame   0x0000000000000bfc      0x420 /tmp/cc2cfoNB.ltrans8.ltrans.o
- .debug_frame   0x000000000000101c      0x128 /tmp/cc2cfoNB.ltrans9.ltrans.o
- .debug_frame   0x0000000000001144      0x1e8 /tmp/cc2cfoNB.ltrans10.ltrans.o
- .debug_frame   0x000000000000132c       0xbc /tmp/cc2cfoNB.ltrans11.ltrans.o
- .debug_frame   0x00000000000013e8      0x168 /tmp/cc2cfoNB.ltrans12.ltrans.o
- .debug_frame   0x0000000000001550       0xec /tmp/cc2cfoNB.ltrans13.ltrans.o
- .debug_frame   0x000000000000163c       0x3c /tmp/cc2cfoNB.ltrans14.ltrans.o
- .debug_frame   0x0000000000001678       0x80 /tmp/cc2cfoNB.ltrans15.ltrans.o
+ .debug_frame   0x0000000000000000       0x38 /tmp/ccCoq7eK.ltrans0.ltrans.o
+ .debug_frame   0x0000000000000038       0x30 /tmp/ccCoq7eK.ltrans1.ltrans.o
+ .debug_frame   0x0000000000000068       0x38 /tmp/ccCoq7eK.ltrans2.ltrans.o
+ .debug_frame   0x00000000000000a0      0x1b8 /tmp/ccCoq7eK.ltrans3.ltrans.o
+ .debug_frame   0x0000000000000258       0x80 /tmp/ccCoq7eK.ltrans4.ltrans.o
+ .debug_frame   0x00000000000002d8      0x180 /tmp/ccCoq7eK.ltrans5.ltrans.o
+ .debug_frame   0x0000000000000458      0x2f0 /tmp/ccCoq7eK.ltrans6.ltrans.o
+ .debug_frame   0x0000000000000748      0x170 /tmp/ccCoq7eK.ltrans7.ltrans.o
+ .debug_frame   0x00000000000008b8      0x1f8 /tmp/ccCoq7eK.ltrans8.ltrans.o
+ .debug_frame   0x0000000000000ab0      0x420 /tmp/ccCoq7eK.ltrans9.ltrans.o
+ .debug_frame   0x0000000000000ed0      0x45c /tmp/ccCoq7eK.ltrans10.ltrans.o
+ .debug_frame   0x000000000000132c       0xbc /tmp/ccCoq7eK.ltrans11.ltrans.o
+ .debug_frame   0x00000000000013e8      0x168 /tmp/ccCoq7eK.ltrans12.ltrans.o
+ .debug_frame   0x0000000000001550       0xec /tmp/ccCoq7eK.ltrans13.ltrans.o
+ .debug_frame   0x000000000000163c       0x3c /tmp/ccCoq7eK.ltrans14.ltrans.o
+ .debug_frame   0x0000000000001678       0x80 /tmp/ccCoq7eK.ltrans15.ltrans.o
  .debug_frame   0x00000000000016f8       0x58 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(bpabi.o)
  .debug_frame   0x0000000000001750       0x34 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_divdi3.o)
  .debug_frame   0x0000000000001784       0x34 /usr/bin/../lib/gcc/arm-none-eabi/4.8.4/armv7-m/libgcc.a(_udivdi3.o)
