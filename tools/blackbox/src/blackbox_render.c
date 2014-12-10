@@ -90,6 +90,8 @@ typedef struct renderOptions_t {
 
 	int bottomGraphSplitAxes;
 
+	int gapless;
+
 	PropStyle propStyle;
 
 	//Start and end time of video in seconds offset from the beginning of the log
@@ -179,7 +181,8 @@ static const renderOptions_t defaultOptions = {
 	.drawCraft = true, .drawPidTable = true, .drawSticks = true,
 	.filename = 0,
 	.timeStart = 0, .timeEnd = 0,
-	.logNumber = 0
+	.logNumber = 0,
+	.gapless = 0
 };
 
 //Cairo doesn't include this in any header (apparently it is considered private?)
@@ -682,7 +685,7 @@ void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windo
 
 			if (frameTime >= windowEndTime)
 				break;
-		} else {
+		} else if (!options.gapless) {
 			//We'll need to start a new line at the next point
 			drawingLine = false;
 		}
@@ -1293,6 +1296,7 @@ void printUsage(const char *argv0)
 		"   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
 		"   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
 		"   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
+		"   --gapless              Fill in gaps in the log with straight lines\n"
 		"\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.pidSmoothing,
 			defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, defaultOptions.propStyle == PROP_STYLE_BLADES ? "blades" : "pie"
 	);
@@ -1370,6 +1374,7 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"smoothing-gyro", required_argument, 0, '2'},
 			{"smoothing-motor", required_argument, 0, '3'},
 			{"prop-style", required_argument, 0, 'r'},
+			{"gapless", no_argument, &options.gapless, 1},
 			{0, 0, 0, 0}
 		};
 
