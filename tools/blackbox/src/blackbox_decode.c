@@ -215,7 +215,7 @@ int validateLogIndex(flightLog_t *log)
 void printUsage(const char *argv0)
 {
 	fprintf(stderr,
-		"Blackbox flight log decoder by Nicholas Sherlock\n\n"
+		"Blackbox flight log decoder by Nicholas Sherlock (" __DATE__ " " __TIME__ ")\n\n"
 		"Usage:\n"
 		"     %s [options] <logfilename.txt>\n\n"
 		"Options:\n"
