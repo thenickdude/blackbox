@@ -24,7 +24,7 @@ double expoCurveLookup(expoCurve_t *curve, double input)
 	if (curve->steps == 1)
 		return normalisedInput * curve->curve[0];
 
-	valueInCurve = fabs(normalisedInput) * curve->steps;
+	valueInCurve = fabs(normalisedInput);
 	prevStepIndex = (int) valueInCurve;
 
 	/* If the input value lies beyond the stated input range, use the final
@@ -35,8 +35,8 @@ double expoCurveLookup(expoCurve_t *curve, double input)
 	}
 
 	//Straight-line interpolation between the two curve points
-	double proportion = normalisedInput - prevStepIndex;
-	double result = curve->curve[prevStepIndex] * (1 - proportion) + curve->curve[prevStepIndex + 1] * proportion;
+	double proportion = valueInCurve - prevStepIndex;
+	double result = curve->curve[prevStepIndex] + (curve->curve[prevStepIndex + 1] - curve->curve[prevStepIndex]) * proportion;
 
 	if (input < 0)
 		return -result;
@@ -62,15 +62,17 @@ expoCurve_t *expoCurveCreate(int offset, double power, double inputRange, double
 
 	result = malloc(sizeof(*result));
 	result->offset = offset;
-	result->inputScale = steps / inputRange;
 	result->steps = steps;
 	result->curve = malloc(steps * sizeof(*result->curve));
 
 	if (steps == 1) {
 		//Straight line
+		result->inputScale = 1.0 / inputRange;
 		result->curve[0] = outputRange;
 	} else {
 		double stepSize = 1.0 / (steps - 1);
+
+		result->inputScale = (steps - 1) / inputRange;
 
 		for (int i = 0; i < steps; i++) {
 			result->curve[i] = pow(i * stepSize, power) * outputRange;
