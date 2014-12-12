@@ -6,8 +6,8 @@
 #include "datapoints.h"
 #include "parser.h"
 
-Datapoints *datapointsCreate(int fieldCount, char **fieldNames, int frameCount) {
-	Datapoints *result = (Datapoints*) malloc(sizeof(Datapoints));
+datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCount) {
+	datapoints_t *result = (datapoints_t*) malloc(sizeof(datapoints_t));
 
 	result->fieldCount = fieldCount;
 	result->fieldNames = fieldNames;
@@ -24,7 +24,7 @@ Datapoints *datapointsCreate(int fieldCount, char **fieldNames, int frameCount) 
  * Smooth the values for the field with the given index by replacing each value with an
  * average over the a window of width (windowRadius*2+1) centered at the point.
  */
-void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowRadius)
+void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadius)
 {
 	int windowSize = windowRadius * 2 + 1;
 	// How many of the frames in the history actually have a valid value in them (so we can average only those)
@@ -78,7 +78,7 @@ void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowRadius)
  *
  * Returns -1 if the time is before any frame in the datapoints.
  */
-int datapointsFindFrameAtTime(Datapoints *points, int64_t time)
+int datapointsFindFrameAtTime(datapoints_t *points, int64_t time)
 {
 	int i, lastGoodFrame = -1;
 
@@ -95,7 +95,7 @@ int datapointsFindFrameAtTime(Datapoints *points, int64_t time)
 	return lastGoodFrame;
 }
 
-bool datapointsGetFrameAtIndex(Datapoints *points, int frameIndex, int64_t *frameTime, int32_t *frame)
+bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int32_t *frame)
 {
 	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
 		return false;
@@ -106,7 +106,7 @@ bool datapointsGetFrameAtIndex(Datapoints *points, int frameIndex, int64_t *fram
 	return true;
 }
 
-bool datapointsGetFieldAtIndex(Datapoints *points, int frameIndex, int fieldIndex, int32_t *frameValue)
+bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t *frameValue)
 {
 	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
 		return false;
@@ -116,7 +116,7 @@ bool datapointsGetFieldAtIndex(Datapoints *points, int frameIndex, int fieldInde
 	return true;
 }
 
-bool datapointsSetFieldAtIndex(Datapoints *points, int frameIndex, int fieldIndex, int32_t frameValue)
+bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t frameValue)
 {
 	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
 		return false;
@@ -126,7 +126,7 @@ bool datapointsSetFieldAtIndex(Datapoints *points, int frameIndex, int fieldInde
 	return true;
 }
 
-bool datapointsGetTimeAtIndex(Datapoints *points, int frameIndex, int64_t *frameTime)
+bool datapointsGetTimeAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime)
 {
 	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
 		return false;
@@ -140,7 +140,7 @@ bool datapointsGetTimeAtIndex(Datapoints *points, int frameIndex, int64_t *frame
  * Set the data for the frame with the given index. The second field of the frame is expected to be a timestamp
  * (if you want to be able to find frames at given times).
  */
-bool datapointsSetFrame(Datapoints *points, int frameIndex, int64_t frameTime, int32_t *frame)
+bool datapointsSetFrame(datapoints_t *points, int frameIndex, int64_t frameTime, int32_t *frame)
 {
 	if (frameIndex < 0 || frameIndex >= points->frameCount)
 		return false;

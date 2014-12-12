@@ -214,10 +214,10 @@ static serialPort_t *blackboxPort;
 static gpsState_t gpsHistory;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
-static blackbox_values_t blackboxHistoryRing[3];
+static blackboxValues_t blackboxHistoryRing[3];
 
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-static blackbox_values_t* blackboxHistory[3];
+static blackboxValues_t* blackboxHistory[3];
 
 static int isTricopter()
 {
@@ -462,7 +462,7 @@ static void writeTag8_4S16(int32_t *values) {
 
 static void writeIntraframe(void)
 {
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 	int x;
 
 	blackboxWrite('I');
@@ -515,8 +515,8 @@ static void writeInterframe(void)
 	int x;
 	int32_t deltas[4];
 
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
-	blackbox_values_t *blackboxLast = blackboxHistory[1];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxLast = blackboxHistory[1];
 
 	blackboxWrite('P');
 
@@ -674,7 +674,7 @@ static void writeGPSFrame()
  */
 static void loadBlackboxState(void)
 {
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 	int i;
 
 	blackboxCurrent->time = currentTime;

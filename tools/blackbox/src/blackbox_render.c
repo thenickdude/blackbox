@@ -198,7 +198,7 @@ static semaphore_t pngRenderingSem;
 static bool pngRenderingSemCreated = false;
 
 static flightLog_t *flightLog;
-static Datapoints *points;
+static datapoints_t *points;
 static int selectedLogIndex;
 
 //Information about fields we have classified

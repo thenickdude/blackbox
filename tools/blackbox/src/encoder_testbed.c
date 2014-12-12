@@ -179,7 +179,7 @@ static const char * const blackboxAdditionalFieldsTricopter[] = {
 		ENCODING(SIGNED_VB)
 };
 
-typedef struct blackbox_values_t {
+typedef struct blackboxValues_t {
 	uint32_t time;
 
 	int32_t axisP[3], axisI[3], axisD[3];
@@ -189,14 +189,14 @@ typedef struct blackbox_values_t {
 	int16_t accSmooth[3];
 	int16_t motor[MAX_MOTORS];
 	int16_t servo[MAX_SERVOS];
-} blackbox_values_t;
+} blackboxValues_t;
 
-typedef struct mcfg_standin_t {
+typedef struct mcfgStandin_t {
 	uint16_t minthrottle, maxthrottle;
-} mcfg_standin_t;
+} mcfgStandin_t;
 
 // Simulation of data that mw.c would normally provide:
-mcfg_standin_t mcfg = {
+mcfgStandin_t mcfg = {
 	.minthrottle = 1150, .maxthrottle = 1850
 };
 int numberMotor = 0;
@@ -208,10 +208,10 @@ char *optionFilename = 0;
 uint32_t blackboxIteration, writtenBytes;
 
 // Keep a history of length 2, plus a buffer for MW to store the new values into
-static blackbox_values_t blackboxHistoryRing[3];
+static blackboxValues_t blackboxHistoryRing[3];
 
 // These point into blackboxHistoryRing, use them to know where to store history of a given age (0, 1 or 2 generations old)
-static blackbox_values_t* blackboxHistory[3];
+static blackboxValues_t* blackboxHistory[3];
 
 flightLogStatistics_t encodedStats;
 
@@ -442,7 +442,7 @@ static void writeTag8_4S16(int32_t *values) {
 
 static void writeIntraframe(void)
 {
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 	int x;
 
 	blackboxWrite('I');
@@ -495,8 +495,8 @@ static void writeInterframe(void)
 	int x;
 	int32_t deltas[4];
 
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
-	blackbox_values_t *blackboxLast = blackboxHistory[1];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxLast = blackboxHistory[1];
 
 	blackboxWrite('P');
 
@@ -560,7 +560,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 	int x, src;
 	uint32_t start = writtenBytes;
 	unsigned int encodedFrameSize;
-	blackbox_values_t *blackboxCurrent = blackboxHistory[0];
+	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 
 	(void) log;
 	(void) frameOffset;

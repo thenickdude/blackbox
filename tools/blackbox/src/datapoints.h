@@ -3,27 +3,27 @@
 
 #include <stdint.h>
 
-typedef struct Datapoints {
+typedef struct datapoints_t {
 	int fieldCount, frameCount;
 	char **fieldNames;
 
 	uint8_t *framePresent;
 	int32_t *frames;
 	int64_t *frameTime;
-} Datapoints;
+} datapoints_t;
 
-Datapoints *datapointsCreate(int fieldCount, char **fieldNames, int frameCount);
+datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCount);
 
-bool datapointsGetFrameAtIndex(Datapoints *points, int frameIndex, int64_t *frameTime, int32_t *frame);
+bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int32_t *frame);
 
-bool datapointsGetFieldAtIndex(Datapoints *points, int frameIndex, int fieldIndex, int32_t *frameValue);
-bool datapointsSetFieldAtIndex(Datapoints *points, int frameIndex, int fieldIndex, int32_t frameValue);
+bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t *frameValue);
+bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t frameValue);
 
-bool datapointsGetTimeAtIndex(Datapoints *points, int frameIndex, int64_t *frameTime);
+bool datapointsGetTimeAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime);
 
-int datapointsFindFrameAtTime(Datapoints *points, int64_t time);
-bool datapointsSetFrame(Datapoints *points, int frameIndex, int64_t frameTime, int32_t *frame);
+int datapointsFindFrameAtTime(datapoints_t *points, int64_t time);
+bool datapointsSetFrame(datapoints_t *points, int frameIndex, int64_t frameTime, int32_t *frame);
 
-void datapointsSmoothField(Datapoints *points, int fieldIndex, int windowSize);
+void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowSize);
 
 #endif

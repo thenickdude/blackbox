@@ -19,7 +19,7 @@ typedef enum FirmwareType {
 	FIRMWARE_TYPE_CLEANFLIGHT
 } FirmwareType;
 
-typedef struct FlightLogStatistics {
+typedef struct flightLogStatistics_t {
 	uint32_t iFrameBytes, pFrameBytes, gFrameBytes, hFrameBytes, totalBytes;
 	uint32_t numIFrames, numPFrames, numGFrames, numHFrames;
 
@@ -43,7 +43,7 @@ typedef struct FlightLogStatistics {
 
 struct flightLogPrivate_t;
 
-typedef struct FlightLog {
+typedef struct flightLog_t {
 	flightLogStatistics_t stats;
 
 	int minthrottle, maxthrottle;
