@@ -23,7 +23,7 @@ $(WINDOWS_ZIP) : $(COMMON_FILES) tools/blackbox/dist/win32/blackbox_decode.exe t
 	zip --junk-paths $@ $^ tools/blackbox/dist/win32/*.dll
 	
 $(MACOSX_ZIP) : $(COMMON_FILES)
-	make -C tools/blackbox/ clean; make -C tools/blackbox/ BUILD_STATIC=MACOSX
+	make -C tools/blackbox/ clean; make -C tools/blackbox/ BUILD_STATIC=MACOSX BLACKBOX_VERSION=$(VERSION)
 	rm -rf .build_tmp
 	mkdir .build_tmp
 	cp $^ .build_tmp/

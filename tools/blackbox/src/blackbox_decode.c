@@ -21,6 +21,9 @@
 
 #include "parser.h"
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 typedef struct decodeOptions_t {
 	int help, raw, limits, debug;
 	int logNumber;
@@ -221,7 +224,11 @@ int validateLogIndex(flightLog_t *log)
 void printUsage(const char *argv0)
 {
 	fprintf(stderr,
-		"Blackbox flight log decoder by Nicholas Sherlock (" __DATE__ " " __TIME__ ")\n\n"
+		"Blackbox flight log decoder by Nicholas Sherlock ("
+#ifdef BLACKBOX_VERSION
+			"v" STR(BLACKBOX_VERSION) ", "
+#endif
+			__DATE__ " " __TIME__ ")\n\n"
 		"Usage:\n"
 		"     %s [options] <logfilename.txt>\n\n"
 		"Options:\n"

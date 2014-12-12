@@ -16,6 +16,7 @@
 
 # Compile-time options
 OPTIONS		?=
+BLACKBOX_VERSION     ?= 
 
 # Debugger optons, must be empty or GDB
 DEBUG = GDB
@@ -62,14 +63,15 @@ endif
 
 DEBUG_FLAGS	 = -g3 -ggdb
 
-CFLAGS		 = $(ARCH_FLAGS) \
-		   $(LTO_FLAGS) \
-		   $(addprefix -D,$(OPTIONS)) \
-		   $(addprefix -I,$(INCLUDE_DIRS)) \
-		   $(DEBUG_FLAGS) \
-		   -std=gnu99 \
-		   -pthread \
-		   -Wall -pedantic -Wextra -Wshadow
+CFLAGS		= $(ARCH_FLAGS) \
+		$(LTO_FLAGS) \
+		$(addprefix -D,$(OPTIONS)) \
+		$(addprefix -I,$(INCLUDE_DIRS)) \
+		$(if $(strip $(BLACKBOX_VERSION)), -DBLACKBOX_VERSION=$(BLACKBOX_VERSION)) \
+		$(DEBUG_FLAGS) \
+		-std=gnu99 \
+		-pthread \
+		-Wall -pedantic -Wextra -Wshadow
 
 CFLAGS += `pkg-config --cflags cairo` `pkg-config --cflags freetype2`
 

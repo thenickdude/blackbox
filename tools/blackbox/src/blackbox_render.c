@@ -31,6 +31,9 @@
 #include "expo.h"
 #include "imu.h"
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 #define MAX_MOTORS 8
 #define MAX_SERVOS 8
 
@@ -1274,7 +1277,11 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 void printUsage(const char *argv0)
 {
 	fprintf(stderr,
-		"Blackbox flight log renderer by Nicholas Sherlock (" __DATE__ " " __TIME__ ")\n\n"
+		"Blackbox flight log renderer by Nicholas Sherlock ("
+#ifdef BLACKBOX_VERSION
+			"v" STR(BLACKBOX_VERSION) ", "
+#endif
+			__DATE__ " " __TIME__ ")\n\n"
 		"Usage:\n"
 		"     %s [options] <logfilename.txt>\n\n"
 		"Options:\n"
