@@ -202,6 +202,17 @@ static void parseHeader(flightLog_t *log)
 		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIEncoding, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "Field I signed") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->mainFieldSigned, FLIGHT_LOG_MAX_FIELDS);
+	} else if (strcmp(fieldName, "I interval") == 0) {
+		log->frameIntervalI = atoi(fieldValue);
+		if (log->frameIntervalI < 1)
+			log->frameIntervalI = 1;
+	} else if (strcmp(fieldName, "P interval") == 0) {
+		char *slashPos = strchr(fieldValue, '/');
+
+		if (slashPos) {
+			log->frameIntervalPNum = atoi(fieldValue);
+			log->frameIntervalPDenom = atoi(slashPos + 1);
+		}
 	} else if (strcmp(fieldName, "Firmware type") == 0) {
 		if (strcmp(fieldValue, "Cleanflight") == 0)
 			log->firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
@@ -486,19 +497,35 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
 	return (int32_t) value;
 }
 
+/**
+ * Should a frame with the given index exist in this log (based on the user's selection of sampling rates)?
+ */
+static int shouldHaveFrame(flightLog_t *log, int32_t frameIndex)
+{
+	return (frameIndex % log->frameIntervalI + log->frameIntervalPNum - 1) % log->frameIntervalPDenom < log->frameIntervalPNum;
+}
+
 static void parseInterframe(flightLog_t *log, bool raw)
 {
 	int i;
 
 	// The new frame gets stored over the top of the current oldest history
 	int32_t *newFrame = log->private->mainHistory[0] == &log->private->blackboxHistoryRing[0][0] ? &log->private->blackboxHistoryRing[1][0] : &log->private->blackboxHistoryRing[0][0];
+	uint32_t frameIndex;
+	uint32_t skippedFrames = 0;
+
+	//Work out how many frames we skipped to get to this one, based on the log sampling rate
+	for (frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
+		skippedFrames++;
+	}
+	log->stats.intentionallyAbsentFrames += skippedFrames;
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
 		uint32_t values[4];
 
 		if (log->private->fieldPPredictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
-			newFrame[i] = log->private->mainHistory[0][i] + 1;
+			newFrame[i] = log->private->mainHistory[0][i] + 1 + skippedFrames;
 		} else {
 			switch (log->private->fieldPEncoding[i]) {
 				case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
@@ -735,6 +762,10 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	log->minthrottle = 1150;
 	log->maxthrottle = 1850;
 
+	log->frameIntervalI = 32;
+	log->frameIntervalPNum = 1;
+	log->frameIntervalPDenom = 1;
+
 	private->motor0Index = -1;
 
 	//Set parsing ranges up for the log the caller selected
@@ -847,6 +878,10 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
 				switch (command) {
 					case 'I':
+						for (uint32_t frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
+							log->stats.intentionallyAbsentFrames++;
+						}
+
 						parseIntraframe(log, raw);
 					break;
 					case 'P':

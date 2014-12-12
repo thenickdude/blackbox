@@ -100,7 +100,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	uint32_t goodBytes = stats->iFrameBytes + stats->pFrameBytes;
 	uint32_t goodFrames = stats->numIFrames + stats->numPFrames;
 	uint32_t totalFrames = (uint32_t) (stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1);
-	uint32_t missingFrames = totalFrames - goodFrames;
+	uint32_t missingFrames = totalFrames - goodFrames - stats->intentionallyAbsentFrames;
 
 	uint32_t runningTimeMS, runningTimeSecs, runningTimeMins;
 	uint32_t startTimeMS, startTimeSecs, startTimeMins;
@@ -145,14 +145,14 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 
 	if (intervalMS > 0 && !raw) {
 		fprintf(stderr, "Data rate %4uHz %6u bytes/s %10u baud\n",
-				(unsigned int) (((int64_t) totalFrames * 1000) / intervalMS),
+				(unsigned int) (((int64_t) goodFrames * 1000) / intervalMS),
 				(unsigned int) (((int64_t) stats->totalBytes * 1000) / intervalMS),
 				(unsigned int) ((((int64_t) stats->totalBytes * 1000 * 8) / intervalMS + 100 - 1) / 100 * 100)); /* Round baud rate up to nearest 100 */
 	} else {
 		fprintf(stderr, "Data rate: Unknown, no timing information available.\n");
 	}
 
-	if (totalFrames && (stats->numBrokenFrames || stats->numUnusablePFrames || missingFrames)) {
+	if (totalFrames && (stats->numBrokenFrames || stats->numUnusablePFrames || missingFrames || stats->intentionallyAbsentFrames)) {
 		fprintf(stderr, "\n");
 
 		if (stats->numBrokenFrames || stats->numUnusablePFrames) {
@@ -165,6 +165,12 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 				missingFrames,
 				(unsigned int) (missingFrames * (intervalMS / totalFrames)), (double) missingFrames / totalFrames * 100);
 		}
+		if (stats->intentionallyAbsentFrames) {
+			fprintf(stderr, "%d frames weren't logged because of your P frame interval settings (%ums, %.2f%%)\n",
+				stats->intentionallyAbsentFrames,
+				(unsigned int) (stats->intentionallyAbsentFrames * (intervalMS / totalFrames)), (double) stats->intentionallyAbsentFrames / totalFrames * 100);
+		}
+
 	}
 
 	if (limits) {

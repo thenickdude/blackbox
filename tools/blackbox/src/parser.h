@@ -29,6 +29,9 @@ typedef struct FlightLogStatistics {
 	//Number of P frames that aren't usable because they were based on a frame that failed to decode:
 	uint32_t numUnusablePFrames;
 
+	//If our sampling rate is less than 1, we won't log every loop iteration, and that is accounted for here:
+	uint32_t intentionallyAbsentFrames;
+
 	int64_t fieldMaximum[FLIGHT_LOG_MAX_FIELDS];
 	int64_t fieldMinimum[FLIGHT_LOG_MAX_FIELDS];
 
@@ -55,6 +58,9 @@ typedef struct FlightLog {
 	//Information about log sections:
 	const char *logBegin[FLIGHT_LOG_MAX_LOGS_IN_FILE + 1];
 	int logCount;
+
+	unsigned int frameIntervalI;
+	unsigned int frameIntervalPNum, frameIntervalPDenom;
 
 	int mainFieldSigned[FLIGHT_LOG_MAX_FIELDS];
 	int gpsFieldSigned[FLIGHT_LOG_MAX_FIELDS];
