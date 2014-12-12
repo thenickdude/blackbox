@@ -371,7 +371,7 @@ static void pidMultiWii(void)
         // Values for blackbox
         axisP[axis] = PTerm;
 		axisI[axis] = ITerm;
-		axisD[axis] = DTerm;
+		axisD[axis] = -DTerm;
     }
 }
 
