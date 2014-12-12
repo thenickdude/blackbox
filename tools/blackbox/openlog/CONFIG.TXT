@@ -1,0 +1,2 @@
+115200,26,0,0,1,0,1
+baud,escape,esc#,mode,verb,echo,ignoreRX
