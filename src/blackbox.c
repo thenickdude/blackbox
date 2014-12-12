@@ -6,11 +6,7 @@
 
 #define BLACKBOX_BAUDRATE 115200
 #define BLACKBOX_INITIAL_PORT_MODE MODE_TX
-
-static const char blackboxHeader[] =
-	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
-	"H Blackbox version:1\n"
-	"H Data version:1\n";
+#define BLACKBOX_I_INTERVAL 32
 
 // Some macros to make writing FLIGHT_LOG_FIELD_PREDICTOR_* constants shorter:
 #define STR_HELPER(x) #x
@@ -21,6 +17,12 @@ static const char blackboxHeader[] =
 
 #define PREDICT(x) STR(CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x))
 #define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x))
+
+static const char blackboxHeader[] =
+	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
+	"H Blackbox version:1\n"
+	"H Data version:1\n"
+	"H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
 
 /* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
 static const char * const blackboxHeaderFields[] = {
@@ -569,6 +571,28 @@ static void writeInterframe(void)
 	blackboxHistory[0] = ((blackboxHistory[0] - blackboxHistoryRing + 1) % 3) + blackboxHistoryRing;
 }
 
+static int gcd(int num, int denom)
+{
+	if (denom == 0)
+		return num;
+	return gcd(denom, num % denom);
+}
+
+static void validateBlackboxConfig()
+{
+	int div;
+
+	if (mcfg.blackbox_rate_num >= mcfg.blackbox_rate_denom) {
+		mcfg.blackbox_rate_num = 1;
+		mcfg.blackbox_rate_denom = 1;
+	} else {
+		div = gcd(mcfg.blackbox_rate_num, mcfg.blackbox_rate_denom);
+
+		mcfg.blackbox_rate_num /= div;
+		mcfg.blackbox_rate_denom /= div;
+	}
+}
+
 static void configureBlackboxPort(void)
 {
 	serialInit(115200);
@@ -585,6 +609,8 @@ static void releaseBlackboxPort(void)
 void startBlackbox(void)
 {
 	if (blackboxState == BLACKBOX_STATE_STOPPED) {
+		validateBlackboxConfig();
+
 		configureBlackboxPort();
 
 		if (!blackboxPort) {
@@ -683,6 +709,8 @@ void handleBlackbox(void)
 	const int SERIAL_CHUNK_SIZE = 16;
 	static int charXmitIndex = 0;
 	int motorsToRemove, endIndex;
+	int blackboxIntercycleIndex, blackboxIntracycleIndex;
+
 	union floatConvert_t {
 		float f;
 		uint32_t u;
@@ -772,22 +800,25 @@ void handleBlackbox(void)
 					// Pause to allow more time for previous to transmit
 				break;
 				case 4:
-					blackboxPrintf("H rcRate:%d\n", cfg.rcRate8);
+					blackboxPrintf("H P interval:%d/%d\n", mcfg.blackbox_rate_num, mcfg.blackbox_rate_denom);
 				break;
 				case 5:
-					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
+					blackboxPrintf("H rcRate:%d\n", cfg.rcRate8);
 				break;
 				case 6:
-					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+					blackboxPrintf("H minthrottle:%d\n", mcfg.minthrottle);
 				break;
 				case 7:
+					blackboxPrintf("H maxthrottle:%d\n", mcfg.maxthrottle);
+				break;
+				case 8:
 					floatConvert.f = gyro.scale;
 					blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
 				break;
-				case 8:
+				case 9:
 					blackboxPrintf("H acc_1G:%u\n", acc_1G);
 				break;
-				case 9:
+				case 10:
 					// One more pause for good luck
 				break;
 				default:
@@ -797,17 +828,19 @@ void handleBlackbox(void)
 			headerXmitIndex++;
 		break;
 		case BLACKBOX_STATE_RUNNING:
-        	// Copy current system values into the blackbox
-        	loadBlackboxState();
-
 			// Write a keyframe every 32 frames so we can resynchronise upon missing frames
-			int blackboxIntercycleIndex = blackboxIteration % 32;
-			int blackboxIntracycleIndex = blackboxIteration / 32;
+			blackboxIntercycleIndex = blackboxIteration % BLACKBOX_I_INTERVAL;
+			blackboxIntracycleIndex = blackboxIteration / BLACKBOX_I_INTERVAL;
 
-			if (blackboxIntercycleIndex == 0)
+			if (blackboxIntercycleIndex == 0) {
+	        	// Copy current system values into the blackbox
+	        	loadBlackboxState();
 				writeIntraframe();
-			else {
-				writeInterframe();
+			} else {
+				if ((blackboxIntercycleIndex + mcfg.blackbox_rate_num - 1) % mcfg.blackbox_rate_denom < mcfg.blackbox_rate_num) {
+		        	loadBlackboxState();
+		        	writeInterframe();
+		        }
 
 				if (feature(FEATURE_GPS)) {
 					/*
@@ -818,7 +851,7 @@ void handleBlackbox(void)
 					 * still be interpreted correctly.
 					 */
 					if (GPS_home[0] != gpsHistory.GPS_home[0] || GPS_home[1] != gpsHistory.GPS_home[1]
-						|| (blackboxIntercycleIndex == 15 && blackboxIntracycleIndex % 128 == 0)) {
+						|| (blackboxIntercycleIndex == BLACKBOX_I_INTERVAL / 2 && blackboxIntracycleIndex % 128 == 0)) {
 
 						writeGPSHomeFrame();
 						writeGPSFrame();
@@ -837,7 +870,7 @@ void handleBlackbox(void)
 	}
 }
 
-bool canUseBlackboxWithCurrentConfiguration(void)
+static bool canUseBlackboxWithCurrentConfiguration(void)
 {
     if (!feature(FEATURE_BLACKBOX))
         return false;

@@ -29,6 +29,7 @@ $(MACOSX_ZIP) : $(COMMON_FILES)
 	cp $^ .build_tmp/
 	cp tools/blackbox/obj/blackbox_decode tools/blackbox/obj/blackbox_render .build_tmp/
 	tar -cf $@ -C .build_tmp/ $(notdir $^) blackbox_decode blackbox_render
+	rm -rf .build_tmp
 		
 $(VERSION_FILE): .git/HEAD .git/index
 	echo "This Blackbox version $(VERSION) was built $(DATE) from Blackbox commit $(shell git rev-parse HEAD)" > $@

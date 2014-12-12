@@ -311,7 +311,8 @@ typedef struct master_t {
     uint8_t reboot_character;               // which byte is used to reboot. Default 'R', could be changed carefully to something else.
 
     // blackbox settings
-    uint8_t blackbox_port;                  // Currently only supports 0.
+    uint8_t blackbox_rate_num;              // Together with the denom, chooses fraction of loop iterations to record
+    uint8_t blackbox_rate_denom;            //
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
