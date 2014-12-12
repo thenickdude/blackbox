@@ -1,6 +1,8 @@
 #ifndef PLATFORM_H_
 #define PLATFORM_H_
 
+#include <stdbool.h>
+
 #if defined(__APPLE__)
 	//MacOS doesn't have POSIX unnamed semaphores. Grand Central Dispatch provides an alternative:
 	#include <dispatch/dispatch.h>
@@ -37,5 +39,7 @@ void semaphore_create(semaphore_t *sem, int initialCount);
 void semaphore_destroy(semaphore_t *sem);
 void semaphore_wait(semaphore_t *sem);
 void semaphore_signal(semaphore_t *sem);
+
+bool directory_create(const char *name);
 
 #endif

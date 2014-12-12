@@ -234,7 +234,7 @@ static void parseHeader(flightLog_t *log)
 		 * match Baseflight so we can use Baseflight's IMU for both: */
 
 		if (log->firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
-			log->gyroScale *= (M_PI / 180.0f) * 0.000001f;
+			log->gyroScale = (float) (log->gyroScale * (M_PI / 180.0f) * 0.000001f);
 		}
 	} else if (strcmp(fieldName, "acc_1G") == 0) {
 		log->acc_1G = atoi(fieldValue);

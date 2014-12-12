@@ -1,6 +1,13 @@
 #include "platform.h"
 
 #ifdef WIN32
+	#include <direct.h>
+#else
+	#include <sys/stat.h>
+#endif
+
+
+#ifdef WIN32
 	/*
 	 * I don't want to have to define my thread routine stdcall on windows and cdecl on POSIX, so
 	 * this structure'll wrap things for me
@@ -79,5 +86,14 @@ void semaphore_destroy(semaphore_t *sem)
 	CloseHandle(*sem);
 #else
 sem_destroy(sem);
+#endif
+}
+
+bool directory_create(const char *name)
+{
+#if defined(WIN32)
+	return _mkdir(name) == 0;
+#else
+	return mkdir(name, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IROTH) == 0;
 #endif
 }

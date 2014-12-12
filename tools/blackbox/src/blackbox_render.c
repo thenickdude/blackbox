@@ -18,6 +18,8 @@
 	#include <io.h>
 #endif
 
+#include <sys/stat.h>
+
 #include <cairo.h>
 
 #include <ft2build.h>
@@ -214,8 +216,7 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 	(void) frameType;
 	(void) fieldCount;
 
-	//Don't accidentally ask for an array of negative size, it doesn't like it:
-	int32_t frameDup[fieldCount > 0 ? fieldCount - 1 : 0];
+	int32_t frameDup[FLIGHT_LOG_MAX_FIELDS];
 
 	if (frameValid) {
 		/*
@@ -967,10 +968,10 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 
 void* pngRenderThread(void *arg)
 {
-	char filename[255];
+	char filename[256];
 	pngRenderingTask_t *task = (pngRenderingTask_t *) arg;
 
-    snprintf(filename, sizeof(filename), "%s%02d.%06d.png", options.outputPrefix, task->outputLogIndex + 1, task->outputFrameIndex);
+    snprintf(filename, sizeof(filename), "%s.%02d.%06d.png", options.outputPrefix, task->outputLogIndex + 1, task->outputFrameIndex);
     cairo_surface_write_to_png (task->surface, filename);
     cairo_surface_destroy (task->surface);
 
@@ -1480,28 +1481,6 @@ void parseCommandlineOptions(int argc, char **argv)
 
 	if (optind < argc) {
 		options.filename = argv[optind];
-
-		//If the user didn't supply an output filename prefix, create our own based on the input filename
-		if (!options.outputPrefix) {
-			// Try replacing the file extension with our suffix:
-			char *fileExtensionPeriod = strrchr(options.filename, '.');
-			int sourceLen;
-
-			if (fileExtensionPeriod) {
-				sourceLen = fileExtensionPeriod - options.filename;
-			} else {
-				//If the original had no extension, just append:
-				sourceLen = strlen(options.filename);
-			}
-
-			options.outputPrefix = malloc((sourceLen + 2 /*Room for an extra period and the null terminator*/) * sizeof(*options.outputPrefix));
-
-			for (int i = 0; i < sourceLen; i++)
-				options.outputPrefix[i] = options.filename[i];
-
-			options.outputPrefix[sourceLen] = '.';
-			options.outputPrefix[sourceLen + 1] = '\0';
-		}
 	}
 }
 
@@ -1599,6 +1578,8 @@ int chooseLog(flightLog_t *log)
 
 int main(int argc, char **argv)
 {
+	struct stat directoryStat;
+	char outputDirectory[256];
 	char **fieldNames;
 	uint32_t frameStart, frameEnd;
 	int fd;
@@ -1626,6 +1607,37 @@ int main(int argc, char **argv)
 
     if (selectedLogIndex == -1)
     	return -1;
+
+	//If the user didn't supply an output filename prefix, create our own based on the input filename
+	if (!options.outputPrefix) {
+		char *fileExtensionPeriod = strrchr(options.filename, '.');
+		char *fileSlash = strrchr(options.filename, '/');
+		char *logNameStart, *logNameEnd;
+
+		if (strrchr(options.filename, '\\') > fileSlash)
+			fileSlash = strrchr(options.filename, '\\');
+
+		if (fileSlash)
+			logNameStart = fileSlash + 1;
+		else
+			logNameStart = options.filename;
+
+		if (fileExtensionPeriod) {
+			logNameEnd = fileExtensionPeriod;
+		} else {
+			logNameEnd = options.filename + strlen(options.filename);
+		}
+
+		snprintf(outputDirectory, 256, "%.*s.frames.%02d", (int) (logNameEnd - options.filename), options.filename, selectedLogIndex + 1);
+
+		//Create the output directory if it doesn't exist
+		if (stat(outputDirectory, &directoryStat) != 0) {
+			directory_create(outputDirectory);
+		}
+
+		options.outputPrefix = malloc(256 * sizeof(char));
+		snprintf(options.outputPrefix, 256, "%s/%.*s", outputDirectory, (int) (logNameEnd - logNameStart), logNameStart);
+	}
 
 	//First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
 	flightLogParse(flightLog, selectedLogIndex, 0, 0, false);
