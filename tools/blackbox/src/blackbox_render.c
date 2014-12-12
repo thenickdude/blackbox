@@ -87,7 +87,7 @@ typedef struct renderOptions_t {
 	int help;
 
 	int plotPids, plotPidSum, plotGyros, plotMotors;
-	int drawPidTable, drawSticks, drawCraft;
+	int drawPidTable, drawSticks, drawCraft, drawTime;
 
 	int pidSmoothing, gyroSmoothing, motorSmoothing;
 
@@ -181,7 +181,7 @@ static const renderOptions_t defaultOptions = {
 	.fps = 30, .help = 0, .propStyle = PROP_STYLE_PIE_CHART,
 	.plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
 	.pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
-	.drawCraft = true, .drawPidTable = true, .drawSticks = true,
+	.drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
 	.filename = 0,
 	.timeStart = 0, .timeEnd = 0,
 	.logNumber = 0,
@@ -1255,7 +1255,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 			drawAccelerometerData(cr, frameValues);
 		}
 
-		drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, (uint32_t) ((windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000));
+		if (options.drawTime)
+			drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, (uint32_t) ((windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000));
 
 	    cairo_destroy(cr);
 
@@ -1296,6 +1297,7 @@ void printUsage(const char *argv0)
 		"   --[no-]draw-pid-table  Show table with PIDs and gyros (default on)\n"
 		"   --[no-]draw-craft      Show craft drawing (default on)\n"
 		"   --[no-]draw-sticks     Show RC command sticks (default on)\n"
+		"   --[no-]draw-time       Show frame number and time in bottom right (default on)\n"
 		"   --[no-]plot-motor      Draw motors on the upper graph (default on)\n"
 		"   --[no-]plot-pid        Draw PIDs on the lower graph (default off)\n"
 		"   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)\n"
@@ -1374,9 +1376,11 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"draw-pid-table", no_argument, &options.drawPidTable, 1},
 			{"draw-craft", no_argument, &options.drawCraft, 1},
 			{"draw-sticks", no_argument, &options.drawSticks, 1},
+			{"draw-time", no_argument, &options.drawTime, 1},
 			{"no-draw-pid-table", no_argument, &options.drawPidTable, 0},
 			{"no-draw-craft", no_argument, &options.drawCraft, 0},
 			{"no-draw-sticks", no_argument, &options.drawSticks, 0},
+			{"no-draw-time", no_argument, &options.drawTime, 0},
 			{"smoothing-pid", required_argument, 0, '1'},
 			{"smoothing-gyro", required_argument, 0, '2'},
 			{"smoothing-motor", required_argument, 0, '3'},
