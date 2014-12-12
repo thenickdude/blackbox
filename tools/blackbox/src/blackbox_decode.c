@@ -27,16 +27,18 @@
 typedef struct decodeOptions_t {
 	int help, raw, limits, debug;
 	int logNumber;
-	const char *filename;
+	const char *filename, *outputFilename;
 } decodeOptions_t;
 
 decodeOptions_t options = {
 	.help = 0, .raw = 0, .limits = 0, .debug = 0,
 	.logNumber = -1,
-	.filename = 0
+	.filename = 0, .outputFilename = 0
 };
 
 uint32_t lastFrameIndex = (uint32_t) -1;
+
+FILE *outputFile;
 
 void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
@@ -48,19 +50,19 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 	if (frameValid) {
 		for (i = 0; i < fieldCount; i++) {
 			if (i == 0) {
-				printf("%u", (uint32_t) frame[i]);
+				fprintf(outputFile, "%u", (uint32_t) frame[i]);
 			} else {
 				if (log->mainFieldSigned[i] || options.raw)
-					printf(", %3d", frame[i]);
+					fprintf(outputFile,", %3d", frame[i]);
 				else
-					printf(", %3u", (uint32_t) frame[i]);
+					fprintf(outputFile,", %3u", (uint32_t) frame[i]);
 			}
 		}
 
 		if (options.debug) {
-			printf(", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
+			fprintf(outputFile,", %c, offset %d, size %d\n", (char) frameType, frameOffset, frameSize);
 		} else
-			printf("\n");
+			fprintf(outputFile,"\n");
 	} else if (options.debug) {
 		// Print to stdout so that these messages line up with our other output on stdout (stderr isn't synchronised to it)
 		if (frame) {
@@ -68,11 +70,11 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 			 * We'll assume that the frame's iteration count is still fairly sensible (if an earlier frame was corrupt,
 			 * the frame index will be smaller than it should be)
 			 */
-			printf("Frame unusuable due to prior corruption %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
+			fprintf(outputFile,"Frame unusuable due to prior corruption %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
 		} else {
 			//We have no frame index for this frame, so just assume it was the one after the previously decoded frame
 			lastFrameIndex++;
-			printf("Failed to decode frame %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
+			fprintf(outputFile,"Failed to decode frame %u, offset %d, size %d\n", lastFrameIndex, frameOffset, frameSize);
 		}
 	}
 }
@@ -88,11 +90,11 @@ void onMetadataReady(flightLog_t *log)
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		if (i > 0)
-			printf(", ");
+			fprintf(outputFile,", ");
 
-		printf("%s", log->mainFieldNames[i]);
+		fprintf(outputFile,"%s", log->mainFieldNames[i]);
 	}
-	printf("\n");
+	fprintf(outputFile,"\n");
 }
 
 void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
@@ -169,7 +171,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 				(unsigned int) (missingFrames * (intervalMS / totalFrames)), (double) missingFrames / totalFrames * 100);
 		}
 		if (stats->intentionallyAbsentFrames) {
-			fprintf(stderr, "%d frames weren't logged because of your P frame interval settings (%ums, %.2f%%)\n",
+			fprintf(stderr, "%d loop iterations weren't logged because of your blackbox_rate settings (%ums, %.2f%%)\n",
 				stats->intentionallyAbsentFrames,
 				(unsigned int) (stats->intentionallyAbsentFrames * (intervalMS / totalFrames)), (double) stats->intentionallyAbsentFrames / totalFrames * 100);
 		}
@@ -230,7 +232,7 @@ void printUsage(const char *argv0)
 #endif
 			__DATE__ " " __TIME__ ")\n\n"
 		"Usage:\n"
-		"     %s [options] <logfilename.txt>\n\n"
+		"     %s [options] <logfilename.txt> [outputfilename|-]\n\n"
 		"Options:\n"
 		"   --help         This page\n"
 		"   --index <num>  Choose the log from the file that should be decoded\n"
@@ -272,10 +274,14 @@ void parseCommandlineOptions(int argc, char **argv)
 
 	if (optind < argc)
 		options.filename = argv[optind];
+	if (optind + 1 < argc)
+		options.outputFilename = argv[optind + 1];
+
 }
 
 int main(int argc, char **argv)
 {
+	char * newFilename = 0;
 	flightLog_t *log;
 	int fd;
 	int logIndex;
@@ -303,10 +309,55 @@ int main(int argc, char **argv)
     if (logIndex == -1)
     	return -1;
 
+    if (options.outputFilename == NULL) {
+		const char *fileExtensionPeriod = strrchr(options.filename, '.');
+		const char *logNameEnd;
+		int newFilenameMaxLen = strlen(options.filename) + 5;
+		newFilename = malloc(newFilenameMaxLen);
+
+		if (fileExtensionPeriod) {
+			logNameEnd = fileExtensionPeriod;
+		} else {
+			logNameEnd = options.filename + strlen(options.filename);
+		}
+
+		snprintf(newFilename, newFilenameMaxLen, "%.*s.csv", (int) (logNameEnd - options.filename), options.filename);
+
+		outputFile = fopen(newFilename, "wb");
+
+		if (!outputFile) {
+			fprintf(stderr, "Failed to create output file %s\n", newFilename);
+			return -1;
+		}
+
+		fprintf(stderr, "Decoding log to %s...\n", newFilename);
+
+		free(newFilename);
+    } else if (strcmp(options.outputFilename, "-") == 0) {
+    	outputFile = stdout;
+    } else {
+		outputFile = fopen(options.outputFilename, "wb");
+
+		if (!outputFile) {
+			fprintf(stderr, "Failed to create output file %s\n", options.outputFilename);
+			return -1;
+		}
+		fprintf(stderr, "Decoding log to %s...\n", options.outputFilename);
+	}
+
 	if (flightLogParse(log, logIndex, onMetadataReady, onFrameReady, options.raw)) {
 		printStats(log, logIndex, options.raw, options.limits);
 
-		// destroyFlightLog(log); Leaking it is faster.
+		/*
+		 * If they didn't specify an output file, assume that they launched us from the GUI by dropping a log file on
+		 * as input. In that case, they won't see our console output unless we pause.
+		 */
+		if (options.outputFilename == 0) {
+			fprintf(stderr, "\n[Press enter to exit]\n");
+			getchar();
+		} else if (strcmp(options.outputFilename, "-") != 0) {
+			fclose(outputFile);
+		}
 	} else {
 		return -1;
 	}
