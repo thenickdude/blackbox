@@ -6,16 +6,18 @@
 #include "datapoints.h"
 #include "parser.h"
 
-datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCount) {
+datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapacity) {
 	datapoints_t *result = (datapoints_t*) malloc(sizeof(datapoints_t));
 
 	result->fieldCount = fieldCount;
 	result->fieldNames = fieldNames;
-	result->frameCount = frameCount;
 
-	result->frames = malloc(sizeof(*result->frames) * fieldCount * frameCount);
-	result->framePresent = calloc(1, sizeof(*result->framePresent) * frameCount);
-	result->frameTime = calloc(1, sizeof(*result->frameTime) * frameCount);
+	result->frameCount = 0;
+	result->frameCapacity = frameCapacity;
+
+	result->frames = malloc(sizeof(*result->frames) * fieldCount * frameCapacity);
+	result->frameTime = calloc(1, sizeof(*result->frameTime) * frameCapacity);
+	result->frameGap = calloc(1, sizeof(*result->frameGap) * frameCapacity);
 
 	return result;
 }
@@ -48,14 +50,14 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
 
 	for (; centerIndex < points->frameCount; centerIndex++, leftIndex++, rightIndex++) {
 		// Oldest value falls out of the window
-		if (leftIndex >= 0 && points->framePresent[leftIndex]) {
+		if (leftIndex >= 0) {
 			accumulator -= history[historyTail];
 			valuesInHistory--;
 			historyTail = (historyTail + 1) % windowSize;
 		}
 
 		//New value is added to the window
-		if (rightIndex < points->frameCount && points->framePresent[rightIndex]) {
+		if (rightIndex < points->frameCount) {
 			int32_t fieldValue = (int32_t) points->frames[points->fieldCount * rightIndex + fieldIndex];
 
 			history[historyHead] = fieldValue;
@@ -65,7 +67,7 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
 		}
 
 		// Store the average of the history window into the frame in the center of the window
-		if (centerIndex >= 0 && points->framePresent[centerIndex]) {
+		if (centerIndex >= 0) {
 			points->frames[points->fieldCount * centerIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
 		}
 	}
@@ -84,12 +86,10 @@ int datapointsFindFrameAtTime(datapoints_t *points, int64_t time)
 
 	//TODO make me a binary search
 	for (i = 0; i < points->frameCount; i++) {
-		if (points->framePresent[i]) {
-			if (time < points->frameTime[i]) {
-				return lastGoodFrame;
-			}
-			lastGoodFrame = i;
+		if (time < points->frameTime[i]) {
+			return lastGoodFrame;
 		}
+		lastGoodFrame = i;
 	}
 
 	return lastGoodFrame;
@@ -97,7 +97,7 @@ int datapointsFindFrameAtTime(datapoints_t *points, int64_t time)
 
 bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int32_t *frame)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
+	if (frameIndex < 0 || frameIndex >= points->frameCount)
 		return false;
 
 	memcpy(frame, points->frames + frameIndex * points->fieldCount, points->fieldCount * sizeof(*points->frames));
@@ -108,7 +108,7 @@ bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *fr
 
 bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t *frameValue)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
+	if (frameIndex < 0 || frameIndex >= points->frameCount)
 		return false;
 
 	*frameValue = points->frames[frameIndex * points->fieldCount + fieldIndex];
@@ -118,7 +118,7 @@ bool datapointsGetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIn
 
 bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIndex, int32_t frameValue)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
+	if (frameIndex < 0 || frameIndex >= points->frameCount)
 		return false;
 
 	points->frames[frameIndex * points->fieldCount + fieldIndex] = frameValue;
@@ -128,7 +128,7 @@ bool datapointsSetFieldAtIndex(datapoints_t *points, int frameIndex, int fieldIn
 
 bool datapointsGetTimeAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount || !points->framePresent[frameIndex])
+	if (frameIndex < 0 || frameIndex >= points->frameCount)
 		return false;
 
 	*frameTime = points->frameTime[frameIndex];
@@ -136,18 +136,33 @@ bool datapointsGetTimeAtIndex(datapoints_t *points, int frameIndex, int64_t *fra
 	return true;
 }
 
+bool datapointsGetGapStartsAtIndex(datapoints_t *points, int frameIndex)
+{
+	return frameIndex >= 0 && frameIndex < points->frameCount && points->frameGap[frameIndex];
+}
+
 /**
  * Set the data for the frame with the given index. The second field of the frame is expected to be a timestamp
  * (if you want to be able to find frames at given times).
  */
-bool datapointsSetFrame(datapoints_t *points, int frameIndex, int64_t frameTime, int32_t *frame)
+bool datapointsAddFrame(datapoints_t *points, int64_t frameTime, const int32_t *frame)
 {
-	if (frameIndex < 0 || frameIndex >= points->frameCount)
+	if (points->frameCount >= points->frameCapacity)
 		return false;
 
-	memcpy(points->frames + frameIndex * points->fieldCount, frame, points->fieldCount * sizeof(*points->frames));
-	points->frameTime[frameIndex] = frameTime;
-	points->framePresent[frameIndex] = true;
+	points->frameTime[points->frameCount] = frameTime;
+	memcpy(points->frames + points->frameCount * points->fieldCount, frame, points->fieldCount * sizeof(*points->frames));
+
+	points->frameCount++;
 
 	return true;
+}
+
+/**
+ * Mark that a gap in the log begins after the last frame added.
+ */
+void datapointsAddGap(datapoints_t *points)
+{
+	if (points->frameCount > 0)
+		points->frameGap[points->frameCount - 1] = 1;
 }

@@ -214,12 +214,25 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 	(void) frameType;
 	(void) fieldCount;
 
-	/*
-	 * Pull the first two fields (iteration and time) off the front of the frame fields,
-	 * since datapoints handles those as separate arguments in this call:
-	 */
-	if (frameValid)
-		datapointsSetFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_ITERATION], frame[FLIGHT_LOG_FIELD_INDEX_TIME], frame + 2);
+	//Don't accidentally ask for an array of negative size, it doesn't like it:
+	int32_t frameDup[fieldCount > 0 ? fieldCount - 1 : 0];
+
+	if (frameValid) {
+		/*
+		 * Pull the time field out, since datapoints handles that as a separate argument in this call:
+		 */
+
+		for (int i = 0; i < fieldCount; i++) {
+			if (i < FLIGHT_LOG_FIELD_INDEX_TIME)
+				frameDup[i] = frame[i];
+			else if (i > FLIGHT_LOG_FIELD_INDEX_TIME)
+				frameDup[i - 1] = frame[i];
+		}
+
+		datapointsAddFrame(points, frame[FLIGHT_LOG_FIELD_INDEX_TIME], frameDup);
+	} else {
+		datapointsAddGap(points);
+	}
 }
 
 /**
@@ -663,35 +676,45 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
 void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windowEndTime, int firstFrameIndex,
 		int fieldIndex, expoCurve_t *curve, int plotHeight)
 {
+	static const int GAP_WARNING_BOX_RADIUS = 4;
 	uint32_t windowWidthMicros = (uint32_t) (windowEndTime - windowStartTime);
 	int32_t fieldValue;
 	int64_t frameTime;
 
 	bool drawingLine = false;
+	double lastX, lastY;
+
 
 	//Draw points from this line until we leave the window
 	for (int frameIndex = firstFrameIndex; frameIndex < points->frameCount; frameIndex++) {
-		if (datapointsGetFieldAtIndex(points, frameIndex, fieldIndex, &fieldValue)) {
-			datapointsGetTimeAtIndex(points, frameIndex, &frameTime);
+		datapointsGetFieldAtIndex(points, frameIndex, fieldIndex, &fieldValue);
+		datapointsGetTimeAtIndex(points, frameIndex, &frameTime);
 
-			double nextX, nextY;
+		double nextX, nextY;
 
-			nextY = (double) -expoCurveLookup(curve, fieldValue) * plotHeight;
-			nextX = (double)(frameTime - windowStartTime) / windowWidthMicros * options.imageWidth;
+		nextY = (double) -expoCurveLookup(curve, fieldValue) * plotHeight;
+		nextX = (double)(frameTime - windowStartTime) / windowWidthMicros * options.imageWidth;
 
-			if (drawingLine) {
-				cairo_line_to(cr, nextX, nextY);
-			} else {
+		if (drawingLine) {
+			if (!options.gapless && datapointsGetGapStartsAtIndex(points, frameIndex - 1)) {
+				//Draw a warning box at the beginning and end of the gap to mark it
+				cairo_rectangle(cr, lastX - GAP_WARNING_BOX_RADIUS, lastY - GAP_WARNING_BOX_RADIUS, GAP_WARNING_BOX_RADIUS * 2, GAP_WARNING_BOX_RADIUS * 2);
+				cairo_rectangle(cr, nextX - GAP_WARNING_BOX_RADIUS, nextY - GAP_WARNING_BOX_RADIUS, GAP_WARNING_BOX_RADIUS * 2, GAP_WARNING_BOX_RADIUS * 2);
+
 				cairo_move_to(cr, nextX, nextY);
-				drawingLine = true;
+			} else {
+				cairo_line_to(cr, nextX, nextY);
 			}
-
-			if (frameTime >= windowEndTime)
-				break;
-		} else if (!options.gapless) {
-			//We'll need to start a new line at the next point
-			drawingLine = false;
+		} else {
+			cairo_move_to(cr, nextX, nextY);
 		}
+
+		drawingLine = true;
+		lastX = nextX;
+		lastY = nextY;
+
+		if (frameTime >= windowEndTime)
+			break;
 	}
 
 	cairo_set_source_rgb(cr, color.r, color.g, color.b);
@@ -1086,15 +1109,15 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 				cairo_set_line_width(cr, 2.5);
 
 				for (i = 0; i < idents.numMotors; i++) {
-					plotLine(cr, idents.motorColors[i], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.motorFields[i], motorCurve, motorGraphHeight);
+					plotLine(cr, idents.motorColors[i], windowStartTime, windowEndTime, firstFrameIndex,
+							idents.motorFields[i], motorCurve, motorGraphHeight);
 				}
 
 				if (idents.numServos) {
 					for (i = 0; i < MAX_SERVOS; i++) {
 						if (idents.servoFields[i] > -1) {
-							plotLine(cr, idents.servoColors[i], windowStartTime,
-									windowEndTime, firstFrameIndex, idents.servoFields[i], motorCurve, motorGraphHeight);
+							plotLine(cr, idents.servoColors[i], windowStartTime, windowEndTime, firstFrameIndex,
+									idents.servoFields[i], motorCurve, motorGraphHeight);
 						}
 					}
 				}
@@ -1131,9 +1154,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 								cairo_set_line_width(cr, 2);
 						}
 
-						plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime,
-								windowEndTime, firstFrameIndex, idents.axisPIDFields[pidType][axis], pidCurve,
-								(int) (options.imageHeight * 0.15));
+						plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime, windowEndTime, firstFrameIndex,
+								idents.axisPIDFields[pidType][axis], pidCurve, (int) (options.imageHeight * 0.15));
 
 						cairo_set_dash(cr, 0, 0, 0);
 					}
@@ -1141,9 +1163,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 					if (options.plotGyros) {
 						cairo_set_line_width(cr, 3);
 
-						plotLine(cr, idents.gyroColors[axis], windowStartTime,
-								windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve,
-								(int) (options.imageHeight * 0.15));
+						plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
+								idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.15));
 					}
 
 					const char *axisLabel;
@@ -1188,9 +1209,8 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 				drawCenterline(cr);
 
 				for (int axis = 0; axis < 3; axis++) {
-					plotLine(cr, idents.gyroColors[axis], windowStartTime,
-							windowEndTime, firstFrameIndex, idents.gyroFields[axis], gyroCurve,
-							(int) (options.imageHeight * 0.25));
+					plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
+							idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.25));
 
 					/*plotLine(cr, idents.gyroColors[axis], windowStartTime,
 							windowEndTime, firstFrameIndex, idents.accFields[axis], accCurve, (int) (options.imageHeight * 0.25));*/
@@ -1253,10 +1273,10 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 			}
 
 			drawAccelerometerData(cr, frameValues);
-		}
 
-		if (options.drawTime)
-			drawFrameLabel(cr, centerFrameIndex > -1 ? centerFrameIndex : 0, (uint32_t) ((windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000));
+			if (options.drawTime)
+				drawFrameLabel(cr, frameValues[0], (uint32_t) ((windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000));
+		}
 
 	    cairo_destroy(cr);
 
@@ -1612,23 +1632,25 @@ int main(int argc, char **argv)
 
 	/* Configure our data points array.
 	 *
-	 * Don't include the leading time or field index fields in the field names / counts, but add on fields
-	 * that we'll synthesize
+	 * Don't include the time field in the field names / counts, but add on fields that we'll synthesize
 	 */
-	fieldNames = malloc(sizeof(*fieldNames) * (flightLog->mainFieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS));
+	fieldNames = malloc(sizeof(*fieldNames) * (flightLog->mainFieldCount - 1 + DATAPOINTS_EXTRA_COMPUTED_FIELDS));
 
-	for (int i = 2; i < flightLog->mainFieldCount; i++) {
-		fieldNames[i - 2] = strdup(flightLog->mainFieldNames[i]);
+	for (int i = 0; i < flightLog->mainFieldCount; i++) {
+		if (i < FLIGHT_LOG_FIELD_INDEX_TIME)
+			fieldNames[i] = strdup(flightLog->mainFieldNames[i]);
+		else if (i > FLIGHT_LOG_FIELD_INDEX_TIME)
+			fieldNames[i - 1] = strdup(flightLog->mainFieldNames[i]);
 	}
 
-	fieldNames[flightLog->mainFieldCount - 2] = strdup("roll");
-	fieldNames[flightLog->mainFieldCount - 1] = strdup("pitch");
-	fieldNames[flightLog->mainFieldCount + 0] = strdup("heading");
-	fieldNames[flightLog->mainFieldCount + 1] = strdup("axisPID[0]");
-	fieldNames[flightLog->mainFieldCount + 2] = strdup("axisPID[1]");
-	fieldNames[flightLog->mainFieldCount + 3] = strdup("axisPID[2]");
+	fieldNames[flightLog->mainFieldCount - 1] = strdup("roll");
+	fieldNames[flightLog->mainFieldCount + 0] = strdup("pitch");
+	fieldNames[flightLog->mainFieldCount + 1] = strdup("heading");
+	fieldNames[flightLog->mainFieldCount + 2] = strdup("axisPID[0]");
+	fieldNames[flightLog->mainFieldCount + 3] = strdup("axisPID[1]");
+	fieldNames[flightLog->mainFieldCount + 4] = strdup("axisPID[2]");
 
-	points = datapointsCreate(flightLog->mainFieldCount - 2 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, (int) (flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1));
+	points = datapointsCreate(flightLog->mainFieldCount - 1 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, (int) (flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1));
 
 	//Now decode the flight log into the points array
 	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, false);
