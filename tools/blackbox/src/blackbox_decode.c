@@ -25,15 +25,15 @@
 #define STR(x) STR_HELPER(x)
 
 typedef struct decodeOptions_t {
-	int help, raw, limits, debug;
+	int help, raw, limits, debug, toStdout;
 	int logNumber;
-	const char *filename, *outputFilename;
+	const char *outputPrefix;
 } decodeOptions_t;
 
 decodeOptions_t options = {
-	.help = 0, .raw = 0, .limits = 0, .debug = 0,
+	.help = 0, .raw = 0, .limits = 0, .debug = 0, .toStdout = 0,
 	.logNumber = -1,
-	.filename = 0, .outputFilename = 0
+	.outputPrefix = 0
 };
 
 uint32_t lastFrameIndex = (uint32_t) -1;
@@ -191,6 +191,8 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 			);
 		}
 	}
+
+	fprintf(stderr, "\n");
 }
 
 int validateLogIndex(flightLog_t *log)
@@ -232,13 +234,14 @@ void printUsage(const char *argv0)
 #endif
 			__DATE__ " " __TIME__ ")\n\n"
 		"Usage:\n"
-		"     %s [options] <logfilename.txt> [outputfilename|-]\n\n"
+		"     %s [options] <input logs>\n\n"
 		"Options:\n"
-		"   --help         This page\n"
-		"   --index <num>  Choose the log from the file that should be decoded\n"
-		"   --limits       Print the limits and range of each field\n"
-		"   --debug        Show extra debugging information\n"
-		"   --raw          Don't apply predictions to fields (show raw field deltas)\n"
+		"   --help           This page\n"
+		"   --index <num>    Choose the log from the file that should be decoded (or omit to decode all)\n"
+		"   --limits         Print the limits and range of each field\n"
+		"   --stdout         Write log to stdout instead of to a file\n"
+		"   --debug          Show extra debugging information\n"
+		"   --raw            Don't apply predictions to fields (show raw field deltas)\n"
 		"\n", argv0
 	);
 }
@@ -254,6 +257,8 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"raw", no_argument, &options.raw, 1},
 			{"debug", no_argument, &options.debug, 1},
 			{"limits", no_argument, &options.limits, 1},
+			{"stdout", no_argument, &options.toStdout, 1},
+			{"prefix", required_argument, 0, 'p'},
 			{"index", required_argument, 0, 'i'},
 			{0, 0, 0, 0}
 		};
@@ -269,97 +274,120 @@ void parseCommandlineOptions(int argc, char **argv)
 			case 'i':
 				options.logNumber = atoi(optarg);
 			break;
+			case 'o':
+				options.outputPrefix = optarg;
+			break;
 		}
 	}
+}
 
-	if (optind < argc)
-		options.filename = argv[optind];
-	if (optind + 1 < argc)
-		options.outputFilename = argv[optind + 1];
+int decodeFlightLog(flightLog_t *log, const char *filename, int logIndex)
+{
+	if (options.toStdout) {
+		outputFile = stdout;
+	} else {
+		char *outputFilename = 0;
+		const char *outputPrefix = 0;
+		int outputPrefixLen;
 
+		if (options.outputPrefix) {
+			outputPrefix = options.outputPrefix;
+			outputPrefixLen = strlen(options.outputPrefix);
+		} else {
+			const char *fileExtensionPeriod = strrchr(filename, '.');
+			const char *logNameEnd;
+
+			if (fileExtensionPeriod) {
+				logNameEnd = fileExtensionPeriod;
+			} else {
+				logNameEnd = filename + strlen(filename);
+			}
+
+			outputPrefix = filename;
+			outputPrefixLen = logNameEnd - outputPrefix;
+		}
+
+		int outputFilenameLen = outputPrefixLen + strlen(".00.csv") + 1;
+		outputFilename = malloc(outputFilenameLen);
+
+		snprintf(outputFilename, outputFilenameLen, "%.*s.%02d.csv", outputPrefixLen, outputPrefix, logIndex + 1);
+
+		outputFile = fopen(outputFilename, "wb");
+
+		if (!outputFile) {
+			fprintf(stderr, "Failed to create output file %s\n", outputFilename);
+
+			free(outputFilename);
+			return -1;
+		}
+
+		fprintf(stderr, "Decoding log '%s' to '%s'...\n", filename, outputFilename);
+
+		free(outputFilename);
+	}
+
+	int success = flightLogParse(log, logIndex, onMetadataReady, onFrameReady, options.raw);
+
+	if (success)
+		printStats(log, logIndex, options.raw, options.limits);
+
+	if (!options.toStdout)
+		fclose(outputFile);
+
+	return success ? 0 : -1;
 }
 
 int main(int argc, char **argv)
 {
-	char * newFilename = 0;
 	flightLog_t *log;
 	int fd;
 	int logIndex;
 
 	parseCommandlineOptions(argc, argv);
 
-	if (options.help || !options.filename) {
+	if (options.help) {
 		printUsage(argv[0]);
 		return -1;
 	}
 
-    fd = open(options.filename, O_RDONLY);
-    if (fd < 0) {
-    	fprintf(stderr, "Failed to open log file '%s': %s\n", options.filename, strerror(errno));
-    	return -1;
-    }
-
-    log = flightLogCreate(fd);
-
-    if (!log)
-    	return -1;
-
-    logIndex = validateLogIndex(log);
-
-    if (logIndex == -1)
-    	return -1;
-
-    if (options.outputFilename == NULL) {
-		const char *fileExtensionPeriod = strrchr(options.filename, '.');
-		const char *logNameEnd;
-		int newFilenameMaxLen = strlen(options.filename) + 5;
-		newFilename = malloc(newFilenameMaxLen);
-
-		if (fileExtensionPeriod) {
-			logNameEnd = fileExtensionPeriod;
-		} else {
-			logNameEnd = options.filename + strlen(options.filename);
-		}
-
-		snprintf(newFilename, newFilenameMaxLen, "%.*s.csv", (int) (logNameEnd - options.filename), options.filename);
-
-		outputFile = fopen(newFilename, "wb");
-
-		if (!outputFile) {
-			fprintf(stderr, "Failed to create output file %s\n", newFilename);
-			return -1;
-		}
-
-		fprintf(stderr, "Decoding log to %s...\n", newFilename);
-
-		free(newFilename);
-    } else if (strcmp(options.outputFilename, "-") == 0) {
-    	outputFile = stdout;
-    } else {
-		outputFile = fopen(options.outputFilename, "wb");
-
-		if (!outputFile) {
-			fprintf(stderr, "Failed to create output file %s\n", options.outputFilename);
-			return -1;
-		}
-		fprintf(stderr, "Decoding log to %s...\n", options.outputFilename);
+	if (options.toStdout && argc - optind > 1) {
+		fprintf(stderr, "You can only decode one log at a time if you're printing to stdout\n");
+		return -1;
 	}
 
-	if (flightLogParse(log, logIndex, onMetadataReady, onFrameReady, options.raw)) {
-		printStats(log, logIndex, options.raw, options.limits);
 
-		/*
-		 * If they didn't specify an output file, assume that they launched us from the GUI by dropping a log file on
-		 * as input. In that case, they won't see our console output unless we pause.
-		 */
-		if (options.outputFilename == 0) {
-			fprintf(stderr, "\n[Press enter to exit]\n");
-			getchar();
-		} else if (strcmp(options.outputFilename, "-") != 0) {
-			fclose(outputFile);
+	for (int i = optind; i < argc; i++) {
+		const char *filename = argv[i];
+
+		fd = open(filename, O_RDONLY);
+		if (fd < 0) {
+			fprintf(stderr, "Failed to open log file '%s': %s\n", filename, strerror(errno));
+			return -1;
 		}
-	} else {
-		return -1;
+
+		log = flightLogCreate(fd);
+
+		if (!log) {
+			fprintf(stderr, "Failed to read log file '%s'\n", filename);
+			return -1;
+		}
+
+		if (options.logNumber > 0 || options.toStdout) {
+			logIndex = validateLogIndex(log);
+
+			if (logIndex == -1)
+				return -1;
+
+			if (decodeFlightLog(log, filename, logIndex) == -1)
+				return -1;
+		} else {
+			//Decode all the logs
+			for (logIndex = 0; logIndex < log->logCount; logIndex++)
+				if (decodeFlightLog(log, filename, logIndex) == -1)
+					return -1;
+		}
+
+		flightLogDestroy(log);
 	}
 
 	return 0;
