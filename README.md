@@ -17,7 +17,10 @@ Grab a zip file from the `downloads/` folder for your operating system to get th
 using Linux, you'll need to clone [the repository][] and build them from source instead, instructions are further
 down this readme.
 
+If you're using Cleanflight, you'll need to use the [Cleanflight Blackbox firmware][] instead.
+
 [the repository]: https://github.com/thenickdude/blackbox
+[Cleanflight Blackbox firmware]: https://github.com/sherlockflight/blackbox-cleanflight
 
 ## Logged data
 The blackbox records flight data on every iteration of the flight controller's control loop. It records the current
@@ -44,18 +47,16 @@ use the flight data recorder.
 The maximum data rate for the flight log is fairly restricted, so anything that increases the load can cause the flight
 log to drop frames and contain errors.
 
-The Blackbox was developed and tested on a quadcopter. It should work on hexacopters or octocopters, but they transmit
-more information to the flight log (due to having more motors) so the number of dropped frames may increase. I don't
-know if it works on tricopters. The `blackbox_render` tool only supports quadcopters (please send me flight logs from
-other craft, and I can add support for them!)
+The Blackbox was developed and tested on a quadcopter. It has also been tested on a tricopter. It should work on
+hexacopters or octocopters, but as they transmit more information to the flight log (due to having more motors), the 
+number of dropped frames may increase. The `blackbox_render` tool only supports tri and quadcopters (please send me 
+flight logs from other craft, and I can add support for them!)
 
-Baseflight's "looptime" setting will decide how many times per second an update is saved to the flight log. The
+Baseflight's `looptime` setting will decide how many times per second an update is saved to the flight log. The
 software was developed on a craft with a looptime of 2400. Any looptime smaller than this will put more strain on the
-data rate than I've tested for. A looptime of 0 (i.e. maximum speed) will never work. The default looptime on Baseflight
-is 3500.
-
-The Blackbox has only really been tested with the "rate" flight mode. It should continue to record useful data on the
-angle or horizon modes, but as I don't fly with those modes, they have had minimal testing.
+data rate than I've tested for. The default looptime on Baseflight is 3500. If you're using a looptime of 2000 or
+smaller, you will probably need to reduce the sampling rate in the Blackbox settings, see the later section on 
+configuring the Blackbox firmware for details.
 
 [Softserial ports]: http://www.netraam.eu/nazewiki/pmwiki.php?n=Howto.FrskyTelemetry
 
@@ -110,6 +111,10 @@ into your computer. You should find a "CONFIG.TXT" file on the card. Edit it in 
 (baud) to 115200. Set esc# to 0, mode to 0, and echo to 0. Save the file and put the card back into your OpenLog, it
 should use those settings from now on.
 
+If your OpenLog didn't write a CONFIG.TXT file, you can [use mine instead][].
+
+[use mine instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/openlog/CONFIG.TXT
+
 ### Protection
 I wrapped my OpenLog in black electrical tape in order to insulate it from my conductive carbon fiber frame, but this
 makes its status LEDs impossible to see. I would recommend wrapping it with some clear heatshrink tubing instead.
@@ -160,10 +165,28 @@ PNG frames with `blackbox_render` which you could convert into a video using ano
 This tool converts a flight log binary file into CSV format. Typical usage (from the command line) would be like:
 
 ```bash
-blackbox_decode LOG00001.TXT > output.csv
+blackbox_decode LOG00001.TXT
 ```
 
-Use the `--help` option for more details.
+That'll decode the log to `LOG00001.01.csv` and print out some statistics about the log. If you're using Windows, you
+can drag and drop your log files onto `blackbox_decode` and they'll all be decoded.
+
+Use the `--help` option to show more details:
+
+```text
+Blackbox flight log decoder by Nicholas Sherlock
+
+Usage:
+     blackbox_decode [options] <input logs>
+
+Options:
+   --help           This page
+   --index <num>    Choose the log from the file that should be decoded (or omit to decode all)
+   --limits         Print the limits and range of each field
+   --stdout         Write log to stdout instead of to a file
+   --debug          Show extra debugging information
+   --raw            Don't apply predictions to fields (show raw field deltas)
+```
 
 ### Using the blackbox_render tool
 This tool converts a flight log binary file into a series of transparent PNG images that you could overlay onto your
@@ -173,14 +196,59 @@ flight video using a video editor (like [DaVinci Resolve][]). Typical usage (fro
 blackbox_render LOG00001.TXT
 ```
 
-This will create PNG files at 30 fps into the same directory as the log file.
+This will create PNG files at 30 fps into a new directory called `LOG00001.01` next to the log file.
 
-Use the `--help` option for more details.
+Use the `--help` option to show more details:
+
+```text
+Blackbox flight log renderer by Nicholas Sherlock
+
+Usage:
+     blackbox_render [options] <logfilename.txt>
+
+Options:
+   --help                 This page
+   --index <num>          Choose which log from the file should be rendered
+   --width <px>           Choose the width of the image (default 1920)
+   --height <px>          Choose the height of the image (default 1080)
+   --fps                  FPS of the resulting video (default 30)
+   --prefix <filename>    Set the prefix of the output frame filenames
+   --start <x:xx>         Begin the log at this time offset (default 0:00)
+   --end <x:xx>           End the log at this time offset
+   --[no-]draw-pid-table  Show table with PIDs and gyros (default on)
+   --[no-]draw-craft      Show craft drawing (default on)
+   --[no-]draw-sticks     Show RC command sticks (default on)
+   --[no-]draw-time       Show frame number and time in bottom right (default on)
+   --[no-]plot-motor      Draw motors on the upper graph (default on)
+   --[no-]plot-pid        Draw PIDs on the lower graph (default off)
+   --[no-]plot-gyro       Draw gyroscopes on the lower graph (default on)
+   --smoothing-pid <n>    Smoothing window for the PIDs (default 4)
+   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default 2)
+   --smoothing-motor <n>  Smoothing window for the motors (default 2)
+   --prop-style <name>    Style of propeller display (pie/blades, default pie)
+   --gapless              Fill in gaps in the log with straight lines
+```
 
 (At least on Windows) if you just want to render a log file using the defaults, you can drag and drop a log onto the
 blackbox_render program and it'll start generating the PNGs immediately.
 
 [DaVinci Resolve]: https://www.blackmagicdesign.com/products/davinciresolve
+
+## Configuring the Blackbox firmware
+The Blackbox currently provides two settings (`blackbox_rate_num` and `blackbox_rate_denom`) that allow you to control 
+the rate at which data is logged. These two together form a fraction (`blackbox_rate_num / blackbox_rate_denom`) which
+decides what portion of the flight controller's control loop iterations should be logged. The default is 1/1 which logs 
+every iteration.
+
+If you are using a short looptime like 2000 or faster, or you're using a slower MicroSD card, you will need to reduce
+this rate to reduce the number of corrupted logged frames. A rate of 1/2 is likely to work for most craft.
+
+You can change these settings by entering the CLI tab in the Baseflight Configurator and using the `set` command, like so:
+
+```
+set blackbox_rate_num = 1
+set blackbox_rate_denom = 2
+```
 
 ## Building firmware
 If you want to rebuild the modified firmware for the Naze32, the procedure is the same as for Baseflight. Once your
@@ -230,7 +298,7 @@ Afterwards you can run `make` in the `tools/blackbox/` directory to build blackb
 
 #### Windows
 The tools can be built with Visual Studio Express 2013, just open up the solution in the `tools/blackbox/visual-studio/`
-folder. You'll need to include the .DLL files from `/tools/blackbox/lib/win32` in the same directory as your built
+folder. You'll need to include the .DLL files from `tools/blackbox/lib/win32` in the same directory as your built
 executable.
 
 ## License
