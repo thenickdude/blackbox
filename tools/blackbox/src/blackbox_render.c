@@ -1628,7 +1628,7 @@ int main(int argc, char **argv)
 			logNameEnd = options.filename + strlen(options.filename);
 		}
 
-		snprintf(outputDirectory, 256, "%.*s.frames.%02d", (int) (logNameEnd - options.filename), options.filename, selectedLogIndex + 1);
+		snprintf(outputDirectory, 256, "%.*s.%02d", (int) (logNameEnd - options.filename), options.filename, selectedLogIndex + 1);
 
 		//Create the output directory if it doesn't exist
 		if (stat(outputDirectory, &directoryStat) != 0) {

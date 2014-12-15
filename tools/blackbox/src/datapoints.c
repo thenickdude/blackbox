@@ -6,7 +6,8 @@
 #include "datapoints.h"
 #include "parser.h"
 
-datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapacity) {
+datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapacity)
+{
 	datapoints_t *result = (datapoints_t*) malloc(sizeof(datapoints_t));
 
 	result->fieldCount = fieldCount;
@@ -22,6 +23,14 @@ datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapac
 	return result;
 }
 
+void datapointsDestroy(datapoints_t *points)
+{
+	free(points->frames);
+	free(points->frameTime);
+	free(points->frameGap);
+	free(points);
+}
+
 /**
  * Smooth the values for the field with the given index by replacing each value with an
  * average over the a window of width (windowRadius*2+1) centered at the point.
@@ -32,7 +41,7 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
 	// How many of the frames in the history actually have a valid value in them (so we can average only those)
 	int valuesInHistory = 0;
 
-	int64_t accumulator = 0;
+	int64_t accumulator;
 
 	if (fieldIndex < 0 || fieldIndex >= points->fieldCount) {
 		fprintf(stderr, "Attempt to smooth field that doesn't exist %d\n", fieldIndex);
@@ -44,31 +53,61 @@ void datapointsSmoothField(datapoints_t *points, int fieldIndex, int windowRadiu
 	int historyHead = 0; //Points to the next location to insert into
 	int historyTail = 0; //Points to the last value in the window
 
-	int centerIndex = -windowRadius;
-	int leftIndex = centerIndex - windowRadius;
-	int rightIndex = centerIndex + windowRadius;
+	int windowCenterIndex;
+	int partitionLeft, partitionRight;
+	int windowLeftIndex, windowRightIndex;
 
-	for (; centerIndex < points->frameCount; centerIndex++, leftIndex++, rightIndex++) {
-		// Oldest value falls out of the window
-		if (leftIndex >= 0) {
-			accumulator -= history[historyTail];
-			valuesInHistory--;
-			historyTail = (historyTail + 1) % windowSize;
-		}
+	for (windowCenterIndex = 0; windowCenterIndex < points->frameCount; ) {
+		partitionLeft = windowCenterIndex;
+		//We'll refine this guess later if we find discontinuities:
+		partitionRight = points->frameCount;
 
-		//New value is added to the window
-		if (rightIndex < points->frameCount) {
-			int32_t fieldValue = (int32_t) points->frames[points->fieldCount * rightIndex + fieldIndex];
+		/*
+		 * We start the right edge of the window at the beginning of the partition so that the main loop can begin by
+		 * accumulating windowRadius points in the history. Those are the values we'll need before we can work out
+		 * the moving average of the first value of the partition.
+		 */
+		windowCenterIndex = windowCenterIndex - windowRadius;
 
-			history[historyHead] = fieldValue;
-			accumulator += fieldValue;
-			valuesInHistory++;
-			historyHead = (historyHead + 1) % windowSize;
-		}
+		windowLeftIndex = windowCenterIndex - windowRadius;
+		windowRightIndex = windowCenterIndex + windowRadius;
 
-		// Store the average of the history window into the frame in the center of the window
-		if (centerIndex >= 0) {
-			points->frames[points->fieldCount * centerIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
+		accumulator = 0;
+		valuesInHistory = 0;
+		historyHead = 0;
+		historyTail = 0;
+
+		//The main loop, where we march our [leftIndex...rightIndex] history window along until we exhaust this partition
+		for (; windowCenterIndex < partitionRight; windowCenterIndex++, windowLeftIndex++, windowRightIndex++) {
+
+			// Oldest value falls out of the window
+			if (windowLeftIndex - 1 >= partitionLeft) {
+				accumulator -= history[historyTail];
+				historyTail = (historyTail + 1) % windowSize;
+
+				valuesInHistory--;
+			}
+
+			//New value is added to the window
+			if (windowRightIndex < partitionRight) {
+				int32_t fieldValue = (int32_t) points->frames[points->fieldCount * windowRightIndex + fieldIndex];
+
+				accumulator += fieldValue;
+
+				history[historyHead] = fieldValue;
+				historyHead = (historyHead + 1) % windowSize;
+
+				valuesInHistory++;
+
+				//If there is a discontinuity after this point, adjust the right edge of the partition so we stop looking further
+				if (points->frameGap[windowRightIndex])
+					partitionRight = windowRightIndex + 1;
+			}
+
+			// Store the average of the history window into the frame in the center of the window
+			if (windowCenterIndex >= partitionLeft) {
+				points->frames[points->fieldCount * windowCenterIndex + fieldIndex] = (int32_t)(accumulator / valuesInHistory);
+			}
 		}
 	}
 

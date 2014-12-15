@@ -2,6 +2,7 @@
 #define DATAPOINTS_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct datapoints_t {
 	int fieldCount, frameCount;
@@ -14,6 +15,7 @@ typedef struct datapoints_t {
 } datapoints_t;
 
 datapoints_t *datapointsCreate(int fieldCount, char **fieldNames, int frameCapacity);
+void datapointsDestroy(datapoints_t *points);
 
 bool datapointsGetFrameAtIndex(datapoints_t *points, int frameIndex, int64_t *frameTime, int32_t *frame);
 
