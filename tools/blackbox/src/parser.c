@@ -62,6 +62,9 @@ typedef struct flightLogPrivate_t
 
 	//The section of the file which is currently being examined:
 	const char *logStart, *logEnd, *logPos;
+
+	//Set to true if we attempt to read from the log when it is already exhausted
+	bool eof;
 } flightLogPrivate_t;
 
 static int readChar(flightLog_t *log)
@@ -72,6 +75,7 @@ static int readChar(flightLog_t *log)
 		return result;
 	}
 
+	log->private->eof = true;
 	return EOF;
 }
 
@@ -744,6 +748,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	bool mainStreamIsValid = false;
 
 	char lastFrameType = 0;
+	bool prematureEof = false;
 	const char *frameStart = 0;
 
 	flightLogPrivate_t *private = log->private;
@@ -772,6 +777,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	private->logStart = log->logBegin[logIndex];
     private->logPos = private->logStart;
     private->logEnd = log->logBegin[logIndex + 1];
+    private->eof = false;
 
 	while (1) {
 		int command = readChar(log);
@@ -798,7 +804,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					break;
 					case EOF:
 						fprintf(stderr, "Data file contained no events\n");
-						return 0;
+						return false;
 				}
 			break;
 			case PARSER_STATE_BEFORE_FIRST_FRAME:
@@ -808,7 +814,15 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 				switch (command) {
 					case 'I':
 						parseIntraframe(log, raw);
-						parserState = PARSER_STATE_DATA;
+
+						if (private->eof)
+							prematureEof = true;
+						else
+							parserState = PARSER_STATE_DATA;
+					break;
+					case EOF:
+						fprintf(stderr, "Data file contained no events\n");
+						return false;
 					break;
 					default:
 						//Ignore leading garbage
@@ -819,8 +833,11 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 				if (lastFrameType == 'P' || lastFrameType == 'I') {
 					unsigned int lastFrameSize = private->logPos - frameStart;
 
-					//If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
-					if (command == 'I' || command == 'P' || command == 'G' || command == 'H' || command == EOF) {
+					/*
+					 * If we didn't reach the end of the log prematurely, and see what looks like the beginning of a new
+					 * frame, assume that the previous frame was valid:
+					 */
+					if (!prematureEof && (command == 'I' || command == 'P' || command == 'G' || command == 'H' || command == EOF)) {
 						if (lastFrameType == 'I' || lastFrameType == 'P') {
 							if (lastFrameType == 'I') {
 								updateFrameSizeStats(log->stats.iFrameSizeCount, lastFrameSize);
@@ -869,6 +886,8 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 						 */
 						private->logPos = frameStart;
 						lastFrameType = '\0';
+						prematureEof = false;
+						private->eof = false;
 						continue;
 					}
 				}
@@ -898,6 +917,9 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					default:
 						mainStreamIsValid = false;
 				}
+
+				if (private->eof)
+					prematureEof = true;
 			break;
 		}
 	}
