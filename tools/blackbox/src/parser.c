@@ -50,6 +50,7 @@ typedef struct flightLogPrivate_t
 	int fieldIPredictor[FLIGHT_LOG_MAX_FIELDS];
 	int fieldIEncoding[FLIGHT_LOG_MAX_FIELDS];
 
+	int dataVersion;
 	int motor0Index;
 
 	int32_t blackboxHistoryRing[2][FLIGHT_LOG_MAX_FIELDS];
@@ -217,6 +218,8 @@ static void parseHeader(flightLog_t *log)
 			log->frameIntervalPNum = atoi(fieldValue);
 			log->frameIntervalPDenom = atoi(slashPos + 1);
 		}
+	} else if (strcmp(fieldName, "Data version") == 0) {
+		log->private->dataVersion = atoi(fieldValue);
 	} else if (strcmp(fieldName, "Firmware type") == 0) {
 		if (strcmp(fieldValue, "Cleanflight") == 0)
 			log->firmwareType = FIRMWARE_TYPE_CLEANFLIGHT;
@@ -238,7 +241,7 @@ static void parseHeader(flightLog_t *log)
 		 * match Baseflight so we can use Baseflight's IMU for both: */
 
 		if (log->firmwareType == FIRMWARE_TYPE_CLEANFLIGHT) {
-			log->gyroScale = (float) (log->gyroScale * (M_PI / 180.0f) * 0.000001f);
+			log->gyroScale = (float) (log->gyroScale * (M_PI / 180.0) * 0.000001);
 		}
 	} else if (strcmp(fieldName, "acc_1G") == 0) {
 		log->acc_1G = atoi(fieldValue);
@@ -380,20 +383,27 @@ static void readTag2_3S32(flightLog_t *log, int32_t *values) {
 	}
 }
 
-static void readTag8_4S16(flightLog_t *log, int32_t *values) {
+static void readTag8_4S16_v1(flightLog_t *log, int32_t *values) {
 	uint8_t selector, combinedChar;
 	uint8_t char1, char2;
 	int i;
+
+	enum {
+		FIELD_ZERO  = 0,
+		FIELD_4BIT  = 1,
+		FIELD_8BIT  = 2,
+		FIELD_16BIT = 3
+	};
 
 	selector = readChar(log);
 
 	//Read the 4 values from the stream
 	for (i = 0; i < 4; i++) {
 		switch (selector & 0x03) {
-			case 0: // Zero
+			case FIELD_ZERO:
 				values[i] = 0;
 			break;
-			case 1: // Two 4-bit fields
+			case FIELD_4BIT: // Two 4-bit fields
 				combinedChar = (uint8_t) readChar(log);
 
 				values[i] = signExtend4Bit(combinedChar & 0x0F);
@@ -403,16 +413,88 @@ static void readTag8_4S16(flightLog_t *log, int32_t *values) {
 
 				values[i] = signExtend4Bit(combinedChar >> 4);
 			break;
-			case 2: // 8-bit field
+			case FIELD_8BIT: // 8-bit field
 				//Sign extend...
 				values[i] = (int32_t) (int8_t) readChar(log);
 			break;
-			case 3: // 16-bit field
+			case FIELD_16BIT: // 16-bit field
 				char1 = readChar(log);
 				char2 = readChar(log);
 
 				//Sign extend...
 				values[i] = (int16_t) (char1 | (char2 << 8));
+			break;
+		}
+
+		selector >>= 2;
+	}
+}
+
+static void readTag8_4S16_v2(flightLog_t *log, int32_t *values) {
+	uint8_t selector;
+	uint8_t char1, char2;
+	uint8_t buffer;
+	int nibbleIndex;
+
+	int i;
+
+	enum {
+		FIELD_ZERO  = 0,
+		FIELD_4BIT  = 1,
+		FIELD_8BIT  = 2,
+		FIELD_16BIT = 3
+	};
+
+	selector = readChar(log);
+
+	//Read the 4 values from the stream
+	nibbleIndex = 0;
+	for (i = 0; i < 4; i++) {
+		switch (selector & 0x03) {
+			case FIELD_ZERO:
+				values[i] = 0;
+			break;
+			case FIELD_4BIT:
+				if (nibbleIndex == 0) {
+					buffer = (uint8_t) readChar(log);
+					values[i] = signExtend4Bit(buffer >> 4);
+					nibbleIndex = 1;
+				} else {
+					values[i] = signExtend4Bit(buffer & 0x0F);
+					nibbleIndex = 0;
+				}
+			break;
+			case FIELD_8BIT:
+				if (nibbleIndex == 0) {
+					//Sign extend...
+					values[i] = (int32_t) (int8_t) readChar(log);
+				} else {
+					char1 = buffer << 4;
+					buffer = (uint8_t) readChar(log);
+
+					char1 |= buffer >> 4;
+					values[i] = (int32_t) (int8_t) char1;
+				}
+			break;
+			case FIELD_16BIT:
+				if (nibbleIndex == 0) {
+					char1 = (uint8_t) readChar(log);
+					char2 = (uint8_t) readChar(log);
+
+					//Sign extend...
+					values[i] = (int16_t) (uint16_t) ((char1 << 8) | char2);
+				} else {
+					/*
+					 * We're in the low 4 bits of the current buffer, then one byte, then the high 4 bits of the next
+					 * buffer.
+					 */
+					char1 = (uint8_t) readChar(log);
+					char2 = (uint8_t) readChar(log);
+
+					values[i] = (int16_t) (uint16_t) ((buffer << 12) | (char1 << 4) | (char2 >> 4));
+
+					buffer = char2;
+				}
 			break;
 		}
 
@@ -539,7 +621,10 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					value = readUnsignedVB(log);
 				break;
 				case FLIGHT_LOG_FIELD_ENCODING_TAG8_4S16:
-					readTag8_4S16(log, (int32_t*)values);
+					if (log->private->dataVersion < 2)
+						readTag8_4S16_v1(log, (int32_t*)values);
+					else
+						readTag8_4S16_v2(log, (int32_t*)values);
 
 					//Apply the predictors for the fields:
 					for (int j = 0; j < 3; j++) {
@@ -790,6 +875,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					break;
 					case 'I':
 					case 'P':
+					case 'G':
 						unreadChar(log, command);
 
 						if (log->mainFieldCount == 0) {
