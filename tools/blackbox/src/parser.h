@@ -53,6 +53,11 @@ typedef struct flightLog_t {
 	uint16_t acc_1G;
 	float gyroScale;
 
+    uint8_t vbatscale;
+    uint8_t vbatmaxcellvoltage;
+    uint8_t vbatmincellvoltage;
+    uint8_t vbatwarningcellvoltage;
+
 	FirmwareType firmwareType;
 
 	//Information about log sections:

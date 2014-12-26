@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,20 +20,28 @@
 
 #include "parser.h"
 
+#define MAG
+#define BARO
+#define XYZ_AXIS_COUNT 3
 #define MAX_MOTORS 8
 #define MAX_SERVOS 8
 
 #define BLACKBOX_I_INTERVAL 32
 
-// Some macros to make writing FLIGHT_LOG_FIELD_PREDICTOR_* constants shorter:
+#define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
+
+// Some macros to make writing FLIGHT_LOG_FIELD_* constants shorter:
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
 #define CONCAT_HELPER(x,y) x ## y
 #define CONCAT(x,y) CONCAT_HELPER(x, y)
 
-#define PREDICT(x) STR(CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x))
-#define ENCODING(x) STR(CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x))
+#define PREDICT(x) CONCAT(FLIGHT_LOG_FIELD_PREDICTOR_, x)
+#define ENCODING(x) CONCAT(FLIGHT_LOG_FIELD_ENCODING_, x)
+#define CONDITION(x) CONCAT(FLIGHT_LOG_FIELD_CONDITION_, x)
+#define UNSIGNED FLIGHT_LOG_FIELD_UNSIGNED
+#define SIGNED FLIGHT_LOG_FIELD_SIGNED
 
 static const char blackboxHeader[] =
 	"H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
@@ -40,158 +49,103 @@ static const char blackboxHeader[] =
 	"H Data version:2\n"
 	"H I interval:" STR(BLACKBOX_I_INTERVAL) "\n";
 
-/* These headers have info for all 8 motors on them, we'll trim the final fields off to match the number of motors in the mixer: */
-static const char * const blackboxHeaderFields[] = {
-	"H Field I name:"
-		"loopIteration,time,"
-		"axisP[0],axisP[1],axisP[2],"
-		"axisI[0],axisI[1],axisI[2],"
-		"axisD[0],axisD[1],axisD[2],"
-		"rcCommand[0],rcCommand[1],rcCommand[2],rcCommand[3],"
-		"gyroData[0],gyroData[1],gyroData[2],"
-		"accSmooth[0],accSmooth[1],accSmooth[2],"
-		"motor[0],motor[1],motor[2],motor[3],"
-		"motor[4],motor[5],motor[6],motor[7]",
-
-	"H Field I signed:"
-		/* loopIteration, time: */
-		"0,0,"
-		/* PIDs: */
-		"1,1,1,1,1,1,1,1,1,"
-		/* rcCommand[0..2] */
-		"1,1,1,"
-		/* rcCommand[3] (Throttle): */
-		"0,"
-		/* gyroData[0..2]: */
-		"1,1,1,"
-		/* accSmooth[0..2]: */
-		"1,1,1,"
-		/* Motor[0..7]: */
-		"0,0,0,0,0,0,0,0",
-
-	"H Field I predictor:"
-		/* loopIteration, time: */
-		PREDICT(0) "," PREDICT(0) ","
-		/* PIDs: */
-		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
-		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
-		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
-		/* rcCommand[0..2] */
-		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
-		/* rcCommand[3] (Throttle): */
-		PREDICT(MINTHROTTLE) ","
-		/* gyroData[0..2]: */
-		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
-		/* accSmooth[0..2]: */
-		PREDICT(0) "," PREDICT(0) "," PREDICT(0) ","
-		/* Motor[0]: */
-		PREDICT(MINTHROTTLE) ","
-		/* Motor[1..7]: */
-		PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) ","
-		PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) "," PREDICT(MOTOR_0) ","
-		PREDICT(MOTOR_0),
-
-     "H Field I encoding:"
-		/* loopIteration, time: */
-		ENCODING(UNSIGNED_VB) "," ENCODING(UNSIGNED_VB) ","
-		/* PIDs: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* rcCommand[0..2] */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* rcCommand[3] (Throttle): */
-		ENCODING(UNSIGNED_VB) ","
-		/* gyroData[0..2]: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* accSmooth[0..2]: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* Motor[0]: */
-		ENCODING(UNSIGNED_VB) ","
-		/* Motor[1..7]: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB),
-
-	//Motors and gyros predict an average of the last two measurements (to reduce the impact of noise):
-	"H Field P predictor:"
-		/* loopIteration, time: */
-		PREDICT(INC) "," PREDICT(STRAIGHT_LINE) ","
-		/* PIDs: */
-		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
-		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
-		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
-		/* rcCommand[0..2] */
-		PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) "," PREDICT(PREVIOUS) ","
-		/* rcCommand[3] (Throttle): */
-		PREDICT(PREVIOUS) ","
-		/* gyroData[0..2]: */
-		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
-		/* accSmooth[0..2]: */
-		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
-		/* Motor[0]: */
-		PREDICT(AVERAGE_2) ","
-		/* Motor[1..7]: */
-		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
-		PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) "," PREDICT(AVERAGE_2) ","
-		PREDICT(AVERAGE_2),
-
-    /* PID_I terms and RC fields are encoded together as groups, everything else is signed since they're diffs: */
-    "H Field P encoding:"
-		/* loopIteration, time: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","
-		/* PIDs: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(TAG2_3S32) "," ENCODING(TAG2_3S32) ","  ENCODING(TAG2_3S32) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* rcCommand[0..3] */
-		ENCODING(TAG8_4S16) "," ENCODING(TAG8_4S16) ","  ENCODING(TAG8_4S16) ","
-		ENCODING(TAG8_4S16) ","
-		/* gyroData[0..2]: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* accSmooth[0..2]: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		/* Motor[0]: */
-		ENCODING(SIGNED_VB) ","
-		/* Motor[1..7]: */
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB) "," ENCODING(SIGNED_VB) ","  ENCODING(SIGNED_VB) ","
-		ENCODING(SIGNED_VB)
+static const char* const blackboxMainHeaderNames[] = {
+    "I name",
+    "I signed",
+    "I predictor",
+    "I encoding",
+    "P predictor",
+    "P encoding"
 };
 
+/* All field definition structs should look like this (but with longer arrs): */
+typedef struct blackboxFieldDefinition_t {
+    const char *name;
+    uint8_t arr[1];
+} blackboxFieldDefinition_t;
+
+typedef struct blackboxMainFieldDefinition_t {
+    const char *name;
+    uint8_t isSigned;
+    uint8_t Ipredict;
+    uint8_t Iencode;
+    uint8_t Ppredict;
+    uint8_t Pencode;
+    uint8_t condition; // Decide whether this field should appear in the log
+} blackboxMainFieldDefinition_t;
+
 /**
- * Additional fields to tack on to those above for tricopters (to record tail servo position)
+ * Description of the blackbox fields we are writing in our main intra (I) and inter (P) frames. This description is
+ * written into the flight log header so the log can be properly interpreted (but these definitions don't actually cause
+ * the encoding to happen, we have to encode the flight log ourselves in write{Inter|Intra}frame() in a way that matches
+ * the encoding we've promised here).
  */
-static const char * const blackboxAdditionalFieldsTricopter[] = {
-	//Field I name
-		"servo[5]",
+static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
+    /* loopIteration doesn't appear in P frames since it always increments */
+    {"loopIteration", UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(INC),           .Pencode = FLIGHT_LOG_FIELD_ENCODING_NULL, CONDITION(ALWAYS)},
+    /* Time advances pretty steadily so the P-frame prediction is a straight line */
+    {"time",          UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(STRAIGHT_LINE), .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"axisP[0]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"axisP[1]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"axisP[2]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    /* I terms get special packed encoding in P frames: */
+    {"axisI[0]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(ALWAYS)},
+    {"axisI[1]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(ALWAYS)},
+    {"axisI[2]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG2_3S32), CONDITION(ALWAYS)},
+    {"axisD[0]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_0)},
+    {"axisD[1]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_1)},
+    {"axisD[2]",      SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(NONZERO_PID_D_2)},
+    /* rcCommands are encoded together as a group in P-frames: */
+    {"rcCommand[0]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
+    {"rcCommand[1]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
+    {"rcCommand[2]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
+    /* Throttle is always in the range [minthrottle..maxthrottle]: */
+    {"rcCommand[3]",  UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
-	//Field I signed
-		"0",
+    {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(ALWAYS)},
+#ifdef MAG
+    {"magADC[0]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
+    {"magADC[1]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
+    {"magADC[2]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
+#endif
+#ifdef BARO
+    {"BaroAlt",       SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_BARO},
+#endif
 
-	//Field I predictor
-		PREDICT(1500),
-
-    //Field I encoding:
-		ENCODING(SIGNED_VB),
-
-	//Field P predictor:
-		PREDICT(PREVIOUS),
-
-    //Field P encoding:
-		ENCODING(SIGNED_VB)
+    /* Gyros and accelerometers base their P-predictions on the average of the previous 2 frames to reduce noise impact */
+    {"gyroData[0]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroData[1]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"gyroData[2]",   SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"accSmooth[0]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"accSmooth[1]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    {"accSmooth[2]",  SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(ALWAYS)},
+    /* Motors only rarely drops under minthrottle (when stick falls below mincommand), so predict minthrottle for it and use *unsigned* encoding (which is large for negative numbers but more compact for positive ones): */
+    {"motor[0]",      UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(AVERAGE_2), .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_1)},
+    /* Subsequent motors base their I-frame values on the first one, P-frame values on the average of last two frames: */
+    {"motor[1]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_2)},
+    {"motor[2]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_3)},
+    {"motor[3]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_4)},
+    {"motor[4]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_5)},
+    {"motor[5]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_6)},
+    {"motor[6]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_7)},
+    {"motor[7]",      UNSIGNED, .Ipredict = PREDICT(MOTOR_0), .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(AVERAGE_2),     .Pencode = ENCODING(SIGNED_VB), CONDITION(AT_LEAST_MOTORS_8)},
+    {"servo[5]",      UNSIGNED, .Ipredict = PREDICT(1500),    .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(SIGNED_VB), CONDITION(TRICOPTER)}
 };
 
 typedef struct blackboxValues_t {
 	uint32_t time;
 
-	int32_t axisP[3], axisI[3], axisD[3];
+	int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 	int16_t rcCommand[4];
 	int16_t gyroData[3];
 	int16_t accSmooth[3];
 	int16_t motor[MAX_MOTORS];
 	int16_t servo[MAX_SERVOS];
+	uint16_t vbatLatest;
+
+    int32_t BaroAlt;
+    int16_t magADC[XYZ_AXIS_COUNT];
 } blackboxValues_t;
 
 typedef struct mcfgStandin_t {
@@ -218,16 +172,38 @@ static blackboxValues_t* blackboxHistory[3];
 
 flightLogStatistics_t encodedStats;
 
-static int isTricopter()
-{
-	return numberMotor == 3;
-}
-
 void blackboxWrite(uint8_t ch)
 {
 	putc(ch, stdout);
 
 	writtenBytes++;
+}
+
+// Print the null-terminated string 's' to the serial port and return the number of bytes written
+static int blackboxPrint(const char *s)
+{
+    const char *pos = s;
+
+    while (*pos) {
+        blackboxWrite(*pos);
+        pos++;
+    }
+
+    return pos - s;
+}
+
+//printf() to the blackbox serial port with no blocking shenanigans (so it's caller's responsibility to not write too fast!)
+static void blackboxPrintf(char *format, ...)
+{
+    char buffer[512];
+
+    va_list args;
+    va_start(args, format);
+    vsprintf(buffer, format, args);
+
+    blackboxPrint(buffer);
+
+    va_end(args);
 }
 
 /**
@@ -455,6 +431,95 @@ static void writeTag8_4S16(int32_t *values) {
     	blackboxWrite(buffer);
 }
 
+/**
+ * Write `valueCount` fields from `values` to the Blackbox using signed variable byte encoding. A 1-byte header is
+ * written first which specifies which fields are non-zero (so this encoding is compact when most fields are zero).
+ *
+ * valueCount must be 8 or less.
+ */
+static void writeTag8_8SVB(int32_t *values, int valueCount)
+{
+    uint8_t header;
+    int i;
+
+    if (valueCount > 0) {
+        //If we're only writing one field then we can skip the header
+        if (valueCount == 1) {
+            writeSignedVB(values[0]);
+        } else {
+            //First write a one-byte header that marks which fields are non-zero
+            header = 0;
+
+            // First field should be in low bits of header
+            for (i = valueCount - 1; i >= 0; i--) {
+                header <<= 1;
+
+                if (values[i] != 0)
+                    header |= 0x01;
+            }
+
+            blackboxWrite(header);
+
+            for (i = 0; i < valueCount; i++)
+                if (values[i] != 0)
+                    writeSignedVB(values[i]);
+        }
+    }
+}
+
+static bool testBlackboxCondition(FlightLogFieldCondition condition)
+{
+    switch (condition) {
+        case FLIGHT_LOG_FIELD_CONDITION_ALWAYS:
+            return true;
+
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_2:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_3:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_4:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_5:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_6:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_7:
+        case FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_8:
+            return (unsigned int) numberMotor >= condition - FLIGHT_LOG_FIELD_CONDITION_AT_LEAST_MOTORS_1 + 1;
+        case FLIGHT_LOG_FIELD_CONDITION_TRICOPTER:
+            return numberMotor == 3;
+
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_0:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_1:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_P_2:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_0:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_1:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_I_2:
+            return true;
+
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0:
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_1:
+	        return true;
+	        
+        case FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_2:
+            return false;
+
+        case FLIGHT_LOG_FIELD_CONDITION_MAG:
+#ifdef MAG
+        	return true;
+#else
+            return false;
+#endif
+
+        case FLIGHT_LOG_FIELD_CONDITION_BARO:
+#ifdef BARO
+			return true;
+#else
+            return false;
+#endif
+        case FLIGHT_LOG_FIELD_CONDITION_NEVER:
+            return false;
+        default:
+            return false;
+    }
+}
+
 static void writeIntraframe(void)
 {
 	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
@@ -465,24 +530,39 @@ static void writeIntraframe(void)
 	writeUnsignedVB(blackboxIteration);
 	writeUnsignedVB(blackboxCurrent->time);
 
-	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisP[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        writeSignedVB(blackboxCurrent->axisPID_P[x]);
 
-	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisI[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        writeSignedVB(blackboxCurrent->axisPID_I[x]);
 
-	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisD[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))
+            writeSignedVB(blackboxCurrent->axisPID_D[x]);
 
 	for (x = 0; x < 3; x++)
 		writeSignedVB(blackboxCurrent->rcCommand[x]);
 
 	writeUnsignedVB(blackboxCurrent->rcCommand[3] - mcfg.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
 
-	for (x = 0; x < 3; x++)
+    writeUnsignedVB(blackboxCurrent->vbatLatest);
+
+#ifdef MAG
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
+            for (x = 0; x < XYZ_AXIS_COUNT; x++)
+                writeSignedVB(blackboxCurrent->magADC[x]);
+        }
+#endif
+
+#ifdef BARO
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
+            writeSignedVB(blackboxCurrent->BaroAlt);
+#endif
+
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
 		writeSignedVB(blackboxCurrent->gyroData[x]);
 
-	for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
 		writeSignedVB(blackboxCurrent->accSmooth[x]);
 
 	//Motors can be below minthrottle when disarmed, but that doesn't happen much
@@ -492,7 +572,7 @@ static void writeIntraframe(void)
 	for (x = 1; x < numberMotor; x++)
 		writeSignedVB(blackboxCurrent->motor[x] - blackboxCurrent->motor[0]);
 
-	if (isTricopter())
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER))
 		writeSignedVB(blackboxHistory[0]->servo[5] - 1500);
 
 	//Rotate our history buffers:
@@ -508,7 +588,7 @@ static void writeIntraframe(void)
 static void writeInterframe(void)
 {
 	int x;
-	int32_t deltas[4];
+    int32_t deltas[5];
 
 	blackboxValues_t *blackboxCurrent = blackboxHistory[0];
 	blackboxValues_t *blackboxLast = blackboxHistory[1];
@@ -523,11 +603,11 @@ static void writeInterframe(void)
 	 */
 	writeSignedVB((int32_t) (blackboxHistory[0]->time - 2 * blackboxHistory[1]->time + blackboxHistory[2]->time));
 
-	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisP[x] - blackboxLast->axisP[x]);
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        writeSignedVB(blackboxCurrent->axisPID_P[x] - blackboxLast->axisPID_P[x]);
 
-	for (x = 0; x < 3; x++)
-		deltas[x] = blackboxCurrent->axisI[x] - blackboxLast->axisI[x];
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        deltas[x] = blackboxCurrent->axisPID_I[x] - blackboxLast->axisPID_I[x];
 
 	/* 
 	 * The PID I field changes very slowly, most of the time +-2, so use an encoding
@@ -535,29 +615,52 @@ static void writeInterframe(void)
 	 */
 	writeTag2_3S32(deltas);
 	
-	for (x = 0; x < 3; x++)
-		writeSignedVB(blackboxCurrent->axisD[x] - blackboxLast->axisD[x]);
-
-	for (x = 0; x < 4; x++)
-		deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+    /*
+     * The PID D term is frequently set to zero for yaw, which makes the result from the calculation
+     * always zero. So don't bother recording D results when PID D terms are zero.
+     */
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
+        if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_NONZERO_PID_D_0 + x))
+            writeSignedVB(blackboxCurrent->axisPID_D[x] - blackboxLast->axisPID_D[x]);
 
 	/*
 	 * RC tends to stay the same or fairly small for many frames at a time, so use an encoding that
 	 * can pack multiple values per byte:
 	 */
+    for (x = 0; x < 4; x++)
+        deltas[x] = blackboxCurrent->rcCommand[x] - blackboxLast->rcCommand[x];
+
 	writeTag8_4S16(deltas);
+	
+    //Check for sensors that are updated periodically (so deltas are normally zero) VBAT, MAG, BARO
+    int optionalFieldCount = 0;
+
+    deltas[optionalFieldCount++] = (int32_t) blackboxCurrent->vbatLatest - blackboxLast->vbatLatest;
+
+#ifdef MAG
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
+        for (x = 0; x < XYZ_AXIS_COUNT; x++)
+            deltas[optionalFieldCount++] = blackboxCurrent->magADC[x] - blackboxLast->magADC[x];
+    }
+#endif
+
+#ifdef BARO
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
+        deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
+#endif
+    writeTag8_8SVB(deltas, optionalFieldCount);	
 
 	//Since gyros, accs and motors are noisy, base the prediction on the average of the history:
-	for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
 		writeSignedVB(blackboxHistory[0]->gyroData[x] - (blackboxHistory[1]->gyroData[x] + blackboxHistory[2]->gyroData[x]) / 2);
 
-	for (x = 0; x < 3; x++)
+    for (x = 0; x < XYZ_AXIS_COUNT; x++)
 		writeSignedVB(blackboxHistory[0]->accSmooth[x] - (blackboxHistory[1]->accSmooth[x] + blackboxHistory[2]->accSmooth[x]) / 2);
 
 	for (x = 0; x < numberMotor; x++)
 		writeSignedVB(blackboxHistory[0]->motor[x] - (blackboxHistory[1]->motor[x] + blackboxHistory[2]->motor[x]) / 2);
 
-	if (isTricopter())
+    if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER))
 		writeSignedVB(blackboxCurrent->servo[5] - blackboxLast->servo[5]);
 
 	//Rotate our history buffers
@@ -590,35 +693,43 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 
 		blackboxCurrent->time = (uint32_t) frame[src++];
 
-		for (x = 0; x < 3; x++) {
-			blackboxCurrent->axisP[x] = frame[src++];
-		}
+		for (x = 0; x < XYZ_AXIS_COUNT; x++)
+			blackboxCurrent->axisPID_P[x] = frame[src++];
 
-		for (x = 0; x < 3; x++) {
-			blackboxCurrent->axisI[x] = frame[src++];
-		}
+		for (x = 0; x < XYZ_AXIS_COUNT; x++)
+			blackboxCurrent->axisPID_I[x] = frame[src++];
 
-		for (x = 0; x < 3; x++) {
-			blackboxCurrent->axisD[x] = frame[src++];
-		}
+		// We sometimes don't write every axisD[], so check if it is actually available
+		for (x = 0; x < XYZ_AXIS_COUNT; x++)
+		    if (strncmp(log->mainFieldNames[src], "axisD[", strlen("axisD[")) == 0
+		        && log->mainFieldNames[src][strlen("axisD[")] == x + '0') {
+			blackboxCurrent->axisPID_D[x] = frame[src++];
+		} else
+		    blackboxCurrent->axisPID_D[x] = 0;
 
-		for (x = 0; x < 4; x++) {
+		for (x = 0; x < 4; x++)
 			blackboxCurrent->rcCommand[x] = frame[src++];
-		}
 
-		for (x = 0; x < 3; x++) {
+		if (strcmp(log->mainFieldNames[src], "vbatLatest") == 0)
+		    blackboxCurrent->vbatLatest = frame[src++];
+
+        if (strncmp(log->mainFieldNames[src], "magADC[", strlen("magADC[")) == 0)
+            for (x = 0; x < XYZ_AXIS_COUNT; x++)
+                blackboxCurrent->magADC[x] = frame[src++];
+
+        if (strcmp(log->mainFieldNames[src], "BaroAlt") == 0)
+            blackboxCurrent->BaroAlt = frame[src++];
+
+		for (x = 0; x < XYZ_AXIS_COUNT; x++)
 			blackboxCurrent->gyroData[x] = frame[src++];
-		}
 
-		for (x = 0; x < 3; x++) {
+		for (x = 0; x < XYZ_AXIS_COUNT; x++)
 			blackboxCurrent->accSmooth[x] = frame[src++];
-		}
 
-		for (x = 0; x < numberMotor; x++) {
+		for (x = 0; x < numberMotor; x++)
 			blackboxCurrent->motor[x] = frame[src++];
-		}
 		
-		if (isTricopter())
+		if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_TRICOPTER))
 			blackboxCurrent->servo[5] = frame[src++];
 
 		if (frameType == 'I') {
@@ -729,30 +840,73 @@ void printStats(flightLogStatistics_t *stats)
 	}
 }
 
-void writeHeader()
+static void sendFieldDefinition(const char * const *headerNames, unsigned int headerCount, const void *fieldDefinitions,
+        const void *secondFieldDefinition, int fieldCount, const uint8_t *conditions, const uint8_t *secondCondition)
 {
-	int motorsToRemove = 8 - numberMotor;
-	const char *additionalHeader;
+    const blackboxFieldDefinition_t *def;
+    static bool needComma = false;
+    size_t definitionStride = (char*) secondFieldDefinition - (char*) fieldDefinitions;
+    size_t conditionsStride = (char*) secondCondition - (char*) conditions;
 
-	printf("%s", blackboxHeader);
-	writtenBytes = strlen(blackboxHeader);
+    for (unsigned int headerXmitIndex = 0; headerXmitIndex < headerCount; headerXmitIndex++) {
+        blackboxPrint("H Field ");
+        blackboxPrint(headerNames[headerXmitIndex]);
+        blackboxPrint(":");
 
-	for (unsigned int i = 0; i < sizeof(blackboxHeaderFields) / sizeof(blackboxHeaderFields[0]); i++) {
-		int endIndex = strlen(blackboxHeaderFields[i]) - (i == 0 ? strlen(",motor[x]") : strlen(",x")) * motorsToRemove;
+        needComma = false;
 
-		for (int j = 0; j < endIndex; j++)
-			blackboxWrite(blackboxHeaderFields[i][j]);
+        for (int fieldXmitIndex = 0; fieldXmitIndex < fieldCount; fieldXmitIndex++) {
+            def = (const blackboxFieldDefinition_t*) ((const char*)fieldDefinitions + definitionStride * fieldXmitIndex);
 
-		if (isTricopter()) {
-			//Add fields to the end for the tail servo
-			blackboxWrite(',');
+            if (!conditions || testBlackboxCondition(conditions[conditionsStride * fieldXmitIndex])) {
+                if (needComma) {
+                    blackboxWrite(',');
+                } else
+                    needComma = true;
 
-			for (additionalHeader = blackboxAdditionalFieldsTricopter[i]; *additionalHeader; additionalHeader++)
-				blackboxWrite(*additionalHeader);
-		}
+                // The first header is a field name
+                if (headerXmitIndex == 0) {
+                    blackboxPrint(def->name);
+                } else {
+                    //The other headers are integers
+                    if (def->arr[headerXmitIndex - 1] >= 10) {
+                        blackboxWrite(def->arr[headerXmitIndex - 1] / 10 + '0');
+                        blackboxWrite(def->arr[headerXmitIndex - 1] % 10 + '0');
+                    } else {
+                        blackboxWrite(def->arr[headerXmitIndex - 1] + '0');
+                    }
+                }
+            }
+        }
 
-		blackboxWrite('\n');
-	}
+        blackboxWrite('\n');
+    }
+}
+
+void blackboxWriteHeader(flightLog_t *log)
+{
+    union floatConvert_t {
+        float f;
+        uint32_t u;
+    } floatConvert;
+
+    int i;
+
+    for (i = 0; blackboxHeader[i] != '\0'; i++)
+        blackboxWrite(blackboxHeader[i]);
+
+    sendFieldDefinition(blackboxMainHeaderNames, ARRAY_LENGTH(blackboxMainHeaderNames), blackboxMainFields, blackboxMainFields + 1,
+            ARRAY_LENGTH(blackboxMainFields), &blackboxMainFields[0].condition, &blackboxMainFields[1].condition);
+
+    blackboxPrintf("H Firmware type:Cleanflight\n");
+    blackboxPrintf("H rcRate:%d\n", log->rcRate);
+    blackboxPrintf("H minthrottle:%d\n", log->minthrottle);
+    blackboxPrintf("H maxthrottle:%d\n", log->maxthrottle);
+    floatConvert.f = log->gyroScale;
+    blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
+    blackboxPrintf("H vbatscale:%u\n", log->vbatscale);
+    blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", log->vbatmincellvoltage, log->vbatwarningcellvoltage, log->vbatmaxcellvoltage);
+    blackboxPrintf("H acc_1G:%u\n", log->acc_1G);
 }
 
 void onMetadataReady(flightLog_t *log)
@@ -770,7 +924,7 @@ void onMetadataReady(flightLog_t *log)
 		}
 	}
 
-	writeHeader();
+	blackboxWriteHeader(log);
 }
 
 int main(int argc, char **argv)

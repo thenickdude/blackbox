@@ -231,6 +231,15 @@ static void parseHeader(flightLog_t *log)
 		log->maxthrottle = atoi(fieldValue);
 	} else if (strcmp(fieldName, "rcRate") == 0) {
 		log->rcRate = atoi(fieldValue);
+    } else if (strcmp(fieldName, "vbatscale") == 0) {
+        log->vbatscale = atoi(fieldValue);
+    } else if (strncmp(fieldName, "vbatcellvoltage", strlen("vbatcellvoltage")) == 0) {
+        int vbatcellvoltage[3];
+        parseCommaSeparatedIntegers(fieldValue, vbatcellvoltage, 3);
+
+        log->vbatmincellvoltage = vbatcellvoltage[0];
+        log->vbatwarningcellvoltage = vbatcellvoltage[1];
+        log->vbatmaxcellvoltage = vbatcellvoltage[2];
 	} else if (strcmp(fieldName, "gyro.scale") == 0) {
 		floatConvert.u = strtoul(fieldValue, 0, 16);
 
@@ -307,7 +316,8 @@ static int32_t signExtend2Bit(uint8_t byte)
 	return (byte & 0x02) ? (int32_t) (int8_t) (byte | 0xFC) : byte;
 }
 
-static void readTag2_3S32(flightLog_t *log, int32_t *values) {
+static void readTag2_3S32(flightLog_t *log, int32_t *values)
+{
 	uint8_t leadByte;
 	uint8_t byte1, byte2, byte3, byte4;
 	int i;
@@ -383,7 +393,8 @@ static void readTag2_3S32(flightLog_t *log, int32_t *values) {
 	}
 }
 
-static void readTag8_4S16_v1(flightLog_t *log, int32_t *values) {
+static void readTag8_4S16_v1(flightLog_t *log, int32_t *values)
+{
 	uint8_t selector, combinedChar;
 	uint8_t char1, char2;
 	int i;
@@ -430,7 +441,8 @@ static void readTag8_4S16_v1(flightLog_t *log, int32_t *values) {
 	}
 }
 
-static void readTag8_4S16_v2(flightLog_t *log, int32_t *values) {
+static void readTag8_4S16_v2(flightLog_t *log, int32_t *values)
+{
 	uint8_t selector;
 	uint8_t char1, char2;
 	uint8_t buffer;
@@ -500,6 +512,20 @@ static void readTag8_4S16_v2(flightLog_t *log, int32_t *values) {
 
 		selector >>= 2;
 	}
+}
+
+static void readTag8_8SVB(flightLog_t *log, int32_t *values, int valueCount)
+{
+    uint8_t header;
+
+    if (valueCount == 1) {
+        values[0] = readSignedVB(log);
+    } else {
+        header = (uint8_t) readChar(log);
+
+        for (int i = 0; i < 8; i++, header >>= 1)
+            values[i] = (header & 0x01) ? readSignedVB(log) : 0;
+    }
 }
 
 static void parseIntraframe(flightLog_t *log, bool raw)
@@ -593,7 +619,8 @@ static int shouldHaveFrame(flightLog_t *log, int32_t frameIndex)
 
 static void parseInterframe(flightLog_t *log, bool raw)
 {
-	int i;
+	int i, j;
+	int groupCount;
 
 	// The new frame gets stored over the top of the current oldest history
 	int32_t *newFrame = log->private->mainHistory[0] == &log->private->blackboxHistoryRing[0][0] ? &log->private->blackboxHistoryRing[1][0] : &log->private->blackboxHistoryRing[0][0];
@@ -608,7 +635,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
-		uint32_t values[4];
+		uint32_t values[8];
 
 		if (log->private->fieldPPredictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
 			newFrame[i] = log->private->mainHistory[0][i] + 1 + skippedFrames;
@@ -627,7 +654,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 						readTag8_4S16_v2(log, (int32_t*)values);
 
 					//Apply the predictors for the fields:
-					for (int j = 0; j < 3; j++) {
+					for (j = 0; j < 3; j++) {
 						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
 						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
 						i++;
@@ -638,12 +665,29 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					readTag2_3S32(log, (int32_t*)values);
 
 					//Apply the predictors for the fields:
-					for (int j = 0; j < 2; j++) {
+					for (j = 0; j < 2; j++) {
 						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
 						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
 						i++;
 					}
 					value = values[2];
+				break;
+				case FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB:
+				    //How many fields are in this encoded group? Check the subsequent field encodings:
+				    for (j = i + 1; j < i + 8 && j < log->mainFieldCount; j++)
+				        if (log->private->fieldPEncoding[j] != FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB)
+				            break;
+
+				    groupCount = j - i;
+
+				    readTag8_8SVB(log, (int32_t*) values, groupCount);
+
+                    // Don't process the final value, allow the regular handler after the 'case' to do that
+				    for (j = 0; j < groupCount - 1; j++) {
+                        newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
+                        i++;
+				    }
+				    value = values[groupCount - 1];
 				break;
 				case FLIGHT_LOG_FIELD_ENCODING_NULL:
 					continue;
@@ -851,6 +895,11 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	//Default to MW's defaults
 	log->minthrottle = 1150;
 	log->maxthrottle = 1850;
+
+    log->vbatscale = 110;
+	log->vbatmincellvoltage = 33;
+	log->vbatmaxcellvoltage = 43;
+    log->vbatwarningcellvoltage = 35;
 
 	log->frameIntervalI = 32;
 	log->frameIntervalPNum = 1;
