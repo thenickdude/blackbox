@@ -20,7 +20,7 @@ down this readme.
 If you're using Cleanflight, you'll need to use the [Cleanflight Blackbox firmware][] instead.
 
 [the repository]: https://github.com/thenickdude/blackbox
-[Cleanflight Blackbox firmware]: https://github.com/sherlockflight/blackbox-cleanflight
+[Cleanflight Blackbox firmware]: https://github.com/sherlockflight/blackbox-cleanflight/releases
 
 ## Logged data
 The blackbox records flight data on every iteration of the flight controller's control loop. It records the current
@@ -65,10 +65,14 @@ The blackbox software is designed to be used with an [OpenLog serial data logger
 little prep to get the OpenLog ready for use, so here are the details:
 
 ### Firmware
-The OpenLog should be flashed with the [OpenLog Lite firmware][] using Arduino IDE in order to minimise dropped frames
-(target the "Arduino Uno"). Note that the .hex file currently in the OpenLog repository is out of date with respect to the .ino
-source file, use the version I've built in the `tools/blackbox/openlog/` directory instead. Or you can build your own 
-.hex file if you add the [required libraries][] to your Arduino libraries directory.
+The OpenLog should be flashed with the [OpenLog Lite firmware][] or the special Blackbox variant using the Arduino IDE
+in order to minimise dropped frames (target the "Arduino Uno"). The Blackbox variant of the firmware ensures that the
+OpenLog is running at the correct baud-rate and does away for the need for a `CONFIG.TXT` file to set up the OpenLog. You
+can find the Blackbox firmware variant in `tools/blackbox/OpenLog_v3_Blackbox/`.
+
+If you decide to use the OpenLog Lite firmware instead, note that the .hex file for OpenLog Lite currently in the
+OpenLog repository is out of date with respect to their .ino source file, so you'll need to build it yourself after
+adding the [required libraries][] to your Arduino libraries directory.
 
 To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout][] along with some way of
 switching the Tx and Rx pins over (since the OpenLog has them switched) like the [FTDI crossover][].
@@ -106,6 +110,9 @@ the best chance of writing at high speed. You must format it with either FAT, or
 [SD Association's special formatting tool]: https://www.sdcard.org/downloads/formatter_4/
 
 ### OpenLog configuration
+This section applies only if you are using the OpenLog or OpenLog Lite original firmware on the OpenLog. If you flashed
+it with the special OpenLog Blackbox firmware, you don't need to configure it further.
+
 Power up the OpenLog with a microSD card inside, wait 10 seconds or so, then power it down and plug the microSD card
 into your computer. You should find a "CONFIG.TXT" file on the card. Edit it in a text editor to set the first number
 (baud) to 115200. Set esc# to 0, mode to 0, and echo to 0. Save the file and put the card back into your OpenLog, it
@@ -113,7 +120,7 @@ should use those settings from now on.
 
 If your OpenLog didn't write a CONFIG.TXT file, you can [use mine instead][].
 
-[use mine instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/openlog/CONFIG.TXT
+[use mine instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/OpenLog_v3_Blackbox/CONFIG.TXT
 
 ### Protection
 I wrapped my OpenLog in black electrical tape in order to insulate it from my conductive carbon fiber frame, but this
