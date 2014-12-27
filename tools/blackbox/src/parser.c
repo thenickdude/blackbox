@@ -300,10 +300,10 @@ static int32_t signExtend24Bit(uint32_t u)
 	return (u & 0x800000) ? (int32_t) (u | 0xFF000000) : (int32_t) u;
 }
 
-static int32_t signExtend12Bit(uint16_t word)
+static int32_t signExtend14Bit(uint16_t word)
 {
     //If sign bit is set, fill the top bits with 1s to sign-extend
-    return (word & 0x800) ? (int32_t) (int16_t) (word | 0xF000) : word;
+    return (word & 0x2000) ? (int32_t) (int16_t) (word | 0xC000) : word;
 }
 
 static int32_t signExtend6Bit(uint8_t byte)
@@ -553,8 +553,8 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 			case FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB:
 				value = readUnsignedVB(log);
 			break;
-			case FLIGHT_LOG_FIELD_ENCODING_NEG_12BIT:
-			    value = (uint32_t) -signExtend12Bit(readUnsignedVB(log));
+			case FLIGHT_LOG_FIELD_ENCODING_NEG_14BIT:
+			    value = (uint32_t) -signExtend14Bit(readUnsignedVB(log));
 			break;
 			default:
 				fprintf(stderr, "Unsupported I-field encoding %d\n", log->private->fieldIEncoding[i]);
@@ -801,7 +801,7 @@ void* memmem(const void *haystack, size_t haystackLen, const void *needle, size_
 unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat)
 {
     // ADC is 12 bit (i.e. max 0xFFF), voltage reference is 3.3V, vbatscale is premultiplied by 100
-    return (vbat * 33 * log->vbatscale) / 0xFFF;
+    return (vbat * 330 * log->vbatscale) / 0xFFF;
 }
 
 int flightLogEstimateNumCells(flightLog_t *log)
@@ -810,6 +810,7 @@ int flightLogEstimateNumCells(flightLog_t *log)
     int refVoltage;
 
     refVoltage = flightLogVbatToMillivolts(log, log->vbatref) / 100;
+
     for (i = 1; i < 8; i++) {
         if (refVoltage < i * log->vbatmaxcellvoltage)
             break;
