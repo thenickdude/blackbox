@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-#define IFRAME_INTERVAL 32
+#define IFRAME_INTERVAL 64
 
 int gcd(int num, int denom) {
 	if (denom == 0)
@@ -128,6 +128,9 @@ int main(void) {
 		for (int num = 1; num <= denom; num++)
 			printPattern2(num, denom);
 	printf("\n");
+
+	//This should be the ugliest case
+    printPattern2(IFRAME_INTERVAL / 2 - 1, IFRAME_INTERVAL);
 
 	return 0;
 }
