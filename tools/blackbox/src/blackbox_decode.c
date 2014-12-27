@@ -193,7 +193,7 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 		}
 	}
 
-	fprintf(stderr, "\n");
+    fprintf(stderr, "\n");
 }
 
 int validateLogIndex(flightLog_t *log)
@@ -356,20 +356,20 @@ int main(int argc, char **argv)
 
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
-			fprintf(stderr, "Failed to open log file '%s': %s\n", filename, strerror(errno));
-			return -1;
+			fprintf(stderr, "Failed to open log file '%s': %s\n\n", filename, strerror(errno));
+            continue;
 		}
 
 		log = flightLogCreate(fd);
 
 		if (!log) {
-			fprintf(stderr, "Failed to read log file '%s'\n", filename);
-			return -1;
+			fprintf(stderr, "Failed to read log file '%s'\n\n", filename);
+            continue;
 		}
 
 	    if (log->logCount == 0) {
-	        fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
-	        return -1;
+	        fprintf(stderr, "Couldn't find the header of a flight log in the file '%s', is this the right kind of file?\n\n", filename);
+	        continue;
 	    }
 
 		if (options.logNumber > 0 || options.toStdout) {
@@ -378,13 +378,11 @@ int main(int argc, char **argv)
 			if (logIndex == -1)
 				return -1;
 
-			if (decodeFlightLog(log, filename, logIndex) == -1)
-				return -1;
+			decodeFlightLog(log, filename, logIndex);
 		} else {
 			//Decode all the logs
 			for (logIndex = 0; logIndex < log->logCount; logIndex++)
-				if (decodeFlightLog(log, filename, logIndex) == -1)
-					return -1;
+				decodeFlightLog(log, filename, logIndex);
 		}
 
 		flightLogDestroy(log);
