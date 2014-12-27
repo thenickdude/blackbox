@@ -233,6 +233,8 @@ static void parseHeader(flightLog_t *log)
 		log->rcRate = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatscale") == 0) {
         log->vbatscale = atoi(fieldValue);
+    } else if (strcmp(fieldName, "vbatref") == 0) {
+        log->vbatref = atoi(fieldValue);
     } else if (strncmp(fieldName, "vbatcellvoltage", strlen("vbatcellvoltage")) == 0) {
         int vbatcellvoltage[3];
         parseCommaSeparatedIntegers(fieldValue, vbatcellvoltage, 3);
@@ -295,7 +297,13 @@ static int32_t readSignedVB(flightLog_t *log)
 static int32_t signExtend24Bit(uint32_t u)
 {
 	//If sign bit is set, fill the top bits with 1s to sign-extend
-	return (u & 0x800000) ? (int32_t) (u | 0xFF000000) : u;
+	return (u & 0x800000) ? (int32_t) (u | 0xFF000000) : (int32_t) u;
+}
+
+static int32_t signExtend12Bit(uint16_t word)
+{
+    //If sign bit is set, fill the top bits with 1s to sign-extend
+    return (word & 0x800) ? (int32_t) (int16_t) (word | 0xF000) : word;
 }
 
 static int32_t signExtend6Bit(uint8_t byte)
@@ -545,6 +553,9 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 			case FLIGHT_LOG_FIELD_ENCODING_UNSIGNED_VB:
 				value = readUnsignedVB(log);
 			break;
+			case FLIGHT_LOG_FIELD_ENCODING_NEG_12BIT:
+			    value = (uint32_t) -signExtend12Bit(readUnsignedVB(log));
+			break;
 			default:
 				fprintf(stderr, "Unsupported I-field encoding %d\n", log->private->fieldIEncoding[i]);
 				exit(-1);
@@ -568,6 +579,9 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 						exit(-1);
 					}
 					value += (uint32_t) log->private->mainHistory[0][log->private->motor0Index];
+				break;
+				case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
+				    value += log->vbatref;
 				break;
 				default:
 					fprintf(stderr, "Unsupported I-field predictor %d\n", log->private->fieldIPredictor[i]);
@@ -784,6 +798,27 @@ void* memmem(const void *haystack, size_t haystackLen, const void *needle, size_
 	return NULL;
 }
 
+unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat)
+{
+    // ADC is 12 bit (i.e. max 0xFFF), voltage reference is 3.3V, vbatscale is premultiplied by 100
+    return (vbat * 33 * log->vbatscale) / 0xFFF;
+}
+
+int flightLogEstimateNumCells(flightLog_t *log)
+{
+    int i;
+    int refVoltage;
+
+    refVoltage = flightLogVbatToMillivolts(log, log->vbatref) / 100;
+    printf("%d %d\n", refVoltage, log->vbatmaxcellvoltage);
+    for (i = 1; i < 8; i++) {
+        if (refVoltage < i * log->vbatmaxcellvoltage)
+            break;
+    }
+
+    return i;
+}
+
 flightLog_t * flightLogCreate(int fd)
 {
 	const char *mapped;
@@ -835,8 +870,8 @@ flightLog_t * flightLogCreate(int fd)
 	}
 #endif
 
-	log = (flightLog_t *) malloc(sizeof(flightLog_t));
-	private = (flightLogPrivate_t *) malloc(sizeof(flightLogPrivate_t));
+	log = (flightLog_t *) malloc(sizeof(*log));
+	private = (flightLogPrivate_t *) malloc(sizeof(*private));
 
 	memset(log, 0, sizeof(*log));
 	memset(private, 0, sizeof(*private));
@@ -896,6 +931,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	log->minthrottle = 1150;
 	log->maxthrottle = 1850;
 
+	log->vbatref = 4095;
     log->vbatscale = 110;
 	log->vbatmincellvoltage = 33;
 	log->vbatmaxcellvoltage = 43;

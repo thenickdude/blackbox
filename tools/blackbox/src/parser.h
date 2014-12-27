@@ -58,6 +58,8 @@ typedef struct flightLog_t {
     uint8_t vbatmincellvoltage;
     uint8_t vbatwarningcellvoltage;
 
+    uint16_t vbatref;
+
 	FirmwareType firmwareType;
 
 	//Information about log sections:
@@ -83,6 +85,10 @@ typedef void (*FlightLogMetadataReady)(flightLog_t *log);
 typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize);
 
 flightLog_t* flightLogCreate(int fd);
+
+int flightLogEstimateNumCells(flightLog_t *log);
+unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat);
+
 bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw);
 void flightLogDestroy(flightLog_t *log);
 
