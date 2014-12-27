@@ -102,7 +102,7 @@ static const blackboxMainFieldDefinition_t blackboxMainFields[] = {
     /* Throttle is always in the range [minthrottle..maxthrottle]: */
     {"rcCommand[3]",  UNSIGNED, .Ipredict = PREDICT(MINTHROTTLE), .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),  .Pencode = ENCODING(TAG8_4S16), CONDITION(ALWAYS)},
 
-    {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(0),       .Iencode = ENCODING(UNSIGNED_VB), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(ALWAYS)},
+    {"vbatLatest",    UNSIGNED, .Ipredict = PREDICT(VBATREF), .Iencode = ENCODING(NEG_14BIT), .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), CONDITION(ALWAYS)},
 #ifdef MAG
     {"magADC[0]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
     {"magADC[1]",     SIGNED,   .Ipredict = PREDICT(0),       .Iencode = ENCODING(SIGNED_VB),   .Ppredict = PREDICT(PREVIOUS),      .Pencode = ENCODING(TAG8_8SVB), FLIGHT_LOG_FIELD_CONDITION_MAG},
@@ -156,6 +156,8 @@ typedef struct mcfgStandin_t {
 mcfgStandin_t mcfg = {
 	.minthrottle = 1150, .maxthrottle = 1850
 };
+
+uint16_t vbatReference = 4095;
 int numberMotor = 0;
 
 // Program options
@@ -545,7 +547,13 @@ static void writeIntraframe(void)
 
 	writeUnsignedVB(blackboxCurrent->rcCommand[3] - mcfg.minthrottle); //Throttle lies in range [minthrottle..maxthrottle]
 
-    writeUnsignedVB(blackboxCurrent->vbatLatest);
+    /*
+     * Our voltage is expected to decrease over the course of the flight, so store our difference from
+     * the reference:
+     *
+     * Write 14 bits even if the number is negative (which would otherwise result in 32 bits)
+     */
+    writeUnsignedVB((vbatReference - blackboxCurrent->vbatLatest) & 0x3FFF);
 
 #ifdef MAG
         if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_MAG)) {
@@ -648,7 +656,7 @@ static void writeInterframe(void)
     if (testBlackboxCondition(FLIGHT_LOG_FIELD_CONDITION_BARO))
         deltas[optionalFieldCount++] = blackboxCurrent->BaroAlt - blackboxLast->BaroAlt;
 #endif
-    writeTag8_8SVB(deltas, optionalFieldCount);	
+    writeTag8_8SVB(deltas, optionalFieldCount);
 
 	//Since gyros, accs and motors are noisy, base the prediction on the average of the history:
     for (x = 0; x < XYZ_AXIS_COUNT; x++)
@@ -906,6 +914,7 @@ void blackboxWriteHeader(flightLog_t *log)
     blackboxPrintf("H gyro.scale:0x%x\n", floatConvert.u);
     blackboxPrintf("H vbatscale:%u\n", log->vbatscale);
     blackboxPrintf("H vbatcellvoltage:%u,%u,%u\n", log->vbatmincellvoltage, log->vbatwarningcellvoltage, log->vbatmaxcellvoltage);
+    blackboxPrintf("H vbatref:%u\n", log->vbatref);
     blackboxPrintf("H acc_1G:%u\n", log->acc_1G);
 }
 
@@ -923,6 +932,8 @@ void onMetadataReady(flightLog_t *log)
 				numberMotor = motorIndex + 1;
 		}
 	}
+
+	vbatReference = log->vbatref;
 
 	blackboxWriteHeader(log);
 }
