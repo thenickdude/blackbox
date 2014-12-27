@@ -51,10 +51,25 @@
 
 #define DATAPOINTS_EXTRA_COMPUTED_FIELDS 6
 
+typedef enum Unit {
+	UNIT_RAW = 0,
+	UNIT_DEGREES_PER_SEC = 1
+} Unit;
+
+static const char* const UNIT_NAME[] = {
+    "raw",
+    "degree"
+};
+
 typedef enum PropStyle {
 	PROP_STYLE_BLADES = 0,
 	PROP_STYLE_PIE_CHART = 1
 } PropStyle;
+
+static const char* const PROP_STYLE_NAME[] = {
+    "blades",
+    "pie"
+};
 
 typedef struct color_t {
 	double r, g, b;
@@ -94,6 +109,8 @@ typedef struct renderOptions_t {
 	int pidSmoothing, gyroSmoothing, motorSmoothing;
 
 	int bottomGraphSplitAxes;
+
+	Unit gyroUnit;
 
 	int gapless;
 
@@ -146,6 +163,9 @@ typedef struct fieldIdentifications_t {
 	int servoFields[MAX_SERVOS];
 	color_t servoColors[MAX_SERVOS];
 
+	int vbatField;
+	int numCells;
+
 	int numMisc;
 	int miscFields[FLIGHT_LOG_MAX_FIELDS];
 	color_t miscColors[FLIGHT_LOG_MAX_FIELDS];
@@ -184,6 +204,7 @@ static const renderOptions_t defaultOptions = {
 	.plotPids = false, .plotPidSum = false, .plotGyros = true, .plotMotors = true,
 	.pidSmoothing = 4, .gyroSmoothing = 2, .motorSmoothing = 2,
 	.drawCraft = true, .drawPidTable = true, .drawSticks = true, .drawTime = true,
+	.gyroUnit = UNIT_RAW,
 	.filename = 0,
 	.timeStart = 0, .timeEnd = 0,
 	.logNumber = 0,
@@ -264,6 +285,8 @@ void identifyFields()
 		idents.accFields[axis] = -1;
 	}
 
+	idents.vbatField = -1;
+
 	for (i = 0; i < sizeof(idents.miscFields) / sizeof(idents.miscFields[0]); i++)
 		idents.miscFields[i] = -1;
 
@@ -278,28 +301,30 @@ void identifyFields()
 
 	//Now look through the field names and assign fields we recognize to each of those categories
 	for (fieldIndex = 0; fieldIndex < points->fieldCount; fieldIndex++) {
-		if (strncmp(points->fieldNames[fieldIndex], "motor[", strlen("motor[")) == 0) {
-			int motorIndex = atoi(points->fieldNames[fieldIndex] + strlen("motor["));
+	    const char *fieldName = points->fieldNames[fieldIndex];
+
+		if (strncmp(fieldName, "motor[", strlen("motor[")) == 0) {
+			int motorIndex = atoi(fieldName + strlen("motor["));
 
 			if (motorIndex >= 0 && motorIndex < MAX_MOTORS) {
 				idents.motorFields[motorIndex] = fieldIndex;
 				idents.motorColors[motorIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
 				idents.numMotors++;
 			}
-		} else if (strncmp(points->fieldNames[fieldIndex], "rcCommand[", strlen("rcCommand[")) == 0){
-			int rcCommandIndex = atoi(points->fieldNames[fieldIndex] + strlen("rcCommand["));
+		} else if (strncmp(fieldName, "rcCommand[", strlen("rcCommand[")) == 0){
+			int rcCommandIndex = atoi(fieldName + strlen("rcCommand["));
 
 			if (rcCommandIndex >= 0 && rcCommandIndex < 4) {
 				idents.rcCommandFields[rcCommandIndex] = fieldIndex;
 			}
-		} else if (strncmp(points->fieldNames[fieldIndex], "axisPID[", strlen("axisPID[")) == 0) {
-			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("axisPID["));
+		} else if (strncmp(fieldName, "axisPID[", strlen("axisPID[")) == 0) {
+			int axisIndex = atoi(fieldName + strlen("axisPID["));
 
 			idents.axisPIDSum[axisIndex] = fieldIndex;
-		} else if (strncmp(points->fieldNames[fieldIndex], "axis", strlen("axis")) == 0) {
-			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("axisX["));
+		} else if (strncmp(fieldName, "axis", strlen("axis")) == 0) {
+			int axisIndex = atoi(fieldName + strlen("axisX["));
 
-			switch (points->fieldNames[fieldIndex][strlen("axis")]) {
+			switch (fieldName[strlen("axis")]) {
 				case 'P':
 					idents.axisPIDFields[PID_P][axisIndex] = fieldIndex;
 				break;
@@ -324,8 +349,8 @@ void identifyFields()
 			}
 
 			idents.PIDLineStyle[axisIndex] = 0; //TODO
-		} else if (strncmp(points->fieldNames[fieldIndex], "gyroData[", strlen("gyroData[")) == 0) {
-			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("gyroData["));
+		} else if (strncmp(fieldName, "gyroData[", strlen("gyroData[")) == 0) {
+			int axisIndex = atoi(fieldName + strlen("gyroData["));
 
 			idents.hasGyros = true;
 			idents.gyroFields[axisIndex] = fieldIndex;
@@ -337,23 +362,27 @@ void identifyFields()
 					idents.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
 			} else
 				idents.gyroColors[axisIndex] = WHITE;
-		} else if (strncmp(points->fieldNames[fieldIndex], "accSmooth[", strlen("accSmooth[")) == 0) {
-			int axisIndex = atoi(points->fieldNames[fieldIndex] + strlen("accSmooth["));
+		} else if (strncmp(fieldName, "accSmooth[", strlen("accSmooth[")) == 0) {
+			int axisIndex = atoi(fieldName + strlen("accSmooth["));
 
 			idents.hasAccs = true;
 			idents.accFields[axisIndex] = fieldIndex;
 			idents.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
-		} else if (strncmp(points->fieldNames[fieldIndex], "servo[", strlen("servo[")) == 0) {
-			int servoIndex = atoi(points->fieldNames[fieldIndex] + strlen("servo["));
+		} else if (strncmp(fieldName, "servo[", strlen("servo[")) == 0) {
+			int servoIndex = atoi(fieldName + strlen("servo["));
 
 			idents.numServos++;
 			idents.servoFields[servoIndex] = fieldIndex;
 			idents.servoColors[servoIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
-		} else if (strcmp(points->fieldNames[fieldIndex], "roll") == 0) {
+		} else if (strcmp(fieldName, "vbatLatest") == 0) {
+		    idents.vbatField = fieldIndex;
+
+		    idents.numCells = flightLogEstimateNumCells(flightLog);
+		} else if (strcmp(fieldName, "roll") == 0) {
 			idents.roll = fieldIndex;
-		} else if (strcmp(points->fieldNames[fieldIndex], "pitch") == 0) {
+		} else if (strcmp(fieldName, "pitch") == 0) {
 			idents.pitch = fieldIndex;
-		} else if (strcmp(points->fieldNames[fieldIndex], "heading") == 0) {
+		} else if (strcmp(fieldName, "heading") == 0) {
 			idents.heading = fieldIndex;
 		} else {
 			idents.miscFields[idents.numMisc] = fieldIndex;
@@ -807,21 +836,21 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 			int32_t fieldValue;
 
 			if (pidType == PID_P - 1) {
-				if (idents.hasGyros)
+				if (idents.hasGyros) {
 					fieldValue = frame[idents.gyroFields[axisIndex]];
-				else
+
+					if (options.gyroUnit == UNIT_DEGREES_PER_SEC) {
+						fieldValue = (int32_t) round((double)flightLog->gyroScale * 1000000 / (M_PI / 180.0) * fieldValue);
+					}
+				} else
 					fieldValue = 0;
 			} else if (idents.hasPIDs) {
 				if (pidType == PID_TOTAL)
-					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]] + frame[idents.axisPIDFields[PID_I][axisIndex]] - frame[idents.axisPIDFields[PID_D][axisIndex]];
-				else if (pidType == PID_D)
-					/*
-					 * It seems kinda confusing that D is subtracted from the PID sum, how about I just negate it so that
-					 * the sum is a simple P + I + D?
-					 */
-					fieldValue = -frame[idents.axisPIDFields[pidType][axisIndex]];
-				else
+					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]] + frame[idents.axisPIDFields[PID_I][axisIndex]] + frame[idents.axisPIDFields[PID_D][axisIndex]];
+				else if (idents.axisPIDFields[pidType][axisIndex] > -1)
 					fieldValue = frame[idents.axisPIDFields[pidType][axisIndex]];
+				else
+					fieldValue = 0;
 			} else
 				fieldValue = 0;
 
@@ -932,8 +961,14 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 	t_fp_vector acceleration;
 	double magnitude;
 	static double lastAccel = 0;
+    cairo_text_extents_t extent;
 
 	char labelBuf[32];
+
+    cairo_set_font_size(cr, FONTSIZE_FRAME_LABEL);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.65);
+
+    cairo_text_extents(cr, "Acceleration 0.0G", &extent);
 
 	if (flightLog->acc_1G && idents.hasAccs) {
 		for (int axis = 0; axis < 3; axis++)
@@ -958,11 +993,15 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 
 		snprintf(labelBuf, sizeof(labelBuf), "Acceleration %.2fG", lastAccel);
 
-		cairo_set_font_size(cr, FONTSIZE_FRAME_LABEL);
-		cairo_set_source_rgba(cr, 1, 1, 1, 0.65);
-
 		cairo_move_to(cr, 8, options.imageHeight - 8);
 		cairo_show_text(cr, labelBuf);
+	}
+
+	if (idents.vbatField > -1) {
+	    snprintf(labelBuf, sizeof(labelBuf), "Cell %.2fV", flightLogVbatToMillivolts(flightLog, frame[idents.vbatField]) / (1000.0 * idents.numCells));
+
+        cairo_move_to(cr, 8, options.imageHeight - 8 - extent.height - 8);
+        cairo_show_text(cr, labelBuf);
 	}
 }
 
@@ -1142,23 +1181,25 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 					drawCenterline(cr);
 
 					for (int pidType = PID_D; pidType >= PID_P; pidType--) {
-						switch (pidType) {
-							case PID_P:
-								cairo_set_line_width(cr, 2);
-							break;
-							case PID_I:
-								cairo_set_dash(cr, DASHED_LINE, DASHED_LINE_NUM_POINTS, 0);
-								cairo_set_line_width(cr, 2);
-							break;
-							case PID_D:
-								cairo_set_dash(cr, DOTTED_LINE, DOTTED_LINE_NUM_POINTS, 0);
-								cairo_set_line_width(cr, 2);
-						}
+					    if (idents.axisPIDFields[pidType][axis] > -1) {
+                            switch (pidType) {
+                                case PID_P:
+                                    cairo_set_line_width(cr, 2);
+                                break;
+                                case PID_I:
+                                    cairo_set_dash(cr, DASHED_LINE, DASHED_LINE_NUM_POINTS, 0);
+                                    cairo_set_line_width(cr, 2);
+                                break;
+                                case PID_D:
+                                    cairo_set_dash(cr, DOTTED_LINE, DOTTED_LINE_NUM_POINTS, 0);
+                                    cairo_set_line_width(cr, 2);
+                            }
 
-						plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime, windowEndTime, firstFrameIndex,
-								idents.axisPIDFields[pidType][axis], pidCurve, (int) (options.imageHeight * 0.15));
+                            plotLine(cr, idents.PIDAxisColors[pidType][axis], windowStartTime, windowEndTime, firstFrameIndex,
+                                    idents.axisPIDFields[pidType][axis], pidCurve, (int) (options.imageHeight * 0.15));
 
-						cairo_set_dash(cr, 0, 0, 0);
+                            cairo_set_dash(cr, 0, 0, 0);
+                        }
 					}
 
 					if (options.plotGyros) {
@@ -1325,10 +1366,12 @@ void printUsage(const char *argv0)
 		"   --smoothing-pid <n>    Smoothing window for the PIDs (default %d)\n"
 		"   --smoothing-gyro <n>   Smoothing window for the gyroscopes (default %d)\n"
 		"   --smoothing-motor <n>  Smoothing window for the motors (default %d)\n"
+	    "   --unit-gyro <raw|degree>  Unit for the gyro values in the table (default %s)\n"
 		"   --prop-style <name>    Style of propeller display (pie/blades, default %s)\n"
 		"   --gapless              Fill in gaps in the log with straight lines\n"
 		"\n", argv0, defaultOptions.imageWidth, defaultOptions.imageHeight, defaultOptions.fps, defaultOptions.pidSmoothing,
-			defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, defaultOptions.propStyle == PROP_STYLE_BLADES ? "blades" : "pie"
+			defaultOptions.gyroSmoothing, defaultOptions.motorSmoothing, UNIT_NAME[defaultOptions.gyroUnit],
+			PROP_STYLE_NAME[defaultOptions.propStyle]
 	);
 }
 
@@ -1370,10 +1413,31 @@ bool parseFrameTime(const char *text, uint32_t *frameTime)
 	return true;
 }
 
+Unit parseUnit(const char *s)
+{
+    if (strcmp(s, "degree") == 0 || strcmp(s, "degrees") == 0)
+        return UNIT_DEGREES_PER_SEC;
+    return UNIT_RAW;
+}
+
 void parseCommandlineOptions(int argc, char **argv)
 {
 	int option_index = 0;
 	int c;
+	enum {
+	    SETTING_INDEX = 1,
+	    SETTING_WIDTH,
+	    SETTING_HEIGHT,
+	    SETTING_FPS,
+	    SETTING_PREFIX,
+	    SETTING_START,
+	    SETTING_END,
+	    SETTING_SMOOTHING_PID,
+	    SETTING_SMOOTHING_GYRO,
+	    SETTING_SMOOTHING_MOTOR,
+        SETTING_UNIT_GYRO,
+	    SETTING_PROP_STYLE
+	};
 
 	memcpy(&options, &defaultOptions, sizeof(options));
 
@@ -1381,13 +1445,13 @@ void parseCommandlineOptions(int argc, char **argv)
 	{
 		static struct option long_options[] = {
 			{"help", no_argument, &options.help, 1},
-			{"index", required_argument, 0, 'i'},
-			{"width", required_argument, 0, 'w'},
-			{"height", required_argument, 0, 'h'},
-			{"fps", required_argument, 0, 'f'},
-			{"prefix", required_argument, 0, 'x'},
-			{"start", required_argument, 0, 'b'},
-			{"end", required_argument, 0, 'e'},
+			{"index", required_argument, 0, SETTING_INDEX},
+			{"width", required_argument, 0, SETTING_WIDTH},
+			{"height", required_argument, 0, SETTING_HEIGHT},
+			{"fps", required_argument, 0, SETTING_FPS},
+			{"prefix", required_argument, 0, SETTING_PREFIX},
+			{"start", required_argument, 0, SETTING_START},
+			{"end", required_argument, 0, SETTING_END},
 			{"plot-pid", no_argument, &options.plotPids, 1},
 			{"plot-gyro", no_argument, &options.plotGyros, 1},
 			{"plot-motor", no_argument, &options.plotMotors, 1},
@@ -1402,10 +1466,11 @@ void parseCommandlineOptions(int argc, char **argv)
 			{"no-draw-craft", no_argument, &options.drawCraft, 0},
 			{"no-draw-sticks", no_argument, &options.drawSticks, 0},
 			{"no-draw-time", no_argument, &options.drawTime, 0},
-			{"smoothing-pid", required_argument, 0, '1'},
-			{"smoothing-gyro", required_argument, 0, '2'},
-			{"smoothing-motor", required_argument, 0, '3'},
-			{"prop-style", required_argument, 0, 'r'},
+			{"smoothing-pid", required_argument, 0, SETTING_SMOOTHING_PID},
+			{"smoothing-gyro", required_argument, 0, SETTING_SMOOTHING_GYRO},
+			{"smoothing-motor", required_argument, 0, SETTING_SMOOTHING_MOTOR},
+            {"unit-gyro", required_argument, 0, SETTING_UNIT_GYRO},
+			{"prop-style", required_argument, 0, SETTING_PROP_STYLE},
 			{"gapless", no_argument, &options.gapless, 1},
 			{0, 0, 0, 0}
 		};
@@ -1418,43 +1483,46 @@ void parseCommandlineOptions(int argc, char **argv)
 			break;
 
 		switch (c) {
-			case 'b':
+			case SETTING_START:
 				if (!parseFrameTime(optarg, &options.timeStart))  {
 					fprintf(stderr, "Bad --start time value\n");
 					exit(-1);
 				}
 			break;
-			case 'e':
+			case SETTING_END:
 				if (!parseFrameTime(optarg, &options.timeEnd))  {
 					fprintf(stderr, "Bad --end time value\n");
 					exit(-1);
 				}
 			break;
-			case 'w':
+			case SETTING_WIDTH:
 				options.imageWidth = atoi(optarg);
 			break;
-			case 'h':
+			case SETTING_HEIGHT:
 				options.imageHeight = atoi(optarg);
 			break;
-			case 'f':
+			case SETTING_FPS:
 				options.fps = atoi(optarg);
 			break;
-			case 'x':
+			case SETTING_PREFIX:
 				options.outputPrefix = optarg;
 			break;
-			case '1':
+			case SETTING_SMOOTHING_PID:
 				options.pidSmoothing = atoi(optarg);
 			break;
-			case '2':
+			case SETTING_SMOOTHING_GYRO:
 				options.gyroSmoothing = atoi(optarg);
 			break;
-			case '3':
+			case SETTING_SMOOTHING_MOTOR:
 				options.motorSmoothing = atoi(optarg);
 			break;
-			case 'i':
+			case SETTING_UNIT_GYRO:
+			    options.gyroUnit = parseUnit(optarg);
+			break;
+			case SETTING_INDEX:
 				options.logNumber = atoi(optarg);
 			break;
-			case 'r':
+			case SETTING_PROP_STYLE:
 				if (strcmp(optarg, "pie") == 0) {
 					options.propStyle = PROP_STYLE_PIE_CHART;
 				} else {
@@ -1493,7 +1561,8 @@ static void applySmoothing() {
 	if (options.pidSmoothing && idents.hasPIDs) {
 		for (int pid = PID_P; pid <= PID_D; pid++)
 			for (int axis = 0; axis < 3; axis++)
-				datapointsSmoothField(points, idents.axisPIDFields[pid][axis], options.pidSmoothing);
+			    if (idents.axisPIDFields[pid][axis] > -1)
+			        datapointsSmoothField(points, idents.axisPIDFields[pid][axis], options.pidSmoothing);
 
 		//Smooth the synthetic PID sum field too
 		for (int axis = 0; axis < 3; axis++)

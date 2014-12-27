@@ -810,7 +810,6 @@ int flightLogEstimateNumCells(flightLog_t *log)
     int refVoltage;
 
     refVoltage = flightLogVbatToMillivolts(log, log->vbatref) / 100;
-    printf("%d %d\n", refVoltage, log->vbatmaxcellvoltage);
     for (i = 1; i < 8; i++) {
         if (refVoltage < i * log->vbatmaxcellvoltage)
             break;
