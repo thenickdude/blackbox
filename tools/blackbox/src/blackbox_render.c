@@ -166,6 +166,8 @@ typedef struct fieldIdentifications_t {
 	int vbatField;
 	int numCells;
 
+	int baroField;
+
 	int numMisc;
 	int miscFields[FLIGHT_LOG_MAX_FIELDS];
 	color_t miscColors[FLIGHT_LOG_MAX_FIELDS];
@@ -286,6 +288,7 @@ void identifyFields()
 	}
 
 	idents.vbatField = -1;
+	idents.baroField = -1;
 
 	for (i = 0; i < sizeof(idents.miscFields) / sizeof(idents.miscFields[0]); i++)
 		idents.miscFields[i] = -1;
@@ -378,6 +381,8 @@ void identifyFields()
 		    idents.vbatField = fieldIndex;
 
 		    idents.numCells = flightLogEstimateNumCells(flightLog);
+        } else if (strcmp(fieldName, "BaroAlt") == 0) {
+            idents.baroField = fieldIndex;
 		} else if (strcmp(fieldName, "roll") == 0) {
 			idents.roll = fieldIndex;
 		} else if (strcmp(fieldName, "pitch") == 0) {
@@ -961,6 +966,8 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 	t_fp_vector acceleration;
 	double magnitude;
 	static double lastAccel = 0;
+	static double lastVoltage = 0;
+	static int lastAlt = 0;
     cairo_text_extents_t extent;
 
 	char labelBuf[32];
@@ -998,11 +1005,23 @@ void drawAccelerometerData(cairo_t *cr, int32_t *frame)
 	}
 
 	if (idents.vbatField > -1) {
-	    snprintf(labelBuf, sizeof(labelBuf), "Cell %.2fV", flightLogVbatToMillivolts(flightLog, frame[idents.vbatField]) / (1000.0 * idents.numCells));
+	    lastVoltage = (lastVoltage * 2 + flightLogVbatToMillivolts(flightLog, frame[idents.vbatField]) / (1000.0 * idents.numCells)) / 3;
 
-        cairo_move_to(cr, 8, options.imageHeight - 8 - extent.height - 8);
+	    snprintf(labelBuf, sizeof(labelBuf), "Batt. cell %.2fV", lastVoltage);
+
+        cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8));
         cairo_show_text(cr, labelBuf);
 	}
+
+
+    if (idents.baroField > -1) {
+        lastAlt = (lastAlt * 2 + frame[idents.baroField]) / 3;
+
+        snprintf(labelBuf, sizeof(labelBuf), "Altitude %.1fm", lastAlt / 100.0);
+
+        cairo_move_to(cr, 8, options.imageHeight - 8 - (extent.height + 8) * 2);
+        cairo_show_text(cr, labelBuf);
+    }
 }
 
 void* pngRenderThread(void *arg)
