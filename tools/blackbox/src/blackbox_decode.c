@@ -198,11 +198,6 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 
 int validateLogIndex(flightLog_t *log)
 {
-	if (log->logCount == 0) {
-		fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
-		return -1;
-	}
-
 	//Did the user pick a log to render?
 	if (options.logNumber > 0) {
 		if (options.logNumber > log->logCount) {
@@ -356,7 +351,6 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-
 	for (int i = optind; i < argc; i++) {
 		const char *filename = argv[i];
 
@@ -372,6 +366,11 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Failed to read log file '%s'\n", filename);
 			return -1;
 		}
+
+	    if (log->logCount == 0) {
+	        fprintf(stderr, "Couldn't find the header of a flight log in this file, is this the right kind of file?\n");
+	        return -1;
+	    }
 
 		if (options.logNumber > 0 || options.toStdout) {
 			logIndex = validateLogIndex(log);
