@@ -745,19 +745,17 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 
 			encodedFrameSize = writtenBytes - start;
 
-			encodedStats.numIFrames++;
-			encodedStats.iFrameBytes += encodedFrameSize;
-
-			encodedStats.iFrameSizeCount[encodedFrameSize]++;
+			encodedStats.frame['I'].count++;
+			encodedStats.frame['I'].bytes += encodedFrameSize;
+			encodedStats.frame['I'].sizeCount[encodedFrameSize]++;
 		} else if (frameType == 'P'){
 			writeInterframe();
 
 			encodedFrameSize = writtenBytes - start;
 
-			encodedStats.numPFrames++;
-			encodedStats.pFrameBytes += encodedFrameSize;
-
-			encodedStats.pFrameSizeCount[encodedFrameSize]++;
+            encodedStats.frame['P'].count++;
+            encodedStats.frame['P'].bytes += encodedFrameSize;
+            encodedStats.frame['P'].sizeCount[encodedFrameSize]++;
 		} else {
 			fprintf(stderr, "Unknown frame type %c\n", (char) frameType);
 			exit(-1);
@@ -793,50 +791,75 @@ void parseCommandlineOptions(int argc, char **argv)
 void printFrameSizeComparison(flightLogStatistics_t *oldStats, flightLogStatistics_t *newStats)
 {
 	// First determine the size bounds:
-	int smallestSize = 0, largestSize = 255;
+	int smallestSize = 255, largestSize = 0;
 
-	for (int i = 0; i < 256; i++) {
-		if (oldStats->iFrameSizeCount[i] || newStats->iFrameSizeCount[i]) {
-			if (!smallestSize)
-				smallestSize = i;
-			largestSize = i;
-		}
-		if (oldStats->pFrameSizeCount[i] || newStats->pFrameSizeCount[i]) {
-			if (!smallestSize)
-				smallestSize = i;
-			largestSize = i;
-		}
+	bool frameTypeExists[256];
+
+	for (int frameType = 0; frameType <= 255; frameType++) {
+        frameTypeExists[frameType] = oldStats->frame[frameType].count || newStats->frame[frameType].count;
+        if (frameTypeExists[frameType]) {
+            for (int i = 0; i < 256; i++) {
+                if (oldStats->frame[frameType].sizeCount[i] || newStats->frame[frameType].sizeCount[i]) {
+                    if (i < smallestSize)
+                        smallestSize = i;
+                    if (i > largestSize)
+                        largestSize = i;
+                }
+            }
+        }
 	}
 
 	fprintf(stderr, "\nFrame sizes\n");
-	fprintf(stderr, "         Old       New       Old       New\n");
-	fprintf(stderr, "Size   I count   I count   P count   P count\n");
+
+	fprintf(stderr, "  ");
+    for (int frameType = 0; frameType <= 255; frameType++) {
+        if (frameTypeExists[frameType]) {
+            fprintf(stderr, "       Old       New");
+        }
+    }
+    fprintf(stderr, "\n");
+
+	fprintf(stderr, "Size");
+    for (int frameType = 0; frameType <= 255; frameType++) {
+        if (frameTypeExists[frameType]) {
+            fprintf(stderr, "   %c count   %c count", (char) frameType, (char) frameType);
+        }
+    }
+    fprintf(stderr, "\n");
 
 	for (int i = smallestSize; i <= largestSize; i++) {
-		fprintf(stderr, "%4d %9d %9d %9d %9d\n", i, oldStats->iFrameSizeCount[i], newStats->iFrameSizeCount[i],
-				oldStats->pFrameSizeCount[i], newStats->pFrameSizeCount[i]);
+	    fprintf(stderr, "%4d ", i);
+	    for (int frameType = 0; frameType <= 255; frameType++) {
+	        if (frameTypeExists[frameType]) {
+                fprintf(stderr, "%9d %9d ", oldStats->frame[frameType].sizeCount[i], newStats->frame[frameType].sizeCount[i]);
+            }
+        }
+        fprintf(stderr, "\n");
 	}
 }
 
 void printStats(flightLogStatistics_t *stats)
 {
-	uint32_t intervalMS = (uint32_t) ((stats->fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - stats->fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000);
-	uint32_t totalBytes = stats->iFrameBytes + stats->pFrameBytes;
-	uint32_t totalFrames = stats->numIFrames + stats->numPFrames;
+	uint32_t intervalMS = (uint32_t) ((stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].max - stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000);
+	uint32_t totalBytes = stats->totalBytes;
+	uint32_t totalFrames = stats->frame['I'].count + stats->frame['P'].count;
 
-	if (stats->numIFrames)
-		fprintf(stderr, "I frames %7d %6.1f bytes avg %8d bytes total\n", stats->numIFrames, (double) stats->iFrameBytes / stats->numIFrames, stats->iFrameBytes);
+    for (int i = 0; i < 256; i++) {
+        uint8_t frameType = (uint8_t) i;
 
-	if (stats->numPFrames)
-		fprintf(stderr, "P frames %7d %6.1f bytes avg %8d bytes total\n", stats->numPFrames, (double) stats->pFrameBytes / stats->numPFrames, stats->pFrameBytes);
+        if (stats->frame[frameType].count) {
+            fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].count,
+                (float) stats->frame[frameType].bytes / stats->frame[frameType].count, stats->frame[frameType].bytes);
+        }
+    }
 
 	if (totalFrames)
 		fprintf(stderr, "Frames %9d %6.1f bytes avg %8d bytes total\n", totalFrames, (double) totalBytes / totalFrames, totalBytes);
 	else
 		fprintf(stderr, "Frames %8d\n", 0);
 
-	if (stats->numBrokenFrames)
-		fprintf(stderr, "%d frames failed to decode (%.2f%%)\n", stats->numBrokenFrames, (double) stats->numBrokenFrames / (stats->numBrokenFrames + stats->numIFrames + stats->numPFrames) * 100);
+	if (stats->totalBrokenFrames)
+		fprintf(stderr, "%d frames failed to decode (%.2f%%)\n", stats->totalBrokenFrames, (double) stats->totalBrokenFrames / (stats->totalBrokenFrames + stats->frame['I'].count + stats->frame['P'].count) * 100);
 
 	fprintf(stderr, "IntervalMS %u Total bytes %u\n", intervalMS, stats->totalBytes);
 
@@ -963,13 +986,13 @@ int main(int argc, char **argv)
 
 	log = flightLogCreate(fileno(input));
 
-	flightLogParse(log, 0, onMetadataReady, onFrameReady, 0);
+	flightLogParse(log, 0, onMetadataReady, onFrameReady, NULL, 0);
 
 	encodedStats.totalBytes = writtenBytes;
-	encodedStats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME] = log->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME];
-	encodedStats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] = log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
+	encodedStats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min = log->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min;
+	encodedStats.field[FLIGHT_LOG_FIELD_INDEX_TIME].max = log->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].max;
 
-	fprintf(stderr, "Logged time %u seconds\n", (uint32_t)((log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME] - log->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000000));
+	fprintf(stderr, "Logged time %u seconds\n", (uint32_t)((log->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].max - log->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000000));
 
 	fprintf(stderr, "\nOriginal statistics\n");
 	printStats(&log->stats);

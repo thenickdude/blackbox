@@ -31,31 +31,44 @@
 
 #include "parser.h"
 
+#define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
+
 #define LOG_START_MARKER "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 
 typedef enum ParserState
 {
 	PARSER_STATE_HEADER = 0,
-	PARSER_STATE_BEFORE_FIRST_FRAME,
 	PARSER_STATE_DATA
 } ParserState;
+
+typedef struct flightLogFrameDefs_t {
+    int predictor[FLIGHT_LOG_MAX_FIELDS];
+    int encoding[FLIGHT_LOG_MAX_FIELDS];
+} flightLogFrameDefs_t;
 
 typedef struct flightLogPrivate_t
 {
 	char *fieldNamesCombined;
 
 	//Information about fields which we need to decode them properly
-	int fieldPPredictor[FLIGHT_LOG_MAX_FIELDS];
-	int fieldPEncoding[FLIGHT_LOG_MAX_FIELDS];
-	int fieldIPredictor[FLIGHT_LOG_MAX_FIELDS];
-	int fieldIEncoding[FLIGHT_LOG_MAX_FIELDS];
+	flightLogFrameDefs_t frameDefs[256];
 
 	int dataVersion;
 	int motor0Index;
 
+	// Blackbox state:
 	int32_t blackboxHistoryRing[2][FLIGHT_LOG_MAX_FIELDS];
 	int32_t* mainHistory[2];
+	flightLogEvent_t lastEvent;
 
+	bool mainStreamIsValid;
+
+	// Event handlers:
+	FlightLogMetadataReady onMetadataReady;
+	FlightLogFrameReady onFrameReady;
+	FlightLogEventReady onEvent;
+
+	// Log data stream:
 	int fd;
 
 	//The start of the entire log file:
@@ -67,6 +80,33 @@ typedef struct flightLogPrivate_t
 	//Set to true if we attempt to read from the log when it is already exhausted
 	bool eof;
 } flightLogPrivate_t;
+
+typedef void (*FlightLogFrameParse)(flightLog_t *log, bool raw);
+typedef void (*FlightLogFrameComplete)(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+
+typedef struct flightLogFrameType_t {
+    uint8_t marker;
+    FlightLogFrameParse parse;
+    FlightLogFrameComplete complete;
+} flightLogFrameType_t;
+
+static void parseIntraframe(flightLog_t *log, bool raw);
+static void parseInterframe(flightLog_t *log, bool raw);
+static void parseGPSFrame(flightLog_t *log, bool raw);
+static void parseGPSHomeFrame(flightLog_t *log, bool raw);
+static void parseEventFrame(flightLog_t *log, bool raw);
+
+static void completeIntraframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static void completeInterframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+static void completeEventFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw);
+
+static const flightLogFrameType_t frameTypes[] = {
+    {.marker = 'I', .parse = parseIntraframe,   .complete = completeIntraframe},
+    {.marker = 'P', .parse = parseInterframe,   .complete = completeInterframe},
+    {.marker = 'G', .parse = parseGPSFrame,     .complete = 0},
+    {.marker = 'H', .parse = parseGPSHomeFrame, .complete = 0},
+    {.marker = 'E', .parse = parseEventFrame,   .complete = completeEventFrame}
+};
 
 static int readChar(flightLog_t *log)
 {
@@ -140,6 +180,19 @@ static void parseCommaSeparatedIntegers(char *line, int *target, int maxCount)
 	}
 }
 
+static bool startsWith(const char *string, const char *startsWith)
+{
+    return strncmp(string, startsWith, strlen(startsWith)) == 0;
+}
+
+static bool endsWith(const char *string, const char *startsWith)
+{
+    int stringLen = strlen(string);
+    int startsWithLen = strlen(startsWith);
+
+    return stringLen >= startsWithLen && strncmp(string + stringLen - startsWithLen, startsWith, startsWithLen) == 0;
+}
+
 static void parseHeader(flightLog_t *log)
 {
 	char *fieldName, *fieldValue;
@@ -197,14 +250,10 @@ static void parseHeader(flightLog_t *log)
 				break;
 			}
 		}
-	} else if (strcmp(fieldName, "Field P predictor") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->private->fieldPPredictor, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field P encoding") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->private->fieldPEncoding, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field I predictor") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIPredictor, FLIGHT_LOG_MAX_FIELDS);
-	} else if (strcmp(fieldName, "Field I encoding") == 0) {
-		parseCommaSeparatedIntegers(fieldValue, log->private->fieldIEncoding, FLIGHT_LOG_MAX_FIELDS);
+	} else if (strlen(fieldName) == strlen("Field X predictor") && startsWith(fieldName, "Field ") && endsWith(fieldName, " predictor")) {
+	    parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].predictor, FLIGHT_LOG_MAX_FIELDS);
+    } else if (strlen(fieldName) == strlen("Field X encoding") && startsWith(fieldName, "Field ") && endsWith(fieldName, " encoding")) {
+        parseCommaSeparatedIntegers(fieldValue, log->private->frameDefs[(uint8_t)fieldName[strlen("Field ")]].encoding, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "Field I signed") == 0) {
 		parseCommaSeparatedIntegers(fieldValue, log->mainFieldSigned, FLIGHT_LOG_MAX_FIELDS);
 	} else if (strcmp(fieldName, "I interval") == 0) {
@@ -536,17 +585,30 @@ static void readTag8_8SVB(flightLog_t *log, int32_t *values, int valueCount)
     }
 }
 
+/**
+ * Should a frame with the given index exist in this log (based on the user's selection of sampling rates)?
+ */
+static int shouldHaveFrame(flightLog_t *log, int32_t frameIndex)
+{
+    return (frameIndex % log->frameIntervalI + log->frameIntervalPNum - 1) % log->frameIntervalPDenom < log->frameIntervalPNum;
+}
+
 static void parseIntraframe(flightLog_t *log, bool raw)
 {
+    flightLogPrivate_t *private = log->private;
 	int i;
 
-	log->private->mainHistory[0] = &log->private->blackboxHistoryRing[0][0];
-	log->private->mainHistory[1] = &log->private->blackboxHistoryRing[0][0];
+    for (uint32_t frameIndex = private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
+        log->stats.intentionallyAbsentIterations++;
+    }
+
+	private->mainHistory[0] = &private->blackboxHistoryRing[0][0];
+	private->mainHistory[1] = &private->blackboxHistoryRing[0][0];
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
 
-		switch (log->private->fieldIEncoding[i]) {
+		switch (private->frameDefs['I'].encoding[i]) {
 			case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
 				value = (uint32_t) readSignedVB(log);
 			break;
@@ -557,13 +619,13 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 			    value = (uint32_t) -signExtend14Bit(readUnsignedVB(log));
 			break;
 			default:
-				fprintf(stderr, "Unsupported I-field encoding %d\n", log->private->fieldIEncoding[i]);
+				fprintf(stderr, "Unsupported I-field encoding %d\n", private->frameDefs['I'].encoding[i]);
 				exit(-1);
 		}
 
 		if (!raw) {
 			//Not many predictors can be used in I-frames since they can't depend on any other frame
-			switch (log->private->fieldIPredictor[i]) {
+			switch (private->frameDefs['I'].predictor[i]) {
 				case FLIGHT_LOG_FIELD_PREDICTOR_0:
 					//No-op
 				break;
@@ -574,22 +636,22 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 					value += 1500;
 				break;
 				case FLIGHT_LOG_FIELD_PREDICTOR_MOTOR_0:
-					if (log->private->motor0Index < 0) {
+					if (private->motor0Index < 0) {
 						fprintf(stderr, "Attempted to base I-field prediction on motor0 before it was read\n");
 						exit(-1);
 					}
-					value += (uint32_t) log->private->mainHistory[0][log->private->motor0Index];
+					value += (uint32_t) private->mainHistory[0][private->motor0Index];
 				break;
 				case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
 				    value += log->vbatref;
 				break;
 				default:
-					fprintf(stderr, "Unsupported I-field predictor %d\n", log->private->fieldIPredictor[i]);
+					fprintf(stderr, "Unsupported I-field predictor %d\n", private->frameDefs['I'].predictor[i]);
 					exit(-1);
 			}
 		}
 
-		log->private->mainHistory[0][i] = (int32_t) value;
+		private->mainHistory[0][i] = (int32_t) value;
 	}
 }
 
@@ -616,19 +678,11 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
 				value += ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2;
 		break;
 		default:
-			fprintf(stderr, "Unsupported P-field predictor %d\n", log->private->fieldPPredictor[fieldIndex]);
+			fprintf(stderr, "Unsupported P-field predictor %d\n", log->private->frameDefs['P'].predictor[fieldIndex]);
 			exit(-1);
 	}
 
 	return (int32_t) value;
-}
-
-/**
- * Should a frame with the given index exist in this log (based on the user's selection of sampling rates)?
- */
-static int shouldHaveFrame(flightLog_t *log, int32_t frameIndex)
-{
-	return (frameIndex % log->frameIntervalI + log->frameIntervalPNum - 1) % log->frameIntervalPDenom < log->frameIntervalPNum;
 }
 
 static void parseInterframe(flightLog_t *log, bool raw)
@@ -645,16 +699,16 @@ static void parseInterframe(flightLog_t *log, bool raw)
 	for (frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
 		skippedFrames++;
 	}
-	log->stats.intentionallyAbsentFrames += skippedFrames;
+	log->stats.intentionallyAbsentIterations += skippedFrames;
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
 		uint32_t values[8];
 
-		if (log->private->fieldPPredictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
+		if (log->private->frameDefs['P'].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
 			newFrame[i] = log->private->mainHistory[0][i] + 1 + skippedFrames;
 		} else {
-			switch (log->private->fieldPEncoding[i]) {
+			switch (log->private->frameDefs['P'].encoding[i]) {
 				case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
 					value = (uint32_t) readSignedVB(log);
 				break;
@@ -670,7 +724,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					//Apply the predictors for the fields:
 					for (j = 0; j < 3; j++) {
 						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
-						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
+						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
 						i++;
 					}
 					value = values[3];
@@ -681,7 +735,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					//Apply the predictors for the fields:
 					for (j = 0; j < 2; j++) {
 						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
-						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
+						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
 						i++;
 					}
 					value = values[2];
@@ -689,7 +743,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 				case FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB:
 				    //How many fields are in this encoded group? Check the subsequent field encodings:
 				    for (j = i + 1; j < i + 8 && j < log->mainFieldCount; j++)
-				        if (log->private->fieldPEncoding[j] != FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB)
+				        if (log->private->frameDefs['P'].encoding[j] != FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB)
 				            break;
 
 				    groupCount = j - i;
@@ -698,7 +752,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 
                     // Don't process the final value, allow the regular handler after the 'case' to do that
 				    for (j = 0; j < groupCount - 1; j++) {
-                        newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], values[j]);
+                        newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
                         i++;
 				    }
 				    value = values[groupCount - 1];
@@ -707,11 +761,11 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					continue;
 				break;
 				default:
-					fprintf(stderr, "Unsupported P-field encoding %d\n", log->private->fieldPEncoding[i]);
+					fprintf(stderr, "Unsupported P-field encoding %d\n", log->private->frameDefs['P'].encoding[i]);
 					exit(-1);
 			}
 
-			newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->fieldPPredictor[i], value);
+			newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], value);
 		}
 	}
 
@@ -744,39 +798,54 @@ static void parseGPSHomeFrame(flightLog_t *log, bool raw)
 	readSignedVB(log);
 }
 
+/**
+ * Attempt to parse an event frame at the current location into the log->private->lastEvent struct.
+ * Return false if the event couldn't be parsed (e.g. unknown event ID), or true if it might have been
+ * parsed successfully.
+ */
+static void parseEventFrame(flightLog_t *log, bool raw)
+{
+    (void) raw;
+
+    uint8_t eventType = readChar(log);
+
+    flightLogEventData_t *data = &log->private->lastEvent.data;
+    log->private->lastEvent.event = eventType;
+
+    switch (eventType) {
+        case FLIGHT_LOG_EVENT_SYNC_BEEP:
+            data->syncBeep.time =readUnsignedVB(log);
+        break;
+        default:
+            log->private->lastEvent.event = -1;
+    }
+}
+
 static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 {
 	int i;
 
-	if (log->stats.numIFrames + log->stats.numPFrames <= 1) {
+	if (log->stats.frame['I'].count + log->stats.frame['P'].count <= 1) {
 		//If this is the first frame, there are no minimums or maximums in the stats to compare with
 		for (i = 0; i < log->mainFieldCount; i++) {
 			if (log->mainFieldSigned[i]) {
-				log->stats.fieldMaximum[i] = fields[i];
-				log->stats.fieldMinimum[i] = fields[i];
+				log->stats.field[i].max = fields[i];
+				log->stats.field[i].min = fields[i];
 			} else {
-				log->stats.fieldMaximum[i] = (uint32_t) fields[i];
-				log->stats.fieldMinimum[i] = (uint32_t) fields[i];
+				log->stats.field[i].max = (uint32_t) fields[i];
+				log->stats.field[i].min = (uint32_t) fields[i];
 			}
 		}
 	} else {
 		for (i = 0; i < log->mainFieldCount; i++) {
 			if (log->mainFieldSigned[i]) {
-				log->stats.fieldMaximum[i] = fields[i] > log->stats.fieldMaximum[i] ? fields[i] : log->stats.fieldMaximum[i];
-				log->stats.fieldMinimum[i] = fields[i] < log->stats.fieldMinimum[i] ? fields[i] : log->stats.fieldMinimum[i];
+				log->stats.field[i].max = fields[i] > log->stats.field[i].max ? fields[i] : log->stats.field[i].max;
+				log->stats.field[i].min = fields[i] < log->stats.field[i].min ? fields[i] : log->stats.field[i].min;
 			} else {
-				log->stats.fieldMaximum[i] = (uint32_t) fields[i] > log->stats.fieldMaximum[i] ? (uint32_t) fields[i] : log->stats.fieldMaximum[i];
-				log->stats.fieldMinimum[i] = (uint32_t) fields[i] < log->stats.fieldMinimum[i] ? (uint32_t) fields[i] : log->stats.fieldMinimum[i];
+				log->stats.field[i].max = (uint32_t) fields[i] > log->stats.field[i].max ? (uint32_t) fields[i] : log->stats.field[i].max;
+				log->stats.field[i].min = (uint32_t) fields[i] < log->stats.field[i].min ? (uint32_t) fields[i] : log->stats.field[i].min;
 			}
 		}
-	}
-}
-
-static void updateFrameSizeStats(uint32_t *counts, unsigned int lastFrameSize)
-{
-	//Don't write out of bounds
-	if (lastFrameSize < FLIGHT_LOG_MAX_FRAME_LENGTH) {
-		counts[lastFrameSize]++;
 	}
 }
 
@@ -906,14 +975,74 @@ flightLog_t * flightLogCreate(int fd)
     return log;
 }
 
-bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw)
+static const flightLogFrameType_t* getFrameType(uint8_t c)
+{
+    for (int i = 0; i < (int) ARRAY_LENGTH(frameTypes); i++)
+        if (frameTypes[i].marker == c)
+            return &frameTypes[i];
+
+    return 0;
+}
+
+static void completeIntraframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+{
+    flightLogPrivate_t *private = log->private;
+
+    (void) frameType;
+
+    // Only accept this frame as valid if time and iteration count are moving forward:
+    if (raw || ((uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max
+        && (uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].max)) {
+
+        log->private->mainStreamIsValid = true;
+
+        updateFieldStatistics(log, log->private->mainHistory[0]);
+    } else {
+        log->private->mainStreamIsValid = false;
+    }
+
+    if (log->private->onFrameReady)
+        log->private->onFrameReady(log, private->mainStreamIsValid, private->mainHistory[0], frameType, log->mainFieldCount, frameStart - private->logData, frameEnd - frameStart);
+}
+
+static void completeInterframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+{
+    flightLogPrivate_t *private = log->private;
+
+    (void) frameType;
+    (void) raw;
+
+    if (log->private->mainStreamIsValid)
+        updateFieldStatistics(log, log->private->mainHistory[0]);
+    else
+        log->stats.frame['P'].brokenCount++;
+
+    //Receiving a P frame can't resynchronise the stream so it doesn't set stateIsValid to true
+
+    if (log->private->onFrameReady)
+        log->private->onFrameReady(log, private->mainStreamIsValid, private->mainHistory[0], frameType, log->mainFieldCount, frameStart - private->logData, frameEnd - frameStart);
+}
+
+static void completeEventFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
+{
+    (void) frameType;
+    (void) frameStart;
+    (void) frameEnd;
+    (void) raw;
+
+    if (log->private->onEvent)
+        log->private->onEvent(log, &log->private->lastEvent);
+}
+
+
+bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw)
 {
 	ParserState parserState = PARSER_STATE_HEADER;
-	bool mainStreamIsValid = false;
+	bool looksLikeFrameCompleted = false;
 
-	char lastFrameType = 0;
 	bool prematureEof = false;
 	const char *frameStart = 0;
+	const flightLogFrameType_t *frameType, *lastFrameType;
 
 	flightLogPrivate_t *private = log->private;
 
@@ -924,8 +1053,13 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	memset(&log->stats, 0, sizeof(log->stats));
 	free(log->private->fieldNamesCombined);
 	log->private->fieldNamesCombined = NULL;
+	log->private->mainStreamIsValid = false;
 	log->mainFieldCount = 0;
 	log->gpsFieldCount = 0;
+
+	memset(log->private->blackboxHistoryRing, 0, sizeof(log->private->blackboxHistoryRing));
+	for (int i = 0; i < 2; i++)
+	    log->private->mainHistory[i] = log->private->blackboxHistoryRing[0];
 
 	//Default to MW's defaults
 	log->minthrottle = 1150;
@@ -942,6 +1076,11 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	log->frameIntervalPDenom = 1;
 
 	private->motor0Index = -1;
+	private->lastEvent.event = -1;
+
+	private->onMetadataReady = onMetadataReady;
+	private->onFrameReady = onFrameReady;
+	private->onEvent = onEvent;
 
 	//Set parsing ranges up for the log the caller selected
 	private->logStart = log->logBegin[logIndex];
@@ -958,139 +1097,89 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					case 'H':
 						parseHeader(log);
 					break;
-					case 'I':
-					case 'P':
-					case 'G':
-						unreadChar(log, command);
-
-						if (log->mainFieldCount == 0) {
-							fprintf(stderr, "Data file is missing field name definitions\n");
-							return false;
-						}
-
-						parserState = PARSER_STATE_BEFORE_FIRST_FRAME;
-
-						if (onMetadataReady)
-							onMetadataReady(log);
-					break;
 					case EOF:
 						fprintf(stderr, "Data file contained no events\n");
 						return false;
-				}
-			break;
-			case PARSER_STATE_BEFORE_FIRST_FRAME:
-				lastFrameType = (char) command;
-				frameStart = private->logPos;
-
-				switch (command) {
-					case 'I':
-						parseIntraframe(log, raw);
-
-						if (private->eof)
-							prematureEof = true;
-						else
-							parserState = PARSER_STATE_DATA;
-					break;
-					case EOF:
-						fprintf(stderr, "Data file contained no events\n");
-						return false;
-					break;
 					default:
-						//Ignore leading garbage
-					break;
+					    frameType = getFrameType(command);
+
+					    if (frameType) {
+                            unreadChar(log, command);
+
+                            if (log->mainFieldCount == 0) {
+                                fprintf(stderr, "Data file is missing field name definitions\n");
+                                return false;
+                            }
+
+                            parserState = PARSER_STATE_DATA;
+                            lastFrameType = NULL;
+                            frameStart = private->logPos;
+
+                            if (onMetadataReady)
+                                onMetadataReady(log);
+                        } // else skip garbage which apparently precedes the first data frame
+                    break;
 				}
 			break;
 			case PARSER_STATE_DATA:
-				if (lastFrameType == 'P' || lastFrameType == 'I') {
+				if (lastFrameType) {
 					unsigned int lastFrameSize = private->logPos - frameStart;
 
-					/*
-					 * If we didn't reach the end of the log prematurely, and see what looks like the beginning of a new
-					 * frame, assume that the previous frame was valid:
-					 */
-					if (!prematureEof && (command == 'I' || command == 'P' || command == 'G' || command == 'H' || command == EOF)) {
-						if (lastFrameType == 'I' || lastFrameType == 'P') {
-							if (lastFrameType == 'I') {
-								updateFrameSizeStats(log->stats.iFrameSizeCount, lastFrameSize);
+					// Is this the beginning of a new frame?
+					frameType = command == EOF ? 0 : getFrameType((uint8_t) command);
+					looksLikeFrameCompleted = frameType || (!prematureEof && command == EOF);
 
-								// Only accept this frame as valid if time and iteration count are moving forward:
-								if (raw || ((uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION]
-									&& (uint32_t)private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_TIME] >= log->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME]))
-									mainStreamIsValid = true;
+					// If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
+					if (lastFrameSize <= FLIGHT_LOG_MAX_FRAME_LENGTH && looksLikeFrameCompleted) {
+                        //Update statistics for this frame type
+                        log->stats.frame[(uint8_t)lastFrameType->marker].bytes += lastFrameSize;
+                        log->stats.frame[(uint8_t)lastFrameType->marker].count++;
+                        log->stats.frame[(uint8_t)lastFrameType->marker].sizeCount[lastFrameSize]++;
 
-								log->stats.iFrameBytes += lastFrameSize;
-								log->stats.numIFrames++;
-							} else if (lastFrameType == 'P' && mainStreamIsValid) {
-								updateFrameSizeStats(log->stats.pFrameSizeCount, lastFrameSize);
-
-								log->stats.pFrameBytes += lastFrameSize;
-								log->stats.numPFrames++;
-								//Receiving a P frame can't resynchronise the stream so it doesn't set stateIsValid to true
-							}
-
-							if (mainStreamIsValid) {
-								updateFieldStatistics(log, private->mainHistory[0]);
-							} else {
-								log->stats.numUnusablePFrames++;
-							}
-
-							if (onFrameReady)
-								onFrameReady(log, mainStreamIsValid, private->mainHistory[0], lastFrameType, log->mainFieldCount, frameStart - private->logData, lastFrameSize);
-						}
+                        if (lastFrameType->complete)
+                            lastFrameType->complete(log, lastFrameType->marker, frameStart, private->logPos, raw);
 					} else {
-						//Otherwise the previous frame was corrupt
-						if (lastFrameType == 'I' || lastFrameType == 'P') {
-							log->stats.numBrokenFrames++;
+						//The previous frame was corrupt
 
-							//We need to resynchronise before we can deliver another frame:
-							mainStreamIsValid = false;
-						}
+					    //We need to resynchronise before we can deliver another main frame:
+                        log->private->mainStreamIsValid = false;
+                        log->stats.frame[(uint8_t)lastFrameType->marker].brokenCount++;
+                        log->stats.totalBrokenFrames++;
 
-						//Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
-						if (onFrameReady)
-							onFrameReady(log, false, 0, lastFrameType, 0, frameStart - private->logData, lastFrameSize);
+                        //Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
+                        if (onFrameReady)
+                            onFrameReady(log, false, 0, lastFrameType->marker, 0, frameStart - private->logData, lastFrameSize);
 
-						/*
-						 * Start the search for a frame beginning at the first byte of the previous, corrupt frame.
-						 * This way we can find the start of the next frame after the corrupt frame
-						 * if the corrupt frame was truncated.
-						 */
-						private->logPos = frameStart;
-						lastFrameType = '\0';
-						prematureEof = false;
-						private->eof = false;
-						continue;
-					}
+                        /*
+                         * Start the search for a frame beginning after the first byte of the previous corrupt frame.
+                         * This way we can find the start of the next frame after the corrupt frame if the corrupt frame
+                         * was truncated.
+                         */
+                        private->logPos = frameStart;
+                        lastFrameType = NULL;
+                        prematureEof = false;
+                        private->eof = false;
+                        continue;
+                    }
 				}
 
-				lastFrameType = (char) command;
+                if (command == EOF)
+                    goto done;
+
+				frameType = getFrameType((uint8_t) command);
 				frameStart = private->logPos;
 
-				switch (command) {
-					case 'I':
-						for (uint32_t frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
-							log->stats.intentionallyAbsentFrames++;
-						}
-
-						parseIntraframe(log, raw);
-					break;
-					case 'P':
-						parseInterframe(log, raw);
-					break;
-					case 'G':
-						parseGPSFrame(log, raw);
-					break;
-					case 'H':
-						parseGPSHomeFrame(log, raw);
-					break;
-					case EOF:
-						goto done;
-					default:
-						mainStreamIsValid = false;
+				if (frameType) {
+				    frameType->parse(log, raw);
+				} else {
+				    private->mainStreamIsValid = false;
 				}
 
+				//We shouldn't read an EOF during reading a frame (that'd imply the frame was truncated)
 				if (private->eof)
 					prematureEof = true;
+
+                lastFrameType = frameType;
 			break;
 		}
 	}

@@ -19,26 +19,28 @@ typedef enum FirmwareType {
 	FIRMWARE_TYPE_CLEANFLIGHT
 } FirmwareType;
 
+typedef struct flightLogFrameStatistics_t {
+    uint32_t bytes;
+    uint32_t count;
+    uint32_t brokenCount;
+    uint32_t sizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH + 1];
+} flightLogFrameStatistics_t;
+
+typedef struct flightLogFieldStatistics_t {
+    int64_t min, max;
+} flightLogFieldStatistics_t;
+
 typedef struct flightLogStatistics_t {
-	uint32_t iFrameBytes, pFrameBytes, gFrameBytes, hFrameBytes, totalBytes;
-	uint32_t numIFrames, numPFrames, numGFrames, numHFrames;
+	uint32_t totalBytes;
 
 	// Number of frames that failed to decode:
-	uint32_t numBrokenFrames;
-
-	//Number of P frames that aren't usable because they were based on a frame that failed to decode:
-	uint32_t numUnusablePFrames;
+	uint32_t totalBrokenFrames;
 
 	//If our sampling rate is less than 1, we won't log every loop iteration, and that is accounted for here:
-	uint32_t intentionallyAbsentFrames;
+	uint32_t intentionallyAbsentIterations;
 
-	int64_t fieldMaximum[FLIGHT_LOG_MAX_FIELDS];
-	int64_t fieldMinimum[FLIGHT_LOG_MAX_FIELDS];
-
-	uint32_t iFrameSizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH];
-	uint32_t pFrameSizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH];
-	uint32_t gFrameSizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH];
-	uint32_t hFrameSizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH];
+	flightLogFieldStatistics_t field[FLIGHT_LOG_MAX_FIELDS];
+	flightLogFrameStatistics_t frame[256];
 } flightLogStatistics_t;
 
 struct flightLogPrivate_t;
@@ -81,15 +83,31 @@ typedef struct flightLog_t {
 	struct flightLogPrivate_t *private;
 } flightLog_t;
 
+typedef struct flightLogEvent_syncBeep_t {
+    uint32_t time;
+} flightLogEvent_syncBeep_t;
+
+typedef union flightLogEventData_t
+{
+    flightLogEvent_syncBeep_t syncBeep;
+} flightLogEventData_t;
+
+typedef struct flightLogEvent_t
+{
+    FlightLogEvent event;
+    flightLogEventData_t data;
+} flightLogEvent_t;
+
 typedef void (*FlightLogMetadataReady)(flightLog_t *log);
 typedef void (*FlightLogFrameReady)(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize);
+typedef void (*FlightLogEventReady)(flightLog_t *log, flightLogEvent_t *event);
 
 flightLog_t* flightLogCreate(int fd);
 
 int flightLogEstimateNumCells(flightLog_t *log);
 unsigned int flightLogVbatToMillivolts(flightLog_t *log, uint16_t vbat);
 
-bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, bool raw);
+bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMetadataReady, FlightLogFrameReady onFrameReady, FlightLogEventReady onEvent, bool raw);
 void flightLogDestroy(flightLog_t *log);
 
 #endif

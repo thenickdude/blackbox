@@ -231,6 +231,8 @@ static fieldIdentifications_t idents;
 
 static FT_Library freetypeLibrary;
 
+static uint32_t syncBeepTime = -1;
+
 void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t frameType, int fieldCount, int frameOffset, int frameSize)
 {
 	(void) log;
@@ -257,6 +259,19 @@ void loadFrameIntoPoints(flightLog_t *log, bool frameValid, int32_t *frame, uint
 	} else {
 		datapointsAddGap(points);
 	}
+}
+
+void onLogEvent(flightLog_t *log, flightLogEvent_t *event)
+{
+    (void) log;
+
+    switch (event->event) {
+        case FLIGHT_LOG_EVENT_SYNC_BEEP:
+            syncBeepTime = event->data.syncBeep.time;
+        break;
+        default:
+            ;
+    }
 }
 
 /**
@@ -1085,9 +1100,9 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 	int i;
 
-	int64_t logStartTime = flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME];
-	int64_t logEndTime = flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_TIME];
-	int64_t logDurationMicro = logEndTime - logStartTime;
+	int64_t logStartTime = flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min;
+	int64_t logEndTime = flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].max;
+	int64_t logDurationMicro;
 
 	uint32_t outputFrames;
 
@@ -1099,6 +1114,12 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	cairo_font_face_t *cairo_face;
 
 	struct craftDrawingParameters_t craftParameters;
+
+	//If sync beep time looks reasonable, start the log there instead of at the first frame
+	if (abs((int64_t)syncBeepTime - logStartTime) < 1000000) //Expected to be well within 1 second of the start
+	    logStartTime = syncBeepTime;
+
+	logDurationMicro = logEndTime - logStartTime;
 
 	if (endFrame == (uint32_t) -1) {
 		endFrame = (uint32_t) ((logDurationMicro * options.fps + (1000000 - 1)) / 1000000);
@@ -1336,7 +1357,19 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 			drawAccelerometerData(cr, frameValues);
 
 			if (options.drawTime)
-				drawFrameLabel(cr, frameValues[0], (uint32_t) ((windowCenterTime - flightLog->stats.fieldMinimum[FLIGHT_LOG_FIELD_INDEX_TIME]) / 1000));
+				drawFrameLabel(cr, frameValues[0], (uint32_t) ((windowCenterTime - flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000));
+		}
+
+		// Draw a synchronisation line
+		if (syncBeepTime >= windowStartTime && syncBeepTime < windowEndTime) {
+		    double lineX = (int64_t) options.imageWidth * (syncBeepTime - windowStartTime) / windowWidthMicros;
+
+            cairo_set_source_rgba(cr, 0.25, 0.25, 1, 0.2);
+            cairo_set_line_width(cr, 20);
+
+            cairo_move_to(cr, lineX, 0);
+            cairo_line_to(cr, lineX, options.imageHeight);
+            cairo_stroke(cr);
 		}
 
 	    cairo_destroy(cr);
@@ -1728,7 +1761,7 @@ int main(int argc, char **argv)
 	}
 
 	//First check out how many frames we need to store so we can pre-allocate (parsing will update the flightlog stats which contain that info)
-	flightLogParse(flightLog, selectedLogIndex, 0, 0, false);
+	flightLogParse(flightLog, selectedLogIndex, NULL, NULL, NULL, false);
 
 	/* Configure our data points array.
 	 *
@@ -1750,10 +1783,10 @@ int main(int argc, char **argv)
 	fieldNames[flightLog->mainFieldCount + 3] = strdup("axisPID[1]");
 	fieldNames[flightLog->mainFieldCount + 4] = strdup("axisPID[2]");
 
-	points = datapointsCreate(flightLog->mainFieldCount - 1 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, (int) (flightLog->stats.fieldMaximum[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1));
+	points = datapointsCreate(flightLog->mainFieldCount - 1 + DATAPOINTS_EXTRA_COMPUTED_FIELDS, fieldNames, (int) (flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max + 1));
 
 	//Now decode the flight log into the points array
-	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, false);
+	flightLogParse(flightLog, selectedLogIndex, 0, loadFrameIntoPoints, onLogEvent, false);
 
 	identifyFields();
 
