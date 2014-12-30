@@ -868,9 +868,11 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 				} else
 					fieldValue = 0;
 			} else if (idents.hasPIDs) {
-				if (pidType == PID_TOTAL)
-					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]] + frame[idents.axisPIDFields[PID_I][axisIndex]] + frame[idents.axisPIDFields[PID_D][axisIndex]];
-				else if (idents.axisPIDFields[pidType][axisIndex] > -1)
+				if (pidType == PID_TOTAL) {
+					fieldValue = frame[idents.axisPIDFields[PID_P][axisIndex]]
+					    + frame[idents.axisPIDFields[PID_I][axisIndex]]
+					    + (idents.axisPIDFields[PID_D][axisIndex] > -1 ? frame[idents.axisPIDFields[PID_D][axisIndex]] : 0);
+				} else if (idents.axisPIDFields[pidType][axisIndex] > -1)
 					fieldValue = frame[idents.axisPIDFields[pidType][axisIndex]];
 				else
 					fieldValue = 0;
