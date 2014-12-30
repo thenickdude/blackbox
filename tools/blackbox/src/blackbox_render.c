@@ -284,14 +284,17 @@ void identifyFields()
 	int fieldIndex;
 
 	//Start off all the fields as -1 so we can use it as a not-present identifier
-	for (i = 0; i < sizeof(idents.rcCommandFields) / sizeof(idents.rcCommandFields[0]); i++)
+	for (i = 0; i < ARRAY_LENGTH(idents.rcCommandFields); i++)
 		idents.rcCommandFields[i] = -1;
 
-	for (i = 0; i < sizeof(idents.motorFields) / sizeof(idents.motorFields[0]); i++)
+	for (i = 0; i < ARRAY_LENGTH(idents.motorFields); i++)
 		idents.motorFields[i] = -1;
 
-	for (i = 0; i < sizeof(idents.servoFields) / sizeof(idents.servoFields[0]); i++)
+	for (i = 0; i < ARRAY_LENGTH(idents.servoFields); i++)
 		idents.servoFields[i] = -1;
+
+    for (i = 0; i < ARRAY_LENGTH(idents.gyroFields); i++)
+        idents.gyroFields[i] = -1;
 
 	for (int pidType = PID_P; pidType <= PID_D; pidType++)
 		for (int axis = 0; axis < 3; axis++)
@@ -305,7 +308,7 @@ void identifyFields()
 	idents.vbatField = -1;
 	idents.baroField = -1;
 
-	for (i = 0; i < sizeof(idents.miscFields) / sizeof(idents.miscFields[0]); i++)
+	for (i = 0; i < ARRAY_LENGTH(idents.miscFields); i++)
 		idents.miscFields[i] = -1;
 
 	idents.numMisc = 0;
@@ -321,7 +324,7 @@ void identifyFields()
 	for (fieldIndex = 0; fieldIndex < points->fieldCount; fieldIndex++) {
 	    const char *fieldName = points->fieldNames[fieldIndex];
 
-		if (strncmp(fieldName, "motor[", strlen("motor[")) == 0) {
+		if (startsWith(fieldName, "motor[")) {
 			int motorIndex = atoi(fieldName + strlen("motor["));
 
 			if (motorIndex >= 0 && motorIndex < MAX_MOTORS) {
@@ -329,17 +332,17 @@ void identifyFields()
 				idents.motorColors[motorIndex] = lineColors[(motorGraphColorIndex++) % NUM_LINE_COLORS];
 				idents.numMotors++;
 			}
-		} else if (strncmp(fieldName, "rcCommand[", strlen("rcCommand[")) == 0){
+		} else if (startsWith(fieldName, "rcCommand[")) {
 			int rcCommandIndex = atoi(fieldName + strlen("rcCommand["));
 
 			if (rcCommandIndex >= 0 && rcCommandIndex < 4) {
 				idents.rcCommandFields[rcCommandIndex] = fieldIndex;
 			}
-		} else if (strncmp(fieldName, "axisPID[", strlen("axisPID[")) == 0) {
+		} else if (startsWith(fieldName, "axisPID[")) {
 			int axisIndex = atoi(fieldName + strlen("axisPID["));
 
 			idents.axisPIDSum[axisIndex] = fieldIndex;
-		} else if (strncmp(fieldName, "axis", strlen("axis")) == 0) {
+		} else if (startsWith(fieldName, "axis")) {
 			int axisIndex = atoi(fieldName + strlen("axisX["));
 
 			switch (fieldName[strlen("axis")]) {
@@ -367,7 +370,7 @@ void identifyFields()
 			}
 
 			idents.PIDLineStyle[axisIndex] = 0; //TODO
-		} else if (strncmp(fieldName, "gyroData[", strlen("gyroData[")) == 0) {
+		} else if (startsWith(fieldName, "gyroData[")) {
 			int axisIndex = atoi(fieldName + strlen("gyroData["));
 
 			idents.hasGyros = true;
@@ -380,13 +383,13 @@ void identifyFields()
 					idents.gyroColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
 			} else
 				idents.gyroColors[axisIndex] = WHITE;
-		} else if (strncmp(fieldName, "accSmooth[", strlen("accSmooth[")) == 0) {
+		} else if (startsWith(fieldName, "accSmooth[")) {
 			int axisIndex = atoi(fieldName + strlen("accSmooth["));
 
 			idents.hasAccs = true;
 			idents.accFields[axisIndex] = fieldIndex;
 			idents.accColors[axisIndex] = lineColors[axisIndex % NUM_LINE_COLORS];
-		} else if (strncmp(fieldName, "servo[", strlen("servo[")) == 0) {
+		} else if (startsWith(fieldName, "servo[")) {
 			int servoIndex = atoi(fieldName + strlen("servo["));
 
 			idents.numServos++;
@@ -1246,7 +1249,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 						cairo_set_line_width(cr, 3);
 
 						plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
-								idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.15));
+                            idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.15));
 					}
 
 					const char *axisLabel;
@@ -1292,7 +1295,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 				for (int axis = 0; axis < 3; axis++) {
 					plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
-							idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.25));
+                        idents.gyroFields[axis], gyroCurve, (int) (options.imageHeight * 0.25));
 
 					/*plotLine(cr, idents.gyroColors[axis], windowStartTime,
 							windowEndTime, firstFrameIndex, idents.accFields[axis], accCurve, (int) (options.imageHeight * 0.25));*/
