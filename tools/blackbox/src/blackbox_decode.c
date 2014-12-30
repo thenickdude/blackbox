@@ -104,9 +104,9 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	uint32_t intervalMS = (uint32_t) ((stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].max - stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000);
 
 	uint32_t goodBytes = stats->frame['I'].bytes + stats->frame['P'].bytes;
-	uint32_t goodFrames = stats->frame['I'].count + stats->frame['P'].count;
+	uint32_t goodFrames = stats->frame['I'].validCount + stats->frame['P'].validCount;
 	uint32_t totalFrames = (uint32_t) (stats->field[FLIGHT_LOG_FIELD_INDEX_ITERATION].max - stats->field[FLIGHT_LOG_FIELD_INDEX_ITERATION].min + 1);
-	uint32_t missingFrames = totalFrames - goodFrames - stats->intentionallyAbsentIterations;
+	int32_t missingFrames = totalFrames - goodFrames - stats->intentionallyAbsentIterations + stats->frame['P'].desyncCount;
 
 	uint32_t runningTimeMS, runningTimeSecs, runningTimeMins;
 	uint32_t startTimeMS, startTimeSecs, startTimeMins;
@@ -115,6 +115,9 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	uint8_t frameTypes[] = {'I', 'P', 'H', 'G', 'E'};
 
 	int i;
+
+	if (missingFrames < 0)
+	    missingFrames = 0;
 
 	runningTimeMS = intervalMS;
 	runningTimeSecs = runningTimeMS / 1000;
@@ -148,9 +151,9 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 	for (i = 0; i < (int) sizeof(frameTypes); i++) {
 	    uint8_t frameType = frameTypes[i];
 
-	    if (stats->frame[frameType].count) {
-	        fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].count,
-                (float) stats->frame[frameType].bytes / stats->frame[frameType].count, stats->frame[frameType].bytes);
+	    if (stats->frame[frameType].validCount + stats->frame[frameType].desyncCount) {
+	        fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].validCount + stats->frame[frameType].desyncCount,
+                (float) stats->frame[frameType].bytes / (stats->frame[frameType].validCount + stats->frame[frameType].desyncCount), stats->frame[frameType].bytes);
         }
     }
 
@@ -168,16 +171,16 @@ void printStats(flightLog_t *log, int logIndex, bool raw, bool limits)
 		fprintf(stderr, "Data rate: Unknown, no timing information available.\n");
 	}
 
-	if (totalFrames && (stats->totalBrokenFrames || stats->frame['P'].brokenCount || missingFrames || stats->intentionallyAbsentIterations)) {
+	if (totalFrames && (stats->totalCorruptFrames || stats->frame['P'].desyncCount || missingFrames || stats->intentionallyAbsentIterations)) {
 		fprintf(stderr, "\n");
 
-		if (stats->totalBrokenFrames || stats->frame['P'].brokenCount) {
-			fprintf(stderr, "%d frames failed to decode, rendering %d loop iterations unreadable. ", stats->totalBrokenFrames, stats->frame['P'].brokenCount);
+		if (stats->totalCorruptFrames || stats->frame['P'].desyncCount) {
+			fprintf(stderr, "%d frames failed to decode, rendering %d loop iterations unreadable. ", stats->totalCorruptFrames, stats->frame['P'].desyncCount + stats->frame['P'].corruptCount + stats->frame['I'].desyncCount + stats->frame['I'].corruptCount);
 			if (!missingFrames)
 				fprintf(stderr, "\n");
 		}
 		if (missingFrames) {
-			fprintf(stderr, "%d frames are missing in total (%ums, %.2f%%)\n",
+			fprintf(stderr, "%d iterations are missing in total (%ums, %.2f%%)\n",
 				missingFrames,
 				(unsigned int) (missingFrames * (intervalMS / totalFrames)), (double) missingFrames / totalFrames * 100);
 		}

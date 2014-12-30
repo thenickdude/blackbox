@@ -845,7 +845,7 @@ static void updateFieldStatistics(flightLog_t *log, int32_t *fields)
 {
 	int i;
 
-	if (log->stats.frame['I'].count + log->stats.frame['P'].count <= 1) {
+	if (log->stats.frame['I'].validCount + log->stats.frame['P'].validCount <= 1) {
 		//If this is the first frame, there are no minimums or maximums in the stats to compare with
 		for (i = 0; i < log->mainFieldCount; i++) {
 			if (log->mainFieldSigned[i]) {
@@ -1055,7 +1055,7 @@ static void completeInterframe(flightLog_t *log, char frameType, const char *fra
     if (log->private->mainStreamIsValid)
         updateFieldStatistics(log, log->private->mainHistory[0]);
     else
-        log->stats.frame['P'].brokenCount++;
+        log->stats.frame['P'].desyncCount++;
 
     //Receiving a P frame can't resynchronise the stream so it doesn't set mainStreamIsValid to true
 
@@ -1184,19 +1184,20 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 					// If we see what looks like the beginning of a new frame, assume that the previous frame was valid:
 					if (lastFrameSize <= FLIGHT_LOG_MAX_FRAME_LENGTH && looksLikeFrameCompleted) {
                         //Update statistics for this frame type
-                        log->stats.frame[(uint8_t)lastFrameType->marker].bytes += lastFrameSize;
-                        log->stats.frame[(uint8_t)lastFrameType->marker].count++;
-                        log->stats.frame[(uint8_t)lastFrameType->marker].sizeCount[lastFrameSize]++;
+                        log->stats.frame[lastFrameType->marker].bytes += lastFrameSize;
+                        log->stats.frame[lastFrameType->marker].sizeCount[lastFrameSize]++;
+                        log->stats.frame[lastFrameType->marker].validCount++;
 
                         if (lastFrameType->complete)
                             lastFrameType->complete(log, lastFrameType->marker, frameStart, private->logPos, raw);
+
 					} else {
 						//The previous frame was corrupt
 
 					    //We need to resynchronise before we can deliver another main frame:
                         log->private->mainStreamIsValid = false;
-                        log->stats.frame[(uint8_t)lastFrameType->marker].brokenCount++;
-                        log->stats.totalBrokenFrames++;
+                        log->stats.frame[lastFrameType->marker].corruptCount++;
+                        log->stats.totalCorruptFrames++;
 
                         //Let the caller know there was a corrupt frame (don't give them a pointer to the frame data because it is totally worthless)
                         if (onFrameReady)

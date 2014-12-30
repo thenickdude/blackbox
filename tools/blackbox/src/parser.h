@@ -21,8 +21,7 @@ typedef enum FirmwareType {
 
 typedef struct flightLogFrameStatistics_t {
     uint32_t bytes;
-    uint32_t count;
-    uint32_t brokenCount;
+    uint32_t validCount, desyncCount, corruptCount;
     uint32_t sizeCount[FLIGHT_LOG_MAX_FRAME_LENGTH + 1];
 } flightLogFrameStatistics_t;
 
@@ -34,7 +33,7 @@ typedef struct flightLogStatistics_t {
 	uint32_t totalBytes;
 
 	// Number of frames that failed to decode:
-	uint32_t totalBrokenFrames;
+	uint32_t totalCorruptFrames;
 
 	//If our sampling rate is less than 1, we won't log every loop iteration, and that is accounted for here:
 	uint32_t intentionallyAbsentIterations;

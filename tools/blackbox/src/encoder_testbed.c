@@ -745,7 +745,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 
 			encodedFrameSize = writtenBytes - start;
 
-			encodedStats.frame['I'].count++;
+			encodedStats.frame['I'].validCount++;
 			encodedStats.frame['I'].bytes += encodedFrameSize;
 			encodedStats.frame['I'].sizeCount[encodedFrameSize]++;
 		} else if (frameType == 'P'){
@@ -753,7 +753,7 @@ void onFrameReady(flightLog_t *log, bool frameValid, int32_t *frame, uint8_t fra
 
 			encodedFrameSize = writtenBytes - start;
 
-            encodedStats.frame['P'].count++;
+            encodedStats.frame['P'].validCount++;
             encodedStats.frame['P'].bytes += encodedFrameSize;
             encodedStats.frame['P'].sizeCount[encodedFrameSize]++;
 		} else {
@@ -796,7 +796,7 @@ void printFrameSizeComparison(flightLogStatistics_t *oldStats, flightLogStatisti
 	bool frameTypeExists[256];
 
 	for (int frameType = 0; frameType <= 255; frameType++) {
-        frameTypeExists[frameType] = oldStats->frame[frameType].count || newStats->frame[frameType].count;
+        frameTypeExists[frameType] = oldStats->frame[frameType].validCount || newStats->frame[frameType].validCount;
         if (frameTypeExists[frameType]) {
             for (int i = 0; i < 256; i++) {
                 if (oldStats->frame[frameType].sizeCount[i] || newStats->frame[frameType].sizeCount[i]) {
@@ -842,14 +842,14 @@ void printStats(flightLogStatistics_t *stats)
 {
 	uint32_t intervalMS = (uint32_t) ((stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].max - stats->field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000);
 	uint32_t totalBytes = stats->totalBytes;
-	uint32_t totalFrames = stats->frame['I'].count + stats->frame['P'].count;
+	uint32_t totalFrames = stats->frame['I'].validCount + stats->frame['P'].validCount;
 
     for (int i = 0; i < 256; i++) {
         uint8_t frameType = (uint8_t) i;
 
-        if (stats->frame[frameType].count) {
-            fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].count,
-                (float) stats->frame[frameType].bytes / stats->frame[frameType].count, stats->frame[frameType].bytes);
+        if (stats->frame[frameType].validCount) {
+            fprintf(stderr, "%c frames %7d %6.1f bytes avg %8d bytes total\n", (char) frameType, stats->frame[frameType].validCount,
+                (float) stats->frame[frameType].bytes / stats->frame[frameType].validCount, stats->frame[frameType].bytes);
         }
     }
 
@@ -858,8 +858,8 @@ void printStats(flightLogStatistics_t *stats)
 	else
 		fprintf(stderr, "Frames %8d\n", 0);
 
-	if (stats->totalBrokenFrames)
-		fprintf(stderr, "%d frames failed to decode (%.2f%%)\n", stats->totalBrokenFrames, (double) stats->totalBrokenFrames / (stats->totalBrokenFrames + stats->frame['I'].count + stats->frame['P'].count) * 100);
+	if (stats->totalCorruptFrames)
+		fprintf(stderr, "%d frames failed to decode (%.2f%%)\n", stats->totalCorruptFrames, (double) stats->totalCorruptFrames / (stats->totalCorruptFrames + stats->frame['I'].validCount + stats->frame['P'].validCount) * 100);
 
 	fprintf(stderr, "IntervalMS %u Total bytes %u\n", intervalMS, stats->totalBytes);
 
