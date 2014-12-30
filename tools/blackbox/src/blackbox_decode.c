@@ -22,9 +22,6 @@
 #include "parser.h"
 #include "platform.h"
 
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
-
 typedef struct decodeOptions_t {
 	int help, raw, limits, debug, toStdout;
 	int logNumber;

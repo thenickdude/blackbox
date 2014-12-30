@@ -30,8 +30,7 @@
 #include <ctype.h>
 
 #include "parser.h"
-
-#define ARRAY_LENGTH(x) (sizeof((x))/sizeof((x)[0]))
+#include "tools.h"
 
 #define LOG_START_MARKER "H Product:Blackbox flight data recorder by Nicholas Sherlock\n"
 
@@ -180,19 +179,6 @@ static void parseCommaSeparatedIntegers(char *line, int *target, int maxCount)
 	}
 }
 
-static bool startsWith(const char *string, const char *startsWith)
-{
-    return strncmp(string, startsWith, strlen(startsWith)) == 0;
-}
-
-static bool endsWith(const char *string, const char *startsWith)
-{
-    int stringLen = strlen(string);
-    int startsWithLen = strlen(startsWith);
-
-    return stringLen >= startsWithLen && strncmp(string + stringLen - startsWithLen, startsWith, startsWithLen) == 0;
-}
-
 static void parseHeader(flightLog_t *log)
 {
 	char *fieldName, *fieldValue;
@@ -284,7 +270,7 @@ static void parseHeader(flightLog_t *log)
         log->vbatscale = atoi(fieldValue);
     } else if (strcmp(fieldName, "vbatref") == 0) {
         log->vbatref = atoi(fieldValue);
-    } else if (strncmp(fieldName, "vbatcellvoltage", strlen("vbatcellvoltage")) == 0) {
+    } else if (strcmp(fieldName, "vbatcellvoltage") == 0) {
         int vbatcellvoltage[3];
         parseCommaSeparatedIntegers(fieldValue, vbatcellvoltage, 3);
 
@@ -341,36 +327,6 @@ static int32_t readSignedVB(flightLog_t *log)
 
 	// Apply ZigZag decoding to recover the signed value
 	return (i >> 1) ^ -(int32_t) (i & 1);
-}
-
-static int32_t signExtend24Bit(uint32_t u)
-{
-	//If sign bit is set, fill the top bits with 1s to sign-extend
-	return (u & 0x800000) ? (int32_t) (u | 0xFF000000) : (int32_t) u;
-}
-
-static int32_t signExtend14Bit(uint16_t word)
-{
-    //If sign bit is set, fill the top bits with 1s to sign-extend
-    return (word & 0x2000) ? (int32_t) (int16_t) (word | 0xC000) : word;
-}
-
-static int32_t signExtend6Bit(uint8_t byte)
-{
-	//If sign bit is set, fill the top bits with 1s to sign-extend
-	return (byte & 0x20) ? (int32_t) (int8_t) (byte | 0xC0) : byte;
-}
-
-static int32_t signExtend4Bit(uint8_t nibble)
-{
-	//If sign bit is set, fill the top bits with 1s to sign-extend
-	return (nibble & 0x08) ? (int32_t) (int8_t) (nibble | 0xF0) : nibble;
-}
-
-static int32_t signExtend2Bit(uint8_t byte)
-{
-	//If sign bit is set, fill the top bits with 1s to sign-extend
-	return (byte & 0x02) ? (int32_t) (int8_t) (byte | 0xFC) : byte;
 }
 
 static void readTag2_3S32(flightLog_t *log, int32_t *values)
