@@ -57,8 +57,8 @@ typedef struct flightLogPrivate_t
 	int motor0Index;
 
 	// Blackbox state:
-	int32_t blackboxHistoryRing[2][FLIGHT_LOG_MAX_FIELDS];
-	int32_t* mainHistory[2];
+	int32_t blackboxHistoryRing[3][FLIGHT_LOG_MAX_FIELDS];
+	int32_t* mainHistory[3];
 	flightLogEvent_t lastEvent;
 
 	bool mainStreamIsValid;
@@ -593,17 +593,23 @@ static int shouldHaveFrame(flightLog_t *log, int32_t frameIndex)
     return (frameIndex % log->frameIntervalI + log->frameIntervalPNum - 1) % log->frameIntervalPDenom < log->frameIntervalPNum;
 }
 
+/**
+ * Attempt to parse the Intraframe at the current log position into the history buffer at mainHistory[0].
+ */
 static void parseIntraframe(flightLog_t *log, bool raw)
 {
     flightLogPrivate_t *private = log->private;
 	int i;
+	int *current, *previous;
 
-    for (uint32_t frameIndex = private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
-        log->stats.intentionallyAbsentIterations++;
+	current = private->mainHistory[0];
+	previous = private->mainHistory[1];
+
+	if (previous) {
+        for (uint32_t frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
+            log->stats.intentionallyAbsentIterations++;
+        }
     }
-
-	private->mainHistory[0] = &private->blackboxHistoryRing[0][0];
-	private->mainHistory[1] = &private->blackboxHistoryRing[0][0];
 
 	for (i = 0; i < log->mainFieldCount; i++) {
 		uint32_t value;
@@ -640,7 +646,7 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 						fprintf(stderr, "Attempted to base I-field prediction on motor0 before it was read\n");
 						exit(-1);
 					}
-					value += (uint32_t) private->mainHistory[0][private->motor0Index];
+					value += (uint32_t) current[private->motor0Index];
 				break;
 				case FLIGHT_LOG_FIELD_PREDICTOR_VBATREF:
 				    value += log->vbatref;
@@ -651,31 +657,40 @@ static void parseIntraframe(flightLog_t *log, bool raw)
 			}
 		}
 
-		private->mainHistory[0][i] = (int32_t) value;
+		current[i] = (int32_t) value;
 	}
 }
 
 /**
  * Take the raw value for an inter-field, apply the prediction that is configured for it, and return it.
- *
  */
 static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predictor, uint32_t value)
 {
+    int32_t *previous = log->private->mainHistory[1];
+    int32_t *previous2 = log->private->mainHistory[2];
+
+    /*
+     * If we don't have a previous state to refer to (e.g. because previous frame was corrupt) don't apply
+     * a prediction. Instead just show the raw values.
+     */
+    if (!previous)
+        predictor = FLIGHT_LOG_FIELD_PREDICTOR_0;
+
 	switch (predictor) {
 		case FLIGHT_LOG_FIELD_PREDICTOR_0:
 			// No correction to apply
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_PREVIOUS:
-			value += (uint32_t) log->private->mainHistory[0][fieldIndex];
+			value += (uint32_t) previous[fieldIndex];
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_STRAIGHT_LINE:
-			value += 2 * (uint32_t) log->private->mainHistory[0][fieldIndex] - (uint32_t) log->private->mainHistory[1][fieldIndex];
+			value += 2 * (uint32_t) previous[fieldIndex] - (uint32_t) previous2[fieldIndex];
 		break;
 		case FLIGHT_LOG_FIELD_PREDICTOR_AVERAGE_2:
 			if (log->mainFieldSigned[fieldIndex])
-				value += (uint32_t) ((int32_t) ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2);
+				value += (uint32_t) ((int32_t) ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2);
 			else
-				value += ((uint32_t) log->private->mainHistory[0][fieldIndex] + (uint32_t) log->private->mainHistory[1][fieldIndex]) / 2;
+				value += ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2;
 		break;
 		default:
 			fprintf(stderr, "Unsupported P-field predictor %d\n", log->private->frameDefs['P'].predictor[fieldIndex]);
@@ -685,19 +700,25 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
 	return (int32_t) value;
 }
 
+/**
+ * Attempt to parse the interframe at the current log position into the history buffer at mainHistory[0].
+ */
 static void parseInterframe(flightLog_t *log, bool raw)
 {
 	int i, j;
 	int groupCount;
 
-	// The new frame gets stored over the top of the current oldest history
-	int32_t *newFrame = log->private->mainHistory[0] == &log->private->blackboxHistoryRing[0][0] ? &log->private->blackboxHistoryRing[1][0] : &log->private->blackboxHistoryRing[0][0];
+	int32_t *current = log->private->mainHistory[0];
+	int32_t *previous = log->private->mainHistory[1];
+
 	uint32_t frameIndex;
 	uint32_t skippedFrames = 0;
 
-	//Work out how many frames we skipped to get to this one, based on the log sampling rate
-	for (frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++)
-		skippedFrames++;
+	if (previous) {
+        //Work out how many frames we skipped to get to this one, based on the log sampling rate
+        for (frameIndex = previous[FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++)
+            skippedFrames++;
+    }
 
 	log->stats.intentionallyAbsentIterations += skippedFrames;
 
@@ -707,7 +728,11 @@ static void parseInterframe(flightLog_t *log, bool raw)
 		uint32_t values[8];
 
 		if (log->private->frameDefs['P'].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
-			newFrame[i] = log->private->mainHistory[0][i] + 1 + skippedFrames;
+		    current[i] = skippedFrames + 1;
+
+		    if (previous)
+		        current[i] += previous[i];
+
 	        i++;
 		} else {
 			switch (log->private->frameDefs['P'].encoding[i]) {
@@ -725,7 +750,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 
 					//Apply the predictors for the fields:
 					for (j = 0; j < 4; j++, i++)
-						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
+					    current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
 
 					continue;
 				break;
@@ -734,7 +759,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 
 					//Apply the predictors for the fields:
 					for (j = 0; j < 3; j++, i++)
-						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
+					    current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
 
 					continue;
 				break;
@@ -749,7 +774,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 				    readTag8_8SVB(log, (int32_t*) values, groupCount);
 
 				    for (j = 0; j < groupCount; j++, i++)
-                        newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
+                        current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
 
                     continue;
 				break;
@@ -762,13 +787,10 @@ static void parseInterframe(flightLog_t *log, bool raw)
 					exit(-1);
 			}
 
-			newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], value);
+			current[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], value);
 			i++;
 		}
 	}
-
-	log->private->mainHistory[1] = log->private->mainHistory[0];
-	log->private->mainHistory[0] = newFrame;
 }
 
 /**
@@ -982,6 +1004,13 @@ static const flightLogFrameType_t* getFrameType(uint8_t c)
     return 0;
 }
 
+static void flightLoginvalidateStream(flightLog_t *log)
+{
+    log->private->mainStreamIsValid = false;
+    log->private->mainHistory[1] = 0;
+    log->private->mainHistory[2] = 0;
+}
+
 static void completeIntraframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
 {
     flightLogPrivate_t *private = log->private;
@@ -996,11 +1025,24 @@ static void completeIntraframe(flightLog_t *log, char frameType, const char *fra
 
         updateFieldStatistics(log, log->private->mainHistory[0]);
     } else {
-        log->private->mainStreamIsValid = false;
+        flightLoginvalidateStream(log);
     }
 
     if (log->private->onFrameReady)
         log->private->onFrameReady(log, private->mainStreamIsValid, private->mainHistory[0], frameType, log->mainFieldCount, frameStart - private->logData, frameEnd - frameStart);
+
+    if (log->private->mainStreamIsValid) {
+        // Rotate history buffers
+
+        // Both the previous and previous-previous states become the I-frame, because we can't look further into the past than the I-frame
+        private->mainHistory[1] = private->mainHistory[0];
+        private->mainHistory[2] = private->mainHistory[0];
+
+        // And advance the current frame into an empty space ready to be filled
+        private->mainHistory[0] += FLIGHT_LOG_MAX_FIELDS;
+        if (private->mainHistory[0] >= &private->blackboxHistoryRing[3][0])
+            private->mainHistory[0] = &private->blackboxHistoryRing[0][0];
+    }
 }
 
 static void completeInterframe(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
@@ -1015,10 +1057,22 @@ static void completeInterframe(flightLog_t *log, char frameType, const char *fra
     else
         log->stats.frame['P'].brokenCount++;
 
-    //Receiving a P frame can't resynchronise the stream so it doesn't set stateIsValid to true
+    //Receiving a P frame can't resynchronise the stream so it doesn't set mainStreamIsValid to true
 
     if (log->private->onFrameReady)
         log->private->onFrameReady(log, private->mainStreamIsValid, private->mainHistory[0], frameType, log->mainFieldCount, frameStart - private->logData, frameEnd - frameStart);
+
+    if (log->private->mainStreamIsValid) {
+        // Rotate history buffers
+
+        private->mainHistory[2] = private->mainHistory[1];
+        private->mainHistory[1] = private->mainHistory[0];
+
+        // And advance the current frame into an empty space ready to be filled
+        private->mainHistory[0] += FLIGHT_LOG_MAX_FIELDS;
+        if (private->mainHistory[0] >= &private->blackboxHistoryRing[3][0])
+            private->mainHistory[0] = &private->blackboxHistoryRing[0][0];
+    }
 }
 
 static void completeEventFrame(flightLog_t *log, char frameType, const char *frameStart, const char *frameEnd, bool raw)
@@ -1051,13 +1105,13 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 	memset(&log->stats, 0, sizeof(log->stats));
 	free(log->private->fieldNamesCombined);
 	log->private->fieldNamesCombined = NULL;
-	log->private->mainStreamIsValid = false;
 	log->mainFieldCount = 0;
 	log->gpsFieldCount = 0;
+	flightLoginvalidateStream(log);
 
-	memset(log->private->blackboxHistoryRing, 0, sizeof(log->private->blackboxHistoryRing));
-	for (int i = 0; i < 2; i++)
-	    log->private->mainHistory[i] = log->private->blackboxHistoryRing[0];
+	log->private->mainHistory[0] = log->private->blackboxHistoryRing[0];
+    log->private->mainHistory[1] = NULL;
+    log->private->mainHistory[2] = NULL;
 
 	//Default to MW's defaults
 	log->minthrottle = 1150;
