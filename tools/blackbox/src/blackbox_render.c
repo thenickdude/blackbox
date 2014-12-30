@@ -1140,7 +1140,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	//Exaggerate values around the origin and compress values near the edges:
 	pitchStickCurve = expoCurveCreate(0, 0.700, 500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100, 1.0, 10);
 
-	gyroCurve = expoCurveCreate(0, 0.666, 2.2e-6 / flightLog->gyroScale, 1.0, 10);
+	gyroCurve = expoCurveCreate(0, 0.25, 9.0e-6 / flightLog->gyroScale, 1.0, 10);
 	accCurve = expoCurveCreate(0, 0.7, 5000, 1.0, 10);
 	pidCurve = expoCurveCreate(0, 0.7, 500, 1.0, 10);
 
