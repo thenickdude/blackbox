@@ -1119,7 +1119,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	struct craftDrawingParameters_t craftParameters;
 
 	//If sync beep time looks reasonable, start the log there instead of at the first frame
-	if (abs((int64_t)syncBeepTime - logStartTime) < 1000000) //Expected to be well within 1 second of the start
+	if (abs((int) ((int64_t)syncBeepTime - logStartTime)) < 1000000) //Expected to be well within 1 second of the start
 	    logStartTime = syncBeepTime;
 
 	logDurationMicro = logEndTime - logStartTime;
@@ -1365,7 +1365,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 		// Draw a synchronisation line
 		if (syncBeepTime >= windowStartTime && syncBeepTime < windowEndTime) {
-		    double lineX = (int64_t) options.imageWidth * (syncBeepTime - windowStartTime) / windowWidthMicros;
+		    double lineX = (double) ((int64_t) options.imageWidth * (syncBeepTime - windowStartTime) / windowWidthMicros);
 
             cairo_set_source_rgba(cr, 0.25, 0.25, 1, 0.2);
             cairo_set_line_width(cr, 20);

@@ -1050,7 +1050,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 
 	bool prematureEof = false;
 	const char *frameStart = 0;
-	const flightLogFrameType_t *frameType, *lastFrameType;
+	const flightLogFrameType_t *frameType = 0, *lastFrameType = 0;
 
 	flightLogPrivate_t *private = log->private;
 

@@ -24,12 +24,18 @@
     <ClCompile Include="..\..\src\parser.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\tools.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\parser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\lib\getopt_mb_uni\getopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
