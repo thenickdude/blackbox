@@ -696,17 +696,19 @@ static void parseInterframe(flightLog_t *log, bool raw)
 	uint32_t skippedFrames = 0;
 
 	//Work out how many frames we skipped to get to this one, based on the log sampling rate
-	for (frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++) {
+	for (frameIndex = log->private->mainHistory[0][FLIGHT_LOG_FIELD_INDEX_ITERATION] + 1; !shouldHaveFrame(log, frameIndex); frameIndex++)
 		skippedFrames++;
-	}
+
 	log->stats.intentionallyAbsentIterations += skippedFrames;
 
-	for (i = 0; i < log->mainFieldCount; i++) {
+	i = 0;
+	while (i < log->mainFieldCount) {
 		uint32_t value;
 		uint32_t values[8];
 
 		if (log->private->frameDefs['P'].predictor[i] == FLIGHT_LOG_FIELD_PREDICTOR_INC) {
 			newFrame[i] = log->private->mainHistory[0][i] + 1 + skippedFrames;
+	        i++;
 		} else {
 			switch (log->private->frameDefs['P'].encoding[i]) {
 				case FLIGHT_LOG_FIELD_ENCODING_SIGNED_VB:
@@ -722,23 +724,19 @@ static void parseInterframe(flightLog_t *log, bool raw)
 						readTag8_4S16_v2(log, (int32_t*)values);
 
 					//Apply the predictors for the fields:
-					for (j = 0; j < 3; j++) {
-						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
+					for (j = 0; j < 4; j++, i++)
 						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
-						i++;
-					}
-					value = values[3];
+
+					continue;
 				break;
 				case FLIGHT_LOG_FIELD_ENCODING_TAG2_3S32:
 					readTag2_3S32(log, (int32_t*)values);
 
 					//Apply the predictors for the fields:
-					for (j = 0; j < 2; j++) {
-						// ^ But don't process the final value, allow the regular handler after the 'case' to do that
+					for (j = 0; j < 3; j++, i++)
 						newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
-						i++;
-					}
-					value = values[2];
+
+					continue;
 				break;
 				case FLIGHT_LOG_FIELD_ENCODING_TAG8_8SVB:
 				    //How many fields are in this encoded group? Check the subsequent field encodings:
@@ -750,15 +748,14 @@ static void parseInterframe(flightLog_t *log, bool raw)
 
 				    readTag8_8SVB(log, (int32_t*) values, groupCount);
 
-                    // Don't process the final value, allow the regular handler after the 'case' to do that
-				    for (j = 0; j < groupCount - 1; j++) {
+				    for (j = 0; j < groupCount; j++, i++)
                         newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], values[j]);
-                        i++;
-				    }
-				    value = values[groupCount - 1];
+
+                    continue;
 				break;
 				case FLIGHT_LOG_FIELD_ENCODING_NULL:
-					continue;
+				    //Nothing to read
+				    value = 0;
 				break;
 				default:
 					fprintf(stderr, "Unsupported P-field encoding %d\n", log->private->frameDefs['P'].encoding[i]);
@@ -766,6 +763,7 @@ static void parseInterframe(flightLog_t *log, bool raw)
 			}
 
 			newFrame[i] = applyInterPrediction(log, i, raw ? FLIGHT_LOG_FIELD_PREDICTOR_0 : log->private->frameDefs['P'].predictor[i], value);
+			i++;
 		}
 	}
 
