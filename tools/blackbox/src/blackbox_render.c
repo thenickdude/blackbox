@@ -482,11 +482,7 @@ void drawCommandSticks(int32_t *frame, int imageWidth, int imageHeight, cairo_t 
 		//Draw horizontal stick label
 		int32_t labelValue;
 
-		//Invert yaw so moving to the left goes into negative values
-		if (i == 0)
-			labelValue = -frame[idents.rcCommandFields[2]];
-		else
-			labelValue = frame[idents.rcCommandFields[(1 - i) * 2 + 0]];
+		labelValue = frame[idents.rcCommandFields[(1 - i) * 2 + 0]];
 
 		snprintf(stickLabel, sizeof(stickLabel), "%d", labelValue);
 		cairo_text_extents(cr, stickLabel, &extent);
@@ -1142,7 +1138,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 	//Exaggerate values around the origin and compress values near the edges:
 	pitchStickCurve = expoCurveCreate(0, 0.700, 500 * (flightLog->rcRate ? flightLog->rcRate : 100) / 100, 1.0, 10);
 
-	gyroCurve = expoCurveCreate(0, 0.25, 9.0e-6 / flightLog->gyroScale, 1.0, 10);
+	gyroCurve = expoCurveCreate(0, 0.2, 9.0e-6 / flightLog->gyroScale, 1.0, 10);
 	accCurve = expoCurveCreate(0, 0.7, 5000, 1.0, 10);
 	pidCurve = expoCurveCreate(0, 0.7, 500, 1.0, 10);
 
