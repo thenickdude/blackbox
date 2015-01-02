@@ -3,6 +3,8 @@ used to configure the OpenLog. Instead it hard-codes the correct settings for th
 (115200 baud).
 
 You'll need to add the [required libraries][] to your Arduino IDE's library path in order to 
-build this from source.
+build this from source. After unpacking that library zip, copy the folders out of it that are
+named "SdFat" and "SerialPort" and copy those to your libraries folder directly (don't copy the
+outer folders "SdFatBeta20120108" or "SerialPortBeta20120106".)
 
 [required libraries]: (https://code.google.com/p/beta-lib/downloads/detail?name=SerialLoggerBeta20120108.zip&can=4&q=)

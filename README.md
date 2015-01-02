@@ -71,8 +71,11 @@ OpenLog is running at the correct baud-rate and does away for the need for a `CO
 can find the Blackbox firmware variant in `tools/blackbox/OpenLog_v3_Blackbox/`.
 
 If you decide to use the OpenLog Lite firmware instead, note that the .hex file for OpenLog Lite currently in the
-OpenLog repository is out of date with respect to their .ino source file, so you'll need to build it yourself after
-adding the [required libraries][] to your Arduino libraries directory.
+OpenLog repository is out of date with respect to their .ino source file, so you'll need to build it yourself.
+
+To build the OpenLog firmware, you will need to add the required libraries][] to your Arduino libraries directory.
+After unpacking that library zip, copy the folders out of it that are named "SdFat" and "SerialPort" and copy those to
+your libraries folder directly (don't copy the outer folders "SdFatBeta20120108" or "SerialPortBeta20120106".)
 
 To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout][] along with some way of
 switching the Tx and Rx pins over (since the OpenLog has them switched) like the [FTDI crossover][].
