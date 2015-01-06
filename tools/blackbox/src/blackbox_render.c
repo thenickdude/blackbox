@@ -719,8 +719,8 @@ void decideCraftParameters(craft_parameters_t *parameters, int imageWidth, int i
 }
 
 /**
- * Plot the given field within the specified time period. valueYOffset will be added from the values before
- * plotting. When the value reaches valueYRange it'll be drawn plotHeight pixels away from the origin.
+ * Plot the given field within the specified time period. When the output from the curve applied to a field
+ * value reaches 1.0 it'll be drawn plotHeight pixels away from the origin.
  */
 void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windowEndTime, int firstFrameIndex,
 		int fieldIndex, expoCurve_t *curve, int plotHeight)
@@ -732,7 +732,6 @@ void plotLine(cairo_t *cr, color_t color, int64_t windowStartTime, int64_t windo
 
 	bool drawingLine = false;
 	double lastX, lastY;
-
 
 	//Draw points from this line until we leave the window
 	for (int frameIndex = firstFrameIndex; frameIndex < points->frameCount; frameIndex++) {
@@ -916,11 +915,11 @@ void drawPIDTable(cairo_t *cr, int32_t *frame)
 	cairo_restore(cr);
 }
 
-void drawCenterline(cairo_t *cr)
+//Draw an origin line for a graph (at the origin and spanning the window)
+void drawAxisLine(cairo_t *cr)
 {
 	cairo_save(cr);
 
-	//Draw an origin line
 	cairo_set_source_rgba(cr, 1, 1, 1, 0.5);
 
 	cairo_set_dash(cr, 0, 0, 0);
@@ -1185,7 +1184,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 					cairo_translate(cr, 0, options.imageHeight * 0.25);
 				}
 
-				drawCenterline(cr);
+				drawAxisLine(cr);
 
 				cairo_set_line_width(cr, 2.5);
 
@@ -1219,7 +1218,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 
 					cairo_translate(cr, 0, options.imageHeight * 0.2 * (axis - 1));
 
-					drawCenterline(cr);
+					drawAxisLine(cr);
 
 					for (int pidType = PID_D; pidType >= PID_P; pidType--) {
 					    if (idents.axisPIDFields[pidType][axis] > -1) {
@@ -1289,7 +1288,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 				//Plot three gyro axes on one graph
 		    	cairo_translate(cr, 0, options.imageHeight * 0.70);
 
-				drawCenterline(cr);
+				drawAxisLine(cr);
 
 				for (int axis = 0; axis < 3; axis++) {
 					plotLine(cr, idents.gyroColors[axis], windowStartTime, windowEndTime, firstFrameIndex,
@@ -1358,7 +1357,7 @@ void renderAnimation(uint32_t startFrame, uint32_t endFrame)
 			drawAccelerometerData(cr, frameValues);
 
 			if (options.drawTime)
-				drawFrameLabel(cr, frameValues[0], (uint32_t) ((windowCenterTime - flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000));
+				drawFrameLabel(cr, frameValues[FLIGHT_LOG_FIELD_INDEX_ITERATION], (uint32_t) ((windowCenterTime - flightLog->stats.field[FLIGHT_LOG_FIELD_INDEX_TIME].min) / 1000));
 		}
 
 		// Draw a synchronisation line

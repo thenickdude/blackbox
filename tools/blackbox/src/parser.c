@@ -179,7 +179,7 @@ static void parseCommaSeparatedIntegers(char *line, int *target, int maxCount)
 	}
 }
 
-static void parseHeader(flightLog_t *log)
+static void parseHeaderLine(flightLog_t *log)
 {
 	char *fieldName, *fieldValue;
 	const char *lineStart, *lineEnd, *separatorPos;
@@ -387,7 +387,6 @@ static void readTag2_3S32(flightLog_t *log, int32_t *values)
 						byte2 = readChar(log);
 						byte3 = readChar(log);
 
-						// Cause sign-extension by using arithmetic right-shift
 						values[i] = signExtend24Bit(byte1 | (byte2 << 8) | (byte3 << 16));
 					break;
 					case 3: // 32-bit
@@ -649,7 +648,7 @@ static int32_t applyInterPrediction(flightLog_t *log, int fieldIndex, int predic
 				value += ((uint32_t) previous[fieldIndex] + (uint32_t) previous2[fieldIndex]) / 2;
 		break;
 		default:
-			fprintf(stderr, "Unsupported P-field predictor %d\n", log->private->frameDefs['P'].predictor[fieldIndex]);
+			fprintf(stderr, "Unsupported P-field predictor %d\n", predictor);
 			exit(-1);
 	}
 
@@ -1103,7 +1102,7 @@ bool flightLogParse(flightLog_t *log, int logIndex, FlightLogMetadataReady onMet
 			case PARSER_STATE_HEADER:
 				switch (command) {
 					case 'H':
-						parseHeader(log);
+						parseHeaderLine(log);
 					break;
 					case EOF:
 						fprintf(stderr, "Data file contained no events\n");
