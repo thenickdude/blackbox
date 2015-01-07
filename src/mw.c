@@ -18,6 +18,8 @@ uint16_t cycleTime = 0;         // this is the number in micro second to achieve
 int16_t headFreeModeHold;
 
 uint16_t vbat;                  // battery voltage in 0.1V steps
+uint16_t vbatLatest = 0;
+
 int32_t amperage;               // amperage read by current sensor in centiampere (1/100th A)
 int32_t mAhdrawn;              // milliampere hours drawn from the battery since start
 int16_t telemTemperature1;      // gyro sensor temperature
@@ -40,7 +42,7 @@ uint8_t rcOptions[CHECKBOXITEMS];
 
 int16_t axisPID[3];
 
-int32_t axisP[3], axisI[3], axisD[3];
+int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 // **********************
 // GPS
@@ -166,7 +168,8 @@ void annexCode(void)
         vbatCycleTime += cycleTime;
         if (!(++vbatTimer % VBATFREQ)) {
             vbatRaw -= vbatRaw / 8;
-            vbatRaw += adcGetChannel(ADC_BATTERY);
+            vbatLatest = adcGetChannel(ADC_BATTERY);
+            vbatRaw += vbatLatest;
             vbat = batteryAdcToVoltage(vbatRaw / 8);
             
             if (mcfg.power_adc_channel > 0) {
@@ -369,9 +372,9 @@ static void pidMultiWii(void)
         axisPID[axis] = PTerm + ITerm - DTerm;
 
         // Values for blackbox
-        axisP[axis] = PTerm;
-		axisI[axis] = ITerm;
-		axisD[axis] = -DTerm;
+        axisPID_P[axis] = PTerm;
+		axisPID_I[axis] = ITerm;
+		axisPID_D[axis] = -DTerm;
     }
 }
 
@@ -443,9 +446,9 @@ static void pidRewrite(void)
         axisPID[axis] = PTerm + ITerm + DTerm;
 
         // Values for blackbox
-        axisP[axis] = PTerm;
-		axisI[axis] = ITerm;
-		axisD[axis] = DTerm;
+        axisPID_P[axis] = PTerm;
+		axisPID_I[axis] = ITerm;
+		axisPID_D[axis] = DTerm;
     }
 }
 
