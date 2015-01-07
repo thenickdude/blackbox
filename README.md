@@ -65,26 +65,17 @@ The blackbox software is designed to be used with an [OpenLog serial data logger
 little prep to get the OpenLog ready for use, so here are the details:
 
 ### Firmware
-The OpenLog should be flashed with the [OpenLog Lite firmware][] or the special Blackbox variant using the Arduino IDE
-in order to minimise dropped frames (target the "Arduino Uno"). The Blackbox variant of the firmware ensures that the
-OpenLog is running at the correct baud-rate and does away for the need for a `CONFIG.TXT` file to set up the OpenLog. You
-can find the Blackbox firmware variant in `tools/blackbox/OpenLog_v3_Blackbox/`.
+The OpenLog should be flashed with the [OpenLog Lite firmware][] or the special [OpenLog Blackbox firmware][] in order to
+minimize dropped frames (the OpenLog hardware is the "Arduino Uno"). The Blackbox variant of the firmware ensures that
+the OpenLog is running at the correct baud-rate and does away for the need for a `CONFIG.TXT` file to set up the OpenLog.
 
-If you decide to use the OpenLog Lite firmware instead, note that the .hex file for OpenLog Lite currently in the
-OpenLog repository is out of date with respect to their .ino source file, so you'll need to build it yourself.
-
-To build the OpenLog firmware, you will need to add the required libraries][] to your Arduino libraries directory.
-After unpacking that library zip, copy the folders out of it that are named "SdFat" and "SerialPort" and copy those to
-your libraries folder directly (don't copy the outer folders "SdFatBeta20120108" or "SerialPortBeta20120106".)
-
-To flash the firmware, you'll need to use an FTDI programmer like the [FTDI Basic Breakout][] along with some way of
-switching the Tx and Rx pins over (since the OpenLog has them switched) like the [FTDI crossover][].
+You can find building and flashing instructions for the OpenLog Blackbox firmware in the 
+[blackbox-firmware repository][].
 
 [OpenLog serial data logger]: https://www.sparkfun.com/products/9530
 [OpenLog Lite firmware]: https://github.com/sparkfun/OpenLog/tree/master/firmware/OpenLog_v3_Light
-[Required libraries]: https://code.google.com/p/beta-lib/downloads/detail?name=SerialLoggerBeta20120108.zip&can=4&q=
-[FTDI Basic Breakout]: https://www.sparkfun.com/products/9716
-[FTDI crossover]: https://www.sparkfun.com/products/10660
+[OpenLog Blackbox firmware]: https://github.com/cleanflight/blackbox-firmware
+[blackbox-firmware repository]: https://github.com/cleanflight/blackbox-firmware
 
 ### Serial port
 Connect the "TX" pin from the two-pin TX/RX header on the centre of the Naze32 to the OpenLog's "RXI" pin. Don't
@@ -121,9 +112,13 @@ into your computer. You should find a "CONFIG.TXT" file on the card. Edit it in 
 (baud) to 115200. Set esc# to 0, mode to 0, and echo to 0. Save the file and put the card back into your OpenLog, it
 should use those settings from now on.
 
-If your OpenLog didn't write a CONFIG.TXT file, you can [use mine instead][].
+If your OpenLog didn't write a CONFIG.TXT file, create a CONFIG.TXT file with these contents and store it in the root
+of the MicroSD card:
 
-[use mine instead]: https://raw.githubusercontent.com/thenickdude/blackbox/blackbox/tools/blackbox/OpenLog_v3_Blackbox/CONFIG.TXT
+```
+115200,26,0,0,1,0,1
+baud,escape,esc#,mode,verb,echo,ignoreRX
+```
 
 ### Protection
 I wrapped my OpenLog in black electrical tape in order to insulate it from my conductive carbon fiber frame, but this
