@@ -4,12 +4,9 @@
 *.dep
 *.bak
 *.uvgui.*
-/.project
+.project
 .settings
-/.cproject
-/obj/NAZE
+.cproject
+obj/
 patches/
-/startup_stm32f10x_md_gcc.s
-/version.txt
-.DS_Store
-*.vcxproj.user
+startup_stm32f10x_md_gcc.s
