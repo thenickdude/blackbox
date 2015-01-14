@@ -1,5 +1,6 @@
 #include "board.h"
 #include "mw.h"
+#include "buzzer.h"
 
 #include "blackbox_fielddefs.h"
 #include "blackbox.h"
@@ -1115,7 +1116,7 @@ static void blackboxPlaySyncBeep()
     BEEP_ON;
 
     // Have the regular beeper code turn off the beep for us eventually, since that's not timing-sensitive
-    toggleBeep = 1;
+    buzzer(BUZZER_ARMING);
 
     blackboxWrite('E');
     blackboxWrite(FLIGHT_LOG_EVENT_SYNC_BEEP);
